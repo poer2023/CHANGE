@@ -1,0 +1,328 @@
+/* 模块化编辑器自定义样式 */
+
+/* 拖拽相关样式 */
+.module-drag-preview {
+  @apply opacity-70 scale-95 rotate-1 shadow-xl;
+  transition: all 0.2s ease;
+}
+
+.module-drag-over {
+  @apply border-blue-500 bg-blue-50 scale-105;
+  transition: all 0.2s ease;
+}
+
+.module-drag-placeholder {
+  @apply border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+/* 进度条动画 */
+.progress-bar {
+  transition: width 0.5s ease-in-out;
+}
+
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background-image: linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.2) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 50px 50px;
+  animation: move 2s linear infinite;
+}
+
+@keyframes move {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 50px 50px;
+  }
+}
+
+/* 模块卡片样式 */
+.module-card {
+  transition: all 0.3s ease;
+}
+
+.module-card:hover {
+  transform: translateY(-2px);
+}
+
+.module-card.selected {
+  @apply ring-2 ring-blue-500 ring-opacity-50;
+}
+
+.module-card.bulk-selected {
+  @apply ring-2 ring-blue-300 ring-opacity-75 bg-blue-25;
+}
+
+/* 结构树样式 */
+.structure-tree-item {
+  transition: all 0.2s ease;
+}
+
+.structure-tree-item:hover {
+  @apply bg-gray-50;
+}
+
+.structure-tree-item.selected {
+  @apply bg-blue-100 text-blue-900 border-l-4 border-blue-500;
+}
+
+.structure-tree-item.dragging {
+  @apply opacity-50;
+}
+
+/* 模板库样式 */
+.template-card {
+  transition: all 0.2s ease;
+}
+
+.template-card:hover {
+  @apply shadow-md border-gray-300;
+}
+
+/* 自定义滚动条 */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f9fafb;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f9fafb;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* 响应式网格布局 */
+.module-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .module-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* 侧边栏动画 */
+.sidebar-enter {
+  transform: translateX(-100%);
+}
+
+.sidebar-enter-active {
+  transform: translateX(0);
+  transition: transform 300ms ease-in-out;
+}
+
+.sidebar-exit {
+  transform: translateX(0);
+}
+
+.sidebar-exit-active {
+  transform: translateX(-100%);
+  transition: transform 300ms ease-in-out;
+}
+
+/* 加载状态 */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 批量操作工具栏 */
+.bulk-toolbar {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 模块类型颜色主题 */
+.module-abstract {
+  @apply border-purple-200 bg-purple-50;
+}
+
+.module-introduction {
+  @apply border-blue-200 bg-blue-50;
+}
+
+.module-literature-review {
+  @apply border-green-200 bg-green-50;
+}
+
+.module-methodology {
+  @apply border-yellow-200 bg-yellow-50;
+}
+
+.module-results {
+  @apply border-orange-200 bg-orange-50;
+}
+
+.module-discussion {
+  @apply border-red-200 bg-red-50;
+}
+
+.module-conclusion {
+  @apply border-indigo-200 bg-indigo-50;
+}
+
+.module-references {
+  @apply border-gray-200 bg-gray-50;
+}
+
+.module-appendix {
+  @apply border-pink-200 bg-pink-50;
+}
+
+.module-custom {
+  @apply border-teal-200 bg-teal-50;
+}
+
+/* 悬停效果 */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 文本区域自动调整高度 */
+.auto-resize-textarea {
+  resize: none;
+  overflow: hidden;
+  min-height: 100px;
+}
+
+/* 工具提示样式 */
+.tooltip {
+  @apply absolute z-10 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.tooltip.show {
+  opacity: 1;
+}
+
+/* 模块连接线 */
+.dependency-line {
+  stroke: #e5e7eb;
+  stroke-width: 2;
+  stroke-dasharray: 5, 5;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* 成功动画 */
+.success-animation {
+  animation: successPulse 0.6s ease-in-out;
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 错误摇摆动画 */
+.error-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* 折叠动画 */
+.collapse-enter {
+  max-height: 0;
+  overflow: hidden;
+}
+
+.collapse-enter-active {
+  max-height: 500px;
+  transition: max-height 0.3s ease-in-out;
+}
+
+.collapse-exit {
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.collapse-exit-active {
+  max-height: 0;
+  transition: max-height 0.3s ease-in-out;
+}

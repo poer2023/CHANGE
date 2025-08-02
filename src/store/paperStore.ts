@@ -1,0 +1,248 @@
+import { create } from 'zustand';
+import { Paper, CreatePaperForm, UpdatePaperForm, FormData } from '@/types';
+
+interface EditorState {
+  content: string;
+  isAutoSaving: boolean;
+  lastSaved: Date | null;
+  isDirty: boolean;
+}
+
+interface PaperState {
+  papers: Paper[];
+  currentPaper: Paper | null;
+  loading: boolean;
+  error: string | null;
+  editorState: EditorState;
+  formData: Partial<FormData>;
+}
+
+interface PaperActions {
+  fetchPapers: () => Promise<void>;
+  fetchPaper: (id: string) => Promise<void>;
+  createPaper: (data: CreatePaperForm) => Promise<Paper>;
+  updatePaper: (id: string, data: UpdatePaperForm) => Promise<void>;
+  deletePaper: (id: string) => Promise<void>;
+  setCurrentPaper: (paper: Paper | null) => void;
+  setEditorContent: (content: string) => void;
+  setFormData: (data: Partial<FormData>) => void;
+  resetForm: () => void;
+  createPaperFromForm: (formData: FormData) => Promise<Paper>;
+  clearError: () => void;
+}
+
+type PaperStore = PaperState & PaperActions;
+
+export const usePaperStore = create<PaperStore>((set, get) => ({
+  papers: [],
+  currentPaper: null,
+  loading: false,
+  error: null,
+  editorState: {
+    content: '',
+    isAutoSaving: false,
+    lastSaved: null,
+    isDirty: false
+  },
+  formData: {},
+
+  fetchPapers: async () => {
+    set({ loading: true, error: null });
+    try {
+      // Simulated API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const mockPapers: Paper[] = [
+        {
+          id: '1',
+          title: 'AI in Medical Diagnosis: A Comprehensive Review',
+          content: 'This paper explores the current state and future prospects...',
+          abstract: 'Abstract content here...',
+          keywords: ['AI', 'medical', 'diagnosis'],
+          status: 'draft',
+          authorId: 'user1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          wordCount: 2431,
+          sections: [],
+        },
+        // Add more mock papers...
+      ];
+      set({ papers: mockPapers, loading: false });
+    } catch (error) {
+      set({ error: 'Failed to fetch papers', loading: false });
+    }
+  },
+
+  fetchPaper: async (id: string) => {
+    set({ loading: true, error: null });
+    try {
+      // Simulated API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const paper = get().papers.find(p => p.id === id);
+      set({ currentPaper: paper || null, loading: false });
+    } catch (error) {
+      set({ error: 'Failed to fetch paper', loading: false });
+    }
+  },
+
+  createPaper: async (data: CreatePaperForm) => {
+    set({ loading: true, error: null });
+    try {
+      // Simulated API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const newPaper: Paper = {
+        id: Date.now().toString(),
+        title: data.title,
+        content: '',
+        keywords: [],
+        status: 'draft',
+        authorId: 'user1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        wordCount: 0,
+        sections: [],
+      };
+      set(state => ({ 
+        papers: [...state.papers, newPaper], 
+        loading: false 
+      }));
+      return newPaper;
+    } catch (error) {
+      set({ error: 'Failed to create paper', loading: false });
+      throw error;
+    }
+  },
+
+  updatePaper: async (id: string, data: UpdatePaperForm) => {
+    set({ loading: true, error: null });
+    try {
+      // Simulated API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      set(state => ({
+        papers: state.papers.map(paper =>
+          paper.id === id 
+            ? { 
+                ...paper, 
+                ...data, 
+                updatedAt: new Date(),
+                wordCount: data.content ? data.content.split(' ').length : paper.wordCount
+              }
+            : paper
+        ),
+        currentPaper: state.currentPaper?.id === id 
+          ? { 
+              ...state.currentPaper, 
+              ...data, 
+              updatedAt: new Date(),
+              wordCount: data.content ? data.content.split(' ').length : state.currentPaper.wordCount
+            }
+          : state.currentPaper,
+        loading: false,
+      }));
+    } catch (error) {
+      set({ error: 'Failed to update paper', loading: false });
+    }
+  },
+
+  deletePaper: async (id: string) => {
+    set({ loading: true, error: null });
+    try {
+      // Simulated API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      set(state => ({
+        papers: state.papers.filter(paper => paper.id !== id),
+        currentPaper: state.currentPaper?.id === id ? null : state.currentPaper,
+        loading: false,
+      }));
+    } catch (error) {
+      set({ error: 'Failed to delete paper', loading: false });
+    }
+  },
+
+  setCurrentPaper: (paper: Paper | null) => {
+    set({ 
+      currentPaper: paper,
+      editorState: {
+        content: paper?.content || '',
+        isAutoSaving: false,
+        lastSaved: paper?.updatedAt || null,
+        isDirty: false
+      }
+    });
+  },
+
+  setEditorContent: (content: string) => {
+    set(state => ({
+      editorState: {
+        ...state.editorState,
+        content,
+        isDirty: content !== (state.currentPaper?.content || '')
+      }
+    }));
+  },
+
+  clearError: () => {
+    set({ error: null });
+  },
+
+  setFormData: (data: Partial<FormData>) => {
+    set(state => ({
+      formData: { ...state.formData, ...data }
+    }));
+  },
+
+  resetForm: () => {
+    set({ formData: {} });
+  },
+
+  createPaperFromForm: async (formData: FormData) => {
+    set({ loading: true, error: null });
+    try {
+      // Simulated API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const newPaper: Paper = {
+        id: Date.now().toString(),
+        title: formData.title || 'Untitled Paper',
+        content: `# ${formData.title || 'Untitled Paper'}\n\n## Abstract\n\n${formData.abstract || 'Abstract to be written...'}\n\n## Introduction\n\nIntroduction content based on requirements: ${formData.requirements}\n\n## Literature Review\n\nLiterature review content...\n\n## Methodology\n\nMethodology content...\n\n## Results\n\nResults content...\n\n## Discussion\n\nDiscussion content...\n\n## Conclusion\n\nConclusion content...\n\n## References\n\nReferences will be added here...`,
+        abstract: formData.abstract || '',
+        keywords: formData.keywords || [],
+        status: 'draft',
+        authorId: 'user1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        wordCount: 0,
+        sections: [
+          { id: '1', title: 'Abstract', content: formData.abstract || '', order: 1 },
+          { id: '2', title: 'Introduction', content: '', order: 2 },
+          { id: '3', title: 'Literature Review', content: '', order: 3 },
+          { id: '4', title: 'Methodology', content: '', order: 4 },
+          { id: '5', title: 'Results', content: '', order: 5 },
+          { id: '6', title: 'Discussion', content: '', order: 6 },
+          { id: '7', title: 'Conclusion', content: '', order: 7 },
+          { id: '8', title: 'References', content: '', order: 8 }
+        ],
+        paperType: formData.paperType,
+        field: formData.field,
+        requirements: formData.requirements,
+        wordCount: formData.wordCount,
+        format: formData.format,
+        specialRequirements: formData.specialRequirements,
+        outlinePreference: formData.outlinePreference,
+        detailLevel: formData.detailLevel,
+        citationStyle: formData.citationStyle
+      };
+      
+      set(state => ({ 
+        papers: [...state.papers, newPaper], 
+        loading: false,
+        formData: {} // Reset form data after successful creation
+      }));
+      
+      return newPaper;
+    } catch (error) {
+      set({ error: 'Failed to create paper from form', loading: false });
+      throw error;
+    }
+  },
+}));

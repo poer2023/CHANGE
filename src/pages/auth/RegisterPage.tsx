@@ -68,11 +68,9 @@ const RegisterPage: React.FC = () => {
       const mockUser = {
         id: Math.random().toString(36).substr(2, 9),
         email: formData.email,
-        username: formData.username,
-        createdAt: new Date().toISOString(),
-        subscription: {
-          plan: 'free' as const,
-        }
+        name: formData.username,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       login(mockUser);

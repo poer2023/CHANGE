@@ -41,11 +41,9 @@ const LoginPage: React.FC = () => {
       const mockUser = {
         id: '1',
         email: formData.email,
-        username: formData.email.split('@')[0],
-        createdAt: new Date().toISOString(),
-        subscription: {
-          plan: 'free' as const,
-        }
+        name: formData.email.split('@')[0],
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       login(mockUser);

@@ -215,7 +215,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   }, [autoFocus]);
 
-  const toolbarButtons = [
+  const toolbarButtons: Array<
+    | { action: string; icon: React.ComponentType<{ className?: string }>; title: string; onClick?: () => void; disabled?: boolean }
+    | { type: 'separator' }
+  > = [
     { action: 'bold', icon: Bold, title: 'Bold (Ctrl+B)' },
     { action: 'italic', icon: Italic, title: 'Italic (Ctrl+I)' },
     { action: 'underline', icon: Underline, title: 'Underline (Ctrl+U)' },
@@ -238,26 +241,31 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
         <div className="flex items-center space-x-1">
           {toolbarButtons.map((button, index) => {
-            if (button.type === 'separator') {
+            if ('type' in button && button.type === 'separator') {
               return <div key={index} className="w-px h-6 bg-gray-300 mx-1" />;
             }
 
-            const Icon = button.icon;
-            const isDisabled = button.disabled;
+            // Type guard to ensure we have a proper button
+            if ('action' in button) {
+              const Icon = button.icon;
+              const isDisabled = button.disabled;
+              
+              return (
+                <button
+                  key={button.action}
+                  title={button.title}
+                  disabled={isDisabled || readOnly}
+                  onClick={button.onClick || (() => executeAction({ type: 'format', action: button.action }))}
+                  className={`p-2 rounded hover:bg-gray-200 transition-colors ${
+                    isDisabled ? 'opacity-50 cursor-not-allowed' : 'text-gray-700 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              );
+            }
             
-            return (
-              <button
-                key={button.action}
-                title={button.title}
-                disabled={isDisabled || readOnly}
-                onClick={button.onClick || (() => executeAction({ type: 'format', action: button.action }))}
-                className={`p-2 rounded hover:bg-gray-200 transition-colors ${
-                  isDisabled ? 'opacity-50 cursor-not-allowed' : 'text-gray-700 hover:text-gray-900'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-              </button>
-            );
+            return null;
           })}
         </div>
 

@@ -18,12 +18,12 @@ import {
   Search,
   X
 } from 'lucide-react';
-import { FormData, Field, ValidationError } from '@/types/form';
+import { FormData, Field, FormValidationError } from '@/types/form';
 
 interface FieldSelectorProps {
   formData: FormData;
   updateFormData: (updates: Partial<FormData>) => void;
-  errors: ValidationError[];
+  errors: FormValidationError[];
 }
 
 const FieldSelector: React.FC<FieldSelectorProps> = ({

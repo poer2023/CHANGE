@@ -7,25 +7,33 @@ interface InputProps extends ComponentProps {
   placeholder?: string;
   value?: string;
   onChange?: (value: string) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onCompositionStart?: (e: React.CompositionEvent<HTMLInputElement>) => void;
+  onCompositionEnd?: (e: React.CompositionEvent<HTMLInputElement>) => void;
   error?: string;
   disabled?: boolean;
   required?: boolean;
   icon?: React.ReactNode;
 }
 
-export const Input: React.FC<InputProps> = ({
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
   className = '',
   label,
   type = 'text',
   placeholder,
   value,
   onChange,
+  onBlur,
+  onKeyPress,
+  onCompositionStart,
+  onCompositionEnd,
   error,
   disabled = false,
   required = false,
   icon,
   ...props
-}) => {
+}, ref) => {
   const baseClasses = 'w-full px-3 py-2 border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500';
   const normalClasses = 'border-gray-300 focus:border-primary-500';
   const errorClasses = 'border-red-300 focus:border-red-500 focus:ring-red-500';
@@ -54,11 +62,16 @@ export const Input: React.FC<InputProps> = ({
           </div>
         )}
         <input
+          ref={ref}
           type={type}
           className={inputClasses}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
+          onBlur={onBlur}
+          onKeyPress={onKeyPress}
+          onCompositionStart={onCompositionStart}
+          onCompositionEnd={onCompositionEnd}
           disabled={disabled}
           required={required}
           {...props}
@@ -69,4 +82,6 @@ export const Input: React.FC<InputProps> = ({
       )}
     </div>
   );
-};
+});
+
+Input.displayName = 'Input';

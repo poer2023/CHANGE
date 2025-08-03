@@ -3,12 +3,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, Loader, CheckCircle, AlertCircle } from 'lucide-react';
-import { FormData, AIMessage, ValidationError } from '@/types/form';
+import { FormData, AIMessage, FormValidationError } from '@/types/form';
 
 interface AIRequirementParserProps {
   formData: FormData;
   updateFormData: (updates: Partial<FormData>) => void;
-  errors: ValidationError[];
+  errors: FormValidationError[];
 }
 
 const AIRequirementParser: React.FC<AIRequirementParserProps> = ({

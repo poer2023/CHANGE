@@ -9,6 +9,13 @@ export interface User {
   updatedAt: Date;
 }
 
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
 export interface Paper {
   id: string;
   title: string;
@@ -285,3 +292,6 @@ export interface UIState {
 
 // Re-export modular types
 export * from './modular';
+
+// Re-export form types
+export * from './form';

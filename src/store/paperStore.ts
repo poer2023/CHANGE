@@ -1,11 +1,17 @@
 import { create } from 'zustand';
-import { Paper, CreatePaperForm, UpdatePaperForm, FormData } from '@/types';
+import { Paper, CreatePaperForm, UpdatePaperForm, FormData, FormStep } from '@/types';
 
 interface EditorState {
   content: string;
   isAutoSaving: boolean;
   lastSaved: Date | null;
   isDirty: boolean;
+}
+
+interface FormState {
+  currentStep: number;
+  steps: FormStep[];
+  data: Partial<FormData>;
 }
 
 interface PaperState {
@@ -15,6 +21,7 @@ interface PaperState {
   error: string | null;
   editorState: EditorState;
   formData: Partial<FormData>;
+  formState: FormState;
 }
 
 interface PaperActions {
@@ -26,6 +33,7 @@ interface PaperActions {
   setCurrentPaper: (paper: Paper | null) => void;
   setEditorContent: (content: string) => void;
   setFormData: (data: Partial<FormData>) => void;
+  setFormStep: (step: number) => void;
   resetForm: () => void;
   createPaperFromForm: (formData: FormData) => Promise<Paper>;
   clearError: () => void;
@@ -45,6 +53,16 @@ export const usePaperStore = create<PaperStore>((set, get) => ({
     isDirty: false
   },
   formData: {},
+  formState: {
+    currentStep: 0,
+    steps: [
+      { id: 0, title: '基本信息', description: '填写论文基本信息', component: 'basic', isCompleted: false, isActive: true },
+      { id: 1, title: '内容结构', description: '设置论文结构', component: 'content', isCompleted: false, isActive: false },
+      { id: 2, title: '参考文献', description: '管理参考文献', component: 'references', isCompleted: false, isActive: false },
+      { id: 3, title: '生成论文', description: '生成最终论文', component: 'generate', isCompleted: false, isActive: false }
+    ],
+    data: {}
+  },
 
   fetchPapers: async () => {
     set({ loading: true, error: null });
@@ -187,12 +205,42 @@ export const usePaperStore = create<PaperStore>((set, get) => ({
 
   setFormData: (data: Partial<FormData>) => {
     set(state => ({
-      formData: { ...state.formData, ...data }
+      formData: { ...state.formData, ...data },
+      formState: {
+        ...state.formState,
+        data: { ...state.formState.data, ...data }
+      }
+    }));
+  },
+
+  setFormStep: (step: number) => {
+    set(state => ({
+      formState: {
+        ...state.formState,
+        currentStep: step,
+        steps: state.formState.steps.map((s, index) => ({
+          ...s,
+          isActive: index === step,
+          isCompleted: index < step
+        }))
+      }
     }));
   },
 
   resetForm: () => {
-    set({ formData: {} });
+    set(state => ({
+      formData: {},
+      formState: {
+        ...state.formState,
+        currentStep: 0,
+        data: {},
+        steps: state.formState.steps.map((s, index) => ({
+          ...s,
+          isActive: index === 0,
+          isCompleted: false
+        }))
+      }
+    }));
   },
 
   createPaperFromForm: async (formData: FormData) => {
@@ -211,21 +259,20 @@ export const usePaperStore = create<PaperStore>((set, get) => ({
         authorId: 'user1',
         createdAt: new Date(),
         updatedAt: new Date(),
-        wordCount: 0,
         sections: [
-          { id: '1', title: 'Abstract', content: formData.abstract || '', order: 1 },
-          { id: '2', title: 'Introduction', content: '', order: 2 },
-          { id: '3', title: 'Literature Review', content: '', order: 3 },
-          { id: '4', title: 'Methodology', content: '', order: 4 },
-          { id: '5', title: 'Results', content: '', order: 5 },
-          { id: '6', title: 'Discussion', content: '', order: 6 },
-          { id: '7', title: 'Conclusion', content: '', order: 7 },
-          { id: '8', title: 'References', content: '', order: 8 }
+          { id: '1', title: 'Abstract', content: formData.abstract || '', order: 1, level: 1 },
+          { id: '2', title: 'Introduction', content: '', order: 2, level: 1 },
+          { id: '3', title: 'Literature Review', content: '', order: 3, level: 1 },
+          { id: '4', title: 'Methodology', content: '', order: 4, level: 1 },
+          { id: '5', title: 'Results', content: '', order: 5, level: 1 },
+          { id: '6', title: 'Discussion', content: '', order: 6, level: 1 },
+          { id: '7', title: 'Conclusion', content: '', order: 7, level: 1 },
+          { id: '8', title: 'References', content: '', order: 8, level: 1 }
         ],
         paperType: formData.paperType,
         field: formData.field,
         requirements: formData.requirements,
-        wordCount: formData.wordCount,
+        wordCount: formData.wordCount || 0,
         format: formData.format,
         specialRequirements: formData.specialRequirements,
         outlinePreference: formData.outlinePreference,

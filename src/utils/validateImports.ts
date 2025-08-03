@@ -40,13 +40,13 @@ import { Input } from '../components/UI/Input';
 export const validateImports = () => {
   const validations = {
     types: {
-      Agent: typeof Agent !== 'undefined',
+      Agent: true, // type-only import
       AgentRole: true, // type alias
-      AgentMessage: typeof AgentMessage !== 'undefined',
-      ChatSession: typeof ChatSession !== 'undefined',
-      AgentContext: typeof AgentContext !== 'undefined',
-      AgentSuggestion: typeof AgentSuggestion !== 'undefined',
-      QuickAction: typeof QuickAction !== 'undefined'
+      AgentMessage: true, // type-only import
+      ChatSession: true, // type-only import
+      AgentContext: true, // type-only import
+      AgentSuggestion: true, // type-only import
+      QuickAction: true // type-only import
     },
     data: {
       AGENTS: typeof AGENTS === 'object' && AGENTS !== null,

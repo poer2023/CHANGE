@@ -1,9 +1,9 @@
+/* Agent 系统样式 */
+@import './styles/agent.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Agent 系统样式 */
-@import './styles/agent.css';
 
 @layer base {
   html {

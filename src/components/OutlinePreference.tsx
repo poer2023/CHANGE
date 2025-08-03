@@ -14,12 +14,12 @@ import {
   Clock,
   Zap
 } from 'lucide-react';
-import { FormData, OutlineOption, ValidationError } from '@/types/form';
+import { FormData, OutlineOption, FormValidationError } from '@/types/form';
 
 interface OutlinePreferenceProps {
   formData: FormData;
   updateFormData: (updates: Partial<FormData>) => void;
-  errors: ValidationError[];
+  errors: FormValidationError[];
 }
 
 const OutlinePreference: React.FC<OutlinePreferenceProps> = ({

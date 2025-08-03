@@ -3,12 +3,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, FileText, GraduationCap, Briefcase, Users, TrendingUp } from 'lucide-react';
-import { FormData, PaperType, ValidationError } from '@/types/form';
+import { FormData, PaperType, FormValidationError } from '@/types/form';
 
 interface PaperTypeSelectorProps {
   formData: FormData;
   updateFormData: (updates: Partial<FormData>) => void;
-  errors: ValidationError[];
+  errors: FormValidationError[];
 }
 
 const PaperTypeSelector: React.FC<PaperTypeSelectorProps> = ({

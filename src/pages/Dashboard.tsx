@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Button } from '@/components';
 import { Plus, FileText, FolderOpen, TrendingUp, Clock } from 'lucide-react';
 
-export const Dashboard: React.FC = () => {
+const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -112,3 +112,5 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
+
+export default Dashboard;

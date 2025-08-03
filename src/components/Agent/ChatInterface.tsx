@@ -178,7 +178,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <Input
               ref={inputRef}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(value) => setInputValue(value)}
               onKeyPress={handleKeyPress}
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={() => setIsComposing(false)}

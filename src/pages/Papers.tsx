@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Button, Input } from '@/components';
 import { Search, Plus, Filter, MoreVertical } from 'lucide-react';
 
-export const Papers: React.FC = () => {
+const Papers: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -73,3 +73,5 @@ export const Papers: React.FC = () => {
     </div>
   );
 };
+
+export default Papers;

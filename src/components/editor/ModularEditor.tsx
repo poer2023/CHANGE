@@ -3,7 +3,7 @@ import {
   Plus, 
   Search, 
   Filter, 
-  Grid3X3, 
+  LayoutGrid, 
   List, 
   FileText,
   Settings,
@@ -11,13 +11,18 @@ import {
   ChevronRight,
   Save,
   Download,
-  Share2
+  Share2,
+  Network,
+  Lightbulb,
+  BarChart3,
+  X
 } from 'lucide-react';
 import StructureTree from './StructureTree';
 import ModuleCard from './ModuleCard';
 import ModuleDragDrop from './ModuleDragDrop';
+import DependencyVisualization from './DependencyVisualization';
 import TemplateLibrary from './TemplateLibrary';
-import { PaperModule, ModularEditorState, ModuleType } from '@/types/modular';
+import { PaperModule, ModularEditorState, ModuleType, ModuleTemplate } from '@/types/modular';
 import { usePaperStore } from '@/store';
 
 interface ModularEditorProps {
@@ -41,6 +46,7 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
   const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showDependencyVisualization, setShowDependencyVisualization] = useState(false);
 
   // 初始化模块数据
   React.useEffect(() => {
@@ -191,7 +197,8 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
               ...module, 
               ...updates, 
               updatedAt: new Date(),
-              wordCount: updates.content ? updates.content.split(/\s+/).length : module.wordCount
+              // 保持wordCount数据的一致性
+              wordCount: updates.wordCount !== undefined ? updates.wordCount : module.wordCount
             }
           : module
       )
@@ -260,6 +267,132 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
     }));
   }, []);
 
+  // 应用模板
+  const applyTemplate = useCallback((template: any) => {
+    const newModules = template.structure.map((section: any, index: number) => ({
+      id: `template-${section.id}-${Date.now()}`,
+      type: getModuleTypeFromTitle(section.title),
+      title: section.title,
+      content: `# ${section.title}\n\n${section.description}\n\n<!-- 在这里开始编写内容 -->`,
+      order: index + 1,
+      isCollapsed: false,
+      isCompleted: false,
+      wordCount: 0,
+      progress: 0,
+      dependencies: index > 0 ? [`template-${template.structure[index - 1].id}-${Date.now()}`] : [],
+      template: template,
+      metadata: {
+        tags: section.isRequired ? ['required'] : [],
+        difficulty: 'medium',
+        estimatedTime: template.wordCountTarget ? Math.round(template.wordCountTarget.min / template.structure.length / 10) : 60,
+        lastModified: new Date(),
+        revisionCount: 0,
+        notes: template.prompts || []
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }));
+
+    setEditorState(prev => ({
+      ...prev,
+      modules: newModules
+    }));
+  }, []);
+
+  // 智能填充
+  const applySmartFill = useCallback((template: any, userInput: any) => {
+    const generateSmartContent = (section: any) => {
+      const { researchField, topic, methodology, keywords, academicLevel } = userInput;
+      
+      let content = `# ${section.title}\n\n`;
+      
+      switch (section.title.toLowerCase()) {
+        case '摘要':
+        case 'abstract':
+          content += `本研究聚焦于${researchField}领域的${topic}。采用${methodology}方法，探讨了...\n\n关键词：${keywords}`;
+          break;
+        case '引言':
+        case 'introduction':
+          content += `在${researchField}领域，${topic}一直是研究的热点问题。随着...的发展，本研究旨在...\n\n## 研究背景\n\n## 研究问题\n\n## 研究目标`;
+          break;
+        case '文献综述':
+        case 'literature review':
+          content += `关于${topic}的研究，学者们从不同角度进行了深入探讨。\n\n## 理论基础\n\n## 研究现状\n\n## 研究缺口`;
+          break;
+        case '研究方法':
+        case 'methodology':
+          content += `本研究采用${methodology}方法来探讨${topic}。\n\n## 研究设计\n\n## 数据收集\n\n## 分析方法`;
+          break;
+        default:
+          content += `${section.description}\n\n<!-- 请根据您的研究内容填写此部分 -->`;
+      }
+      
+      return content;
+    };
+
+    const newModules = template.structure.map((section: any, index: number) => ({
+      id: `smart-${section.id}-${Date.now()}`,
+      type: getModuleTypeFromTitle(section.title),
+      title: section.title,
+      content: generateSmartContent(section),
+      order: index + 1,
+      isCollapsed: false,
+      isCompleted: false,
+      wordCount: generateSmartContent(section).split(/\s+/).length,
+      progress: 15, // 智能填充给初始进度
+      dependencies: index > 0 ? [`smart-${template.structure[index - 1].id}`] : [],
+      template: {
+        ...template,
+        wordCountTarget: userInput.targetLength ? 
+          { min: parseInt(userInput.targetLength) / template.structure.length, max: parseInt(userInput.targetLength) / template.structure.length * 1.5 } 
+          : template.wordCountTarget
+      },
+      metadata: {
+        tags: section.isRequired ? ['required', 'smart-filled'] : ['smart-filled'],
+        difficulty: userInput.academicLevel === 'doctoral' ? 'hard' : userInput.academicLevel === 'master' ? 'medium' : 'easy',
+        estimatedTime: template.wordCountTarget ? Math.round(template.wordCountTarget.min / template.structure.length / 10) : 60,
+        lastModified: new Date(),
+        revisionCount: 0,
+        notes: [
+          `基于您的研究领域：${userInput.researchField}`,
+          `研究主题：${userInput.topic}`,
+          ...template.prompts || []
+        ]
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }));
+
+    setEditorState(prev => ({
+      ...prev,
+      modules: newModules
+    }));
+  }, []);
+
+  // 从标题映射模块类型
+  const getModuleTypeFromTitle = (title: string) => {
+    const mappings: Record<string, any> = {
+      '摘要': 'abstract',
+      'abstract': 'abstract',
+      '引言': 'introduction', 
+      'introduction': 'introduction',
+      '文献综述': 'literature-review',
+      'literature review': 'literature-review',
+      '研究方法': 'methodology',
+      'methodology': 'methodology',
+      '结果': 'results',
+      'results': 'results',
+      '讨论': 'discussion',
+      'discussion': 'discussion',
+      '结论': 'conclusion',
+      'conclusion': 'conclusion',
+      '参考文献': 'references',
+      'references': 'references'
+    };
+    
+    return mappings[title.toLowerCase()] || 'custom';
+  };
+
   const getModuleTypeLabel = (type: ModuleType): string => {
     const labels: Record<ModuleType, string> = {
       'abstract': '摘要',
@@ -302,9 +435,11 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <span>进度: {totalProgress}%</span>
               <span>•</span>
-              <span>字数: {totalWordCount}</span>
+              <span>字数: {totalWordCount.toLocaleString()}</span>
               <span>•</span>
               <span>模块: {editorState.modules.length}</span>
+              <span>•</span>
+              <span>已完成: {editorState.modules.filter(m => m.isCompleted).length}</span>
             </div>
           </div>
 
@@ -347,19 +482,34 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
               <button
                 onClick={() => setEditorState(prev => ({ ...prev, viewMode: 'card' }))}
                 className={`p-2 ${editorState.viewMode === 'card' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
+                title="卡片视图"
               >
-                <Grid3X3 className="h-4 w-4" />
+                <LayoutGrid className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setEditorState(prev => ({ ...prev, viewMode: 'list' }))}
                 className={`p-2 ${editorState.viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
+                title="列表视图"
               >
                 <List className="h-4 w-4" />
               </button>
             </div>
+            
+            <button
+              onClick={() => setShowDependencyVisualization(!showDependencyVisualization)}
+              className={`p-2 rounded-lg transition-colors ${
+                showDependencyVisualization 
+                  ? 'bg-purple-100 text-purple-600' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+              title="依赖关系视图"
+            >
+              <Network className="h-4 w-4" />
+            </button>
+            
             <button
               onClick={() => handleAddModule('custom')}
-              className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
+              className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="h-4 w-4 mr-1" />
               添加模块
@@ -395,16 +545,25 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
 
         {/* 中间编辑区域 */}
         <main className="flex-1 overflow-hidden">
-          <ModuleDragDrop
-            modules={filteredModules}
-            viewMode={editorState.viewMode}
-            selectedModuleId={editorState.selectedModuleId}
-            onModuleUpdate={handleModuleUpdate}
-            onModuleSelect={handleModuleSelect}
-            onModuleReorder={handleModuleReorder}
-            bulkSelection={editorState.bulkSelection}
-            onBulkSelection={handleBulkSelection}
-          />
+          {showDependencyVisualization ? (
+            <DependencyVisualization
+              modules={editorState.modules}
+              selectedModuleId={editorState.selectedModuleId}
+              onModuleSelect={handleModuleSelect}
+              onModuleUpdate={handleModuleUpdate}
+            />
+          ) : (
+            <ModuleDragDrop
+              modules={filteredModules}
+              viewMode={editorState.viewMode}
+              selectedModuleId={editorState.selectedModuleId}
+              onModuleUpdate={handleModuleUpdate}
+              onModuleSelect={handleModuleSelect}
+              onModuleReorder={handleModuleReorder}
+              bulkSelection={editorState.bulkSelection}
+              onBulkSelection={handleBulkSelection}
+            />
+          )}
         </main>
 
         {/* 右侧属性和AI面板 */}
@@ -457,25 +616,82 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">模块标题</label>
                             <input
                               type="text"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               value={editorState.modules.find(m => m.id === editorState.selectedModuleId)?.title || ''}
                               onChange={(e) => handleModuleUpdate(editorState.selectedModuleId!, { title: e.target.value })}
                             />
                           </div>
+                          
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">进度</label>
                             <div className="flex items-center space-x-2">
                               <div className="flex-1 bg-gray-200 rounded-full h-2">
                                 <div
-                                  className="bg-blue-600 h-2 rounded-full"
+                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                                   style={{ width: `${editorState.modules.find(m => m.id === editorState.selectedModuleId)?.progress || 0}%` }}
                                 />
                               </div>
-                              <span className="text-sm text-gray-600">
+                              <span className="text-sm text-gray-600 min-w-12">
                                 {editorState.modules.find(m => m.id === editorState.selectedModuleId)?.progress || 0}%
                               </span>
                             </div>
                           </div>
+                          
+                          {(() => {
+                            const selectedModule = editorState.modules.find(m => m.id === editorState.selectedModuleId);
+                            if (!selectedModule) return null;
+                            
+                            const getStats = (content: string) => {
+                              const trimmed = content.trim();
+                              const words = trimmed.split(/\s+/).filter(w => w.length > 0);
+                              const sentences = trimmed.split(/[.!?]+/).filter(s => s.trim().length > 0);
+                              const paragraphs = trimmed.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+                              return { words: words.length, sentences: sentences.length, paragraphs: paragraphs.length };
+                            };
+                            
+                            const stats = getStats(selectedModule.content);
+                            
+                            return (
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">内容统计</label>
+                                <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                                  <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-600">字数:</span>
+                                      <span className="font-medium">{stats.words}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-600">句子:</span>
+                                      <span className="font-medium">{stats.sentences}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-600">段落:</span>
+                                      <span className="font-medium">{stats.paragraphs}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-600">时间:</span>
+                                      <span className="font-medium">{selectedModule.metadata.estimatedTime}min</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {selectedModule.template?.wordCountTarget && (
+                                    <div className="pt-2 border-t border-gray-200">
+                                      <div className="flex justify-between items-center text-xs text-gray-600 mb-1">
+                                        <span>目标进度</span>
+                                        <span>{stats.words}/{selectedModule.template.wordCountTarget.min}</span>
+                                      </div>
+                                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                        <div
+                                          className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
+                                          style={{ width: `${Math.min(100, (stats.words / selectedModule.template.wordCountTarget.min) * 100)}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     ) : (
@@ -486,14 +702,38 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
 
                 {editorState.sidebarTab === 'ai' && (
                   <div className="space-y-4">
-                    <h3 className="font-medium text-gray-900">AI建议</h3>
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <p className="text-sm text-blue-900 font-medium mb-1">结构建议</p>
-                      <p className="text-sm text-blue-700">建议在引言部分添加更多研究背景</p>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium text-gray-900">AI建议</h3>
+                      <button
+                        onClick={() => setShowDependencyVisualization(true)}
+                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+                      >
+                        <Lightbulb className="h-3 w-3" />
+                        <span>查看依赖建议</span>
+                      </button>
                     </div>
-                    <div className="bg-green-50 p-3 rounded-lg">
-                      <p className="text-sm text-green-900 font-medium mb-1">内容检查</p>
-                      <p className="text-sm text-green-700">方法论模块内容完整度良好</p>
+                    
+                    <div className="space-y-3">
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <p className="text-sm text-blue-900 font-medium mb-1">结构建议</p>
+                        <p className="text-sm text-blue-700">建议在引言部分添加更多研究背景</p>
+                        <button className="mt-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">
+                          应用建议
+                        </button>
+                      </div>
+                      
+                      <div className="bg-green-50 p-3 rounded-lg">
+                        <p className="text-sm text-green-900 font-medium mb-1">内容检查</p>
+                        <p className="text-sm text-green-700">方法论模块内容完整度良好</p>
+                      </div>
+                      
+                      <div className="bg-yellow-50 p-3 rounded-lg">
+                        <p className="text-sm text-yellow-900 font-medium mb-1">依赖关系</p>
+                        <p className="text-sm text-yellow-700">检测到缺少引言模块依赖</p>
+                        <button className="mt-2 px-2 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700">
+                          修复依赖
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -503,7 +743,14 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
                     onTemplateSelect={(template) => {
                       // 应用模板逻辑
                       console.log('Selected template:', template);
+                      applyTemplate(template);
                     }}
+                    onSmartFill={(template: ModuleTemplate, userInput: any) => {
+                      // 智能填充逻辑
+                      console.log('Smart fill:', template, userInput);
+                      applySmartFill(template, userInput);
+                    }}
+                    currentModules={editorState.modules}
                   />
                 )}
               </div>

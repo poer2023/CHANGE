@@ -4,7 +4,7 @@ import {
   Home, 
   FileText, 
   FolderOpen, 
-  Template, 
+  LayoutTemplate, 
   MessageSquare, 
   BarChart3, 
   BookOpen 
@@ -14,7 +14,7 @@ const navItems = [
   { to: '/', icon: Home, label: 'Dashboard' },
   { to: '/papers', icon: FileText, label: 'Papers' },
   { to: '/projects', icon: FolderOpen, label: 'Projects' },
-  { to: '/templates', icon: Template, label: 'Templates' },
+  { to: '/templates', icon: LayoutTemplate, label: 'Templates' },
   { to: '/chat', icon: MessageSquare, label: 'AI Assistant' },
   { to: '/references', icon: BookOpen, label: 'References' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },

@@ -1,7 +1,7 @@
-import { FormData, ValidationError } from '@/types/form';
+import { FormData, FormValidationError } from '@/types/form';
 
-export const validateFormStep = (formData: FormData, step: number): ValidationError[] => {
-  const errors: ValidationError[] = [];
+export const validateFormStep = (formData: FormData, step: number): FormValidationError[] => {
+  const errors: FormValidationError[] = [];
 
   switch (step) {
     case 0: // 论文类型选择
@@ -72,8 +72,8 @@ export const validateFormStep = (formData: FormData, step: number): ValidationEr
   return errors;
 };
 
-export const validateCompleteForm = (formData: FormData): ValidationError[] => {
-  const errors: ValidationError[] = [];
+export const validateCompleteForm = (formData: FormData): FormValidationError[] => {
+  const errors: FormValidationError[] = [];
 
   // 必填字段检查
   const requiredFields = [

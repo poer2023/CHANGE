@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { Grid3X3, List, Search } from 'lucide-react';
+import React, { useState, useCallback, useRef } from 'react';
+import { LayoutGrid, List, Search, GripVertical } from 'lucide-react';
 import ModuleCard from './ModuleCard';
 import { PaperModule } from '@/types/modular';
 
@@ -26,23 +26,91 @@ const ModuleDragDrop: React.FC<ModuleDragDropProps> = ({
 }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dropLinePosition, setDropLinePosition] = useState<number | null>(null);
+  const dragCounter = useRef(0);
 
-  const handleDragStart = useCallback((index: number) => {
+  const handleDragStart = useCallback((index: number, e: React.DragEvent) => {
     setDraggedIndex(index);
+    dragCounter.current = 0;
+    
+    // 设置拖拽数据
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+    
+    // 创建自定义拖拽预览
+    const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
+    dragImage.style.opacity = '0.8';
+    dragImage.style.transform = 'rotate(2deg)';
+    dragImage.style.backgroundColor = 'white';
+    dragImage.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
+    dragImage.style.borderRadius = '8px';
+    dragImage.style.width = '300px';
+    
+    document.body.appendChild(dragImage);
+    e.dataTransfer.setDragImage(dragImage, 150, 50);
+    
+    // 清理临时元素
+    setTimeout(() => {
+      document.body.removeChild(dragImage);
+    }, 0);
+  }, []);
+
+  const handleDragEnter = useCallback((index: number, e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current++;
+    if (draggedIndex !== index) {
+      setDragOverIndex(index);
+      setDropLinePosition(index);
+    }
+  }, [draggedIndex]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setDragOverIndex(null);
+      setDropLinePosition(null);
+    }
   }, []);
 
   const handleDragOver = useCallback((index: number, e: React.DragEvent) => {
     e.preventDefault();
-    setDragOverIndex(index);
-  }, []);
+    e.dataTransfer.dropEffect = 'move';
+    
+    // 计算插入位置
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseY = e.clientY;
+    const elementMiddle = rect.top + rect.height / 2;
+    
+    if (draggedIndex !== null && draggedIndex !== index) {
+      const insertIndex = mouseY < elementMiddle ? index : index + 1;
+      setDropLinePosition(insertIndex);
+    }
+  }, [draggedIndex]);
+
+  const handleDrop = useCallback((index: number, e: React.DragEvent) => {
+    e.preventDefault();
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+    
+    if (dragIndex !== index && !isNaN(dragIndex)) {
+      // 计算最终插入位置
+      const rect = e.currentTarget.getBoundingClientRect();
+      const mouseY = e.clientY;
+      const elementMiddle = rect.top + rect.height / 2;
+      const targetIndex = mouseY < elementMiddle ? index : index + 1;
+      
+      onModuleReorder(dragIndex, targetIndex > dragIndex ? targetIndex - 1 : targetIndex);
+    }
+    
+    handleDragEnd();
+  }, [onModuleReorder]);
 
   const handleDragEnd = useCallback(() => {
-    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
-      onModuleReorder(draggedIndex, dragOverIndex);
-    }
     setDraggedIndex(null);
     setDragOverIndex(null);
-  }, [draggedIndex, dragOverIndex, onModuleReorder]);
+    setDropLinePosition(null);
+    dragCounter.current = 0;
+  }, []);
 
   const handleModuleClick = useCallback((moduleId: string, event: React.MouseEvent) => {
     if (event.ctrlKey || event.metaKey) {
@@ -56,33 +124,60 @@ const ModuleDragDrop: React.FC<ModuleDragDropProps> = ({
     }
   }, [bulkSelection, onBulkSelection, onModuleSelect]);
 
+  const renderDropLine = (position: number) => {
+    if (dropLinePosition === position && draggedIndex !== null) {
+      return (
+        <div className="relative">
+          <div className="absolute inset-x-0 -top-1 h-0.5 bg-blue-500 rounded-full shadow-lg">
+            <div className="absolute -left-1 -top-1 w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div className="absolute -right-1 -top-1 w-2 h-2 bg-blue-500 rounded-full"></div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const renderCardView = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
         {modules.map((module, index) => (
-          <div
-            key={module.id}
-            draggable
-            onDragStart={() => handleDragStart(index)}
-            onDragOver={(e) => handleDragOver(index, e)}
-            onDragEnd={handleDragEnd}
-            className={`transition-all duration-200 ${
-              draggedIndex === index ? 'opacity-50 scale-95' : ''
-            } ${
-              dragOverIndex === index && draggedIndex !== index 
-                ? 'transform scale-105 shadow-lg' 
-                : ''
-            }`}
-          >
-            <ModuleCard
-              module={module}
-              isSelected={selectedModuleId === module.id}
-              isBulkSelected={bulkSelection.includes(module.id)}
-              onUpdate={(updates) => onModuleUpdate(module.id, updates)}
-              onSelect={() => handleModuleClick(module.id, {} as React.MouseEvent)}
-              onDragStart={() => handleDragStart(index)}
+          <div key={module.id} className="relative">
+            {renderDropLine(index)}
+            <div
+              draggable
+              onDragStart={(e) => handleDragStart(index, e)}
+              onDragEnter={(e) => handleDragEnter(index, e)}
+              onDragLeave={handleDragLeave}
+              onDragOver={(e) => handleDragOver(index, e)}
+              onDrop={(e) => handleDrop(index, e)}
               onDragEnd={handleDragEnd}
-            />
+              className={`relative transition-all duration-300 ease-in-out cursor-grab active:cursor-grabbing ${
+                draggedIndex === index 
+                  ? 'opacity-50 scale-95 rotate-1 z-10' 
+                  : 'hover:shadow-lg hover:-translate-y-1'
+              } ${
+                dragOverIndex === index && draggedIndex !== index 
+                  ? 'scale-105 shadow-xl ring-2 ring-blue-300 ring-opacity-50' 
+                  : ''
+              }`}
+            >
+              {/* 拖拽手柄 */}
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                <GripVertical className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              </div>
+              
+              <ModuleCard
+                module={module}
+                isSelected={selectedModuleId === module.id}
+                isBulkSelected={bulkSelection.includes(module.id)}
+                onUpdate={(updates) => onModuleUpdate(module.id, updates)}
+                onSelect={() => handleModuleClick(module.id, {} as React.MouseEvent)}
+                onDragStart={() => handleDragStart(index, {} as React.DragEvent)}
+                onDragEnd={handleDragEnd}
+              />
+            </div>
+            {index === modules.length - 1 && renderDropLine(index + 1)}
           </div>
         ))}
       </div>
@@ -92,31 +187,46 @@ const ModuleDragDrop: React.FC<ModuleDragDropProps> = ({
   const renderListView = () => {
     return (
       <div className="p-6">
-        <div className="space-y-4">
+        <div className="space-y-2">
           {modules.map((module, index) => (
-            <div
-              key={module.id}
-              draggable
-              onDragStart={() => handleDragStart(index)}
-              onDragOver={(e) => handleDragOver(index, e)}
-              onDragEnd={handleDragEnd}
-              className={`transition-all duration-200 ${
-                draggedIndex === index ? 'opacity-50' : ''
-              } ${
-                dragOverIndex === index && draggedIndex !== index 
-                  ? 'transform translate-y-1 shadow-lg' 
-                  : ''
-              }`}
-            >
-              <ModuleCard
-                module={module}
-                isSelected={selectedModuleId === module.id}
-                isBulkSelected={bulkSelection.includes(module.id)}
-                onUpdate={(updates) => onModuleUpdate(module.id, updates)}
-                onSelect={() => handleModuleClick(module.id, {} as React.MouseEvent)}
-                onDragStart={() => handleDragStart(index)}
+            <div key={module.id} className="relative">
+              {renderDropLine(index)}
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(index, e)}
+                onDragEnter={(e) => handleDragEnter(index, e)}
+                onDragLeave={handleDragLeave}
+                onDragOver={(e) => handleDragOver(index, e)}
+                onDrop={(e) => handleDrop(index, e)}
                 onDragEnd={handleDragEnd}
-              />
+                className={`group relative transition-all duration-300 ease-in-out cursor-grab active:cursor-grabbing ${
+                  draggedIndex === index 
+                    ? 'opacity-50 scale-98 z-10' 
+                    : 'hover:shadow-md hover:bg-white'
+                } ${
+                  dragOverIndex === index && draggedIndex !== index 
+                    ? 'shadow-lg bg-blue-50 border-blue-200' 
+                    : ''
+                }`}
+              >
+                {/* 拖拽手柄 - 列表视图 */}
+                <div className="absolute left-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                  <GripVertical className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                </div>
+                
+                <div className="pl-8">
+                  <ModuleCard
+                    module={module}
+                    isSelected={selectedModuleId === module.id}
+                    isBulkSelected={bulkSelection.includes(module.id)}
+                    onUpdate={(updates) => onModuleUpdate(module.id, updates)}
+                    onSelect={() => handleModuleClick(module.id, {} as React.MouseEvent)}
+                    onDragStart={() => handleDragStart(index, {} as React.DragEvent)}
+                    onDragEnd={handleDragEnd}
+                  />
+                </div>
+              </div>
+              {index === modules.length - 1 && renderDropLine(index + 1)}
             </div>
           ))}
         </div>
@@ -127,62 +237,69 @@ const ModuleDragDrop: React.FC<ModuleDragDropProps> = ({
   const renderOutlineView = () => {
     return (
       <div className="p-6">
-        <div className="bg-white rounded-lg border border-gray-200">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">论文大纲</h2>
           </div>
           <div className="divide-y divide-gray-100">
             {modules.map((module, index) => (
-              <div
-                key={module.id}
-                draggable
-                onDragStart={() => handleDragStart(index)}
-                onDragOver={(e) => handleDragOver(index, e)}
-                onDragEnd={handleDragEnd}
-                onClick={() => handleModuleClick(module.id, {} as React.MouseEvent)}
-                className={`p-4 cursor-pointer transition-all duration-200 hover:bg-gray-50 ${
-                  selectedModuleId === module.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
-                } ${
-                  bulkSelection.includes(module.id) ? 'bg-blue-25' : ''
-                } ${
-                  draggedIndex === index ? 'opacity-50' : ''
-                } ${
-                  dragOverIndex === index && draggedIndex !== index 
-                    ? 'bg-blue-100' 
-                    : ''
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm font-medium text-gray-500">
-                      {module.order}.
-                    </span>
-                    <span className="font-medium text-gray-900">
-                      {module.title}
-                    </span>
-                    <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-                      {module.type}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <span>{module.wordCount} 词</span>
-                    <div className="flex items-center space-x-1">
-                      <div className="w-16 bg-gray-200 rounded-full h-1">
-                        <div
-                          className="bg-blue-500 h-1 rounded-full"
-                          style={{ width: `${module.progress}%` }}
-                        />
+              <div key={module.id} className="relative">
+                {renderDropLine(index)}
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(index, e)}
+                  onDragEnter={(e) => handleDragEnter(index, e)}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={(e) => handleDragOver(index, e)}
+                  onDrop={(e) => handleDrop(index, e)}
+                  onDragEnd={handleDragEnd}
+                  onClick={() => handleModuleClick(module.id, {} as React.MouseEvent)}
+                  className={`group p-4 cursor-pointer transition-all duration-200 hover:bg-gray-50 cursor-grab active:cursor-grabbing ${
+                    selectedModuleId === module.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                  } ${
+                    bulkSelection.includes(module.id) ? 'bg-blue-25' : ''
+                  } ${
+                    draggedIndex === index ? 'opacity-50 bg-gray-100' : ''
+                  } ${
+                    dragOverIndex === index && draggedIndex !== index 
+                      ? 'bg-blue-100 shadow-inner' 
+                      : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <GripVertical className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors duration-200" />
+                      <span className="text-sm font-medium text-gray-500">
+                        {module.order}.
+                      </span>
+                      <span className="font-medium text-gray-900">
+                        {module.title}
+                      </span>
+                      <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                        {module.type}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <span>{module.wordCount} 词</span>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                            style={{ width: `${module.progress}%` }}
+                          />
+                        </div>
+                        <span>{module.progress}%</span>
                       </div>
-                      <span>{module.progress}%</span>
                     </div>
                   </div>
+                  {module.content && (
+                    <div className="mt-2 ml-7 text-sm text-gray-600 line-clamp-2">
+                      {module.content.substring(0, 100)}
+                      {module.content.length > 100 ? '...' : ''}
+                    </div>
+                  )}
                 </div>
-                {module.content && (
-                  <div className="mt-2 text-sm text-gray-600 line-clamp-2">
-                    {module.content.substring(0, 100)}
-                    {module.content.length > 100 ? '...' : ''}
-                  </div>
-                )}
+                {index === modules.length - 1 && renderDropLine(index + 1)}
               </div>
             ))}
           </div>

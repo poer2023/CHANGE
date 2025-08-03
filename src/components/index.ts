@@ -2,6 +2,12 @@
 export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as NotificationToast } from './NotificationToast';
 
+// Layout components
+export * from './Layout';
+
+// UI components
+export * from './UI';
+
 // Agent components
 export * from './Agent';
 

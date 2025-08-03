@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -13,7 +13,18 @@ import {
   AlertTriangle,
   Target,
   MessageSquare,
-  GripVertical
+  GripVertical,
+  BarChart3,
+  Eye,
+  EyeOff,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Quote,
+  Link,
+  Save,
+  X
 } from 'lucide-react';
 import { PaperModule } from '@/types/modular';
 
@@ -39,8 +50,11 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [localContent, setLocalContent] = useState(module.content);
+  const [showStatistics, setShowStatistics] = useState(false);
+  const [showRichTextTools, setShowRichTextTools] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLocalContent(module.content);
@@ -57,14 +71,89 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const getContentStatistics = useCallback((content: string) => {
+    const trimmedContent = content.trim();
+    const words = trimmedContent.split(/\s+/).filter(word => word.length > 0);
+    const sentences = trimmedContent.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const paragraphs = trimmedContent.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+    const characters = trimmedContent.length;
+    const charactersNoSpaces = trimmedContent.replace(/\s/g, '').length;
+    
+    return {
+      wordCount: words.length,
+      sentenceCount: sentences.length,
+      paragraphCount: paragraphs.length,
+      characterCount: characters,
+      characterCountNoSpaces: charactersNoSpaces,
+      averageWordsPerSentence: sentences.length > 0 ? Math.round(words.length / sentences.length) : 0,
+      readingTime: Math.ceil(words.length / 200) // assuming 200 WPM reading speed
+    };
+  }, []);
+
   const handleContentChange = (content: string) => {
     setLocalContent(content);
-    const wordCount = content.trim().split(/\s+/).filter(word => word.length > 0).length;
+    const stats = getContentStatistics(content);
+    const targetWords = module.template?.wordCountTarget?.min || 100;
+    const progress = Math.min(100, (stats.wordCount / targetWords) * 100);
+    
     onUpdate({ 
       content, 
-      wordCount,
-      progress: Math.min(100, (wordCount / (module.template?.wordCountTarget?.min || 100)) * 100)
+      wordCount: stats.wordCount,
+      progress: progress,
+      metadata: {
+        ...module.metadata,
+        lastModified: new Date(),
+        revisionCount: module.metadata.revisionCount + (content !== module.content ? 1 : 0)
+      }
     });
+  };
+
+  const insertTextAtCursor = (text: string, wrapSelection: boolean = false) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentContent = localContent;
+    const selectedText = currentContent.substring(start, end);
+    
+    let newText = text;
+    if (wrapSelection && selectedText) {
+      newText = text + selectedText + text;
+    }
+    
+    const newContent = currentContent.substring(0, start) + newText + currentContent.substring(end);
+    handleContentChange(newContent);
+    
+    // 设置新的光标位置
+    setTimeout(() => {
+      const newCursorPos = start + (wrapSelection && selectedText ? text.length : newText.length);
+      textarea.setSelectionRange(newCursorPos, wrapSelection && selectedText ? newCursorPos + selectedText.length : newCursorPos);
+      textarea.focus();
+    }, 0);
+  };
+
+  const handleFormatting = (format: string) => {
+    switch (format) {
+      case 'bold':
+        insertTextAtCursor('**', true);
+        break;
+      case 'italic':
+        insertTextAtCursor('*', true);
+        break;
+      case 'list':
+        insertTextAtCursor('\n- ');
+        break;
+      case 'numbered-list':
+        insertTextAtCursor('\n1. ');
+        break;
+      case 'quote':
+        insertTextAtCursor('\n> ');
+        break;
+      case 'link':
+        insertTextAtCursor('[链接文本](URL)');
+        break;
+    }
   };
 
   const handleToggleComplete = () => {
@@ -261,30 +350,236 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
         <div className="p-4">
           {isEditing ? (
             <div className="space-y-3">
-              <textarea
-                ref={textareaRef}
-                value={localContent}
-                onChange={(e) => handleContentChange(e.target.value)}
-                className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder={`开始编写${module.title}...`}
-                autoFocus
-              />
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setLocalContent(module.content);
+              {/* 增强的富文本工具栏 */}
+              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-t-lg border border-gray-200">
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => setShowRichTextTools(!showRichTextTools)}
+                    className={`p-1 rounded transition-colors ${
+                      showRichTextTools ? 'text-blue-600 bg-blue-100' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                    title="切换格式工具"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                  </button>
+                  
+                  {showRichTextTools && (
+                    <>
+                      <div className="w-px h-4 bg-gray-300 mx-2"></div>
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => handleFormatting('bold')}
+                          className="p-1 text-gray-600 hover:text-gray-900 rounded hover:bg-gray-200 transition-colors"
+                          title="粗体 (Ctrl+B)"
+                        >
+                          <Bold className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleFormatting('italic')}
+                          className="p-1 text-gray-600 hover:text-gray-900 rounded hover:bg-gray-200 transition-colors"
+                          title="斜体 (Ctrl+I)"
+                        >
+                          <Italic className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleFormatting('list')}
+                          className="p-1 text-gray-600 hover:text-gray-900 rounded hover:bg-gray-200 transition-colors"
+                          title="无序列表"
+                        >
+                          <List className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleFormatting('numbered-list')}
+                          className="p-1 text-gray-600 hover:text-gray-900 rounded hover:bg-gray-200 transition-colors"
+                          title="有序列表"
+                        >
+                          <ListOrdered className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleFormatting('quote')}
+                          className="p-1 text-gray-600 hover:text-gray-900 rounded hover:bg-gray-200 transition-colors"
+                          title="引用"
+                        >
+                          <Quote className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleFormatting('link')}
+                          className="p-1 text-gray-600 hover:text-gray-900 rounded hover:bg-gray-200 transition-colors"
+                          title="链接"
+                        >
+                          <Link className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => setShowStatistics(!showStatistics)}
+                    className={`p-1 rounded transition-colors ${
+                      showStatistics ? 'text-blue-600 bg-blue-100' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                    title="统计信息"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </button>
+                  
+                  <div className="flex items-center space-x-1 ml-2 text-xs text-gray-500">
+                    <FileText className="h-3 w-3" />
+                    <span>{getContentStatistics(localContent).wordCount} 词</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 实时统计信息面板 */}
+              {showStatistics && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 transition-all duration-200">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    {(() => {
+                      const stats = getContentStatistics(localContent);
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">字数:</span>
+                            <span className="font-medium text-blue-900">{stats.wordCount}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">句子:</span>
+                            <span className="font-medium text-blue-900">{stats.sentenceCount}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">段落:</span>
+                            <span className="font-medium text-blue-900">{stats.paragraphCount}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">字符:</span>
+                            <span className="font-medium text-blue-900">{stats.characterCount}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">平均句长:</span>
+                            <span className="font-medium text-blue-900">{stats.averageWordsPerSentence} 词</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">阅读时间:</span>
+                            <span className="font-medium text-blue-900">{stats.readingTime} 分钟</span>
+                          </div>
+                          {module.template?.wordCountTarget && (
+                            <div className="col-span-2 pt-2 border-t border-blue-200">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-gray-600 text-xs">目标进度:</span>
+                                <span className="text-xs font-medium text-blue-900">
+                                  {stats.wordCount}/{module.template.wordCountTarget.min} 词 
+                                  ({Math.min(100, (stats.wordCount / module.template.wordCountTarget.min) * 100).toFixed(1)}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-blue-200 rounded-full h-1.5">
+                                <div
+                                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                                  style={{ width: `${Math.min(100, (stats.wordCount / module.template.wordCountTarget.min) * 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()
+                    }
+                  </div>
+                </div>
+              )}
+              
+              {/* 增强的编辑器文本区域 */}
+              <div className="relative">
+                <textarea
+                  ref={textareaRef}
+                  value={localContent}
+                  onChange={(e) => handleContentChange(e.target.value)}
+                  className="w-full h-40 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm leading-relaxed transition-all duration-200"
+                  placeholder={`开始编写${module.title}...\n\n提示：\n• 使用 **粗体** 和 *斜体* 格式\n• 使用 # 标题 格式\n• 使用 - 列表项 格式\n• 支持Markdown语法`}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    // 支持Tab缩进
+                    if (e.key === 'Tab') {
+                      e.preventDefault();
+                      insertTextAtCursor('    ');
+                    }
+                    // 支持快捷键
+                    if (e.ctrlKey || e.metaKey) {
+                      switch (e.key) {
+                        case 'b':
+                          e.preventDefault();
+                          handleFormatting('bold');
+                          break;
+                        case 'i':
+                          e.preventDefault();
+                          handleFormatting('italic');
+                          break;
+                        case 'k':
+                          e.preventDefault();
+                          handleFormatting('link');
+                          break;
+                      }
+                    }
                   }}
-                  className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
-                >
-                  保存
-                </button>
+                />
+                
+                {/* 实时字数和进度显示 */}
+                <div className="absolute bottom-2 right-2 flex items-center space-x-2">
+                  {module.template?.wordCountTarget && (
+                    <div className="flex items-center space-x-1 px-2 py-1 bg-white bg-opacity-90 rounded text-xs border shadow-sm">
+                      <div className="w-8 bg-gray-200 rounded-full h-1">
+                        <div
+                          className="bg-green-500 h-1 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, (getContentStatistics(localContent).wordCount / module.template.wordCountTarget.min) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-gray-600">
+                        {Math.min(100, (getContentStatistics(localContent).wordCount / module.template.wordCountTarget.min) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  )}
+                  <div className="px-2 py-1 bg-white bg-opacity-90 rounded text-xs text-gray-500 border shadow-sm">
+                    {getContentStatistics(localContent).wordCount} 词
+                  </div>
+                </div>
+              </div>
+              
+              {/* 操作按钮 */}
+              <div className="flex justify-between items-center pt-2">
+                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                  <Clock className="h-3 w-3" />
+                  <span>最后保存: {new Date().toLocaleTimeString()}</span>
+                  {localContent !== module.content && (
+                    <span className="text-orange-600 font-medium">• 有未保存的更改</span>
+                  )}
+                </div>
+                
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      setIsEditing(false);
+                      setLocalContent(module.content);
+                      setShowRichTextTools(false);
+                      setShowStatistics(false);
+                    }}
+                    className="inline-flex items-center px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    取消
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditing(false);
+                      setShowRichTextTools(false);
+                      setShowStatistics(false);
+                    }}
+                    className="inline-flex items-center px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    <Save className="h-3 w-3 mr-1" />
+                    保存
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -293,15 +588,31 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
                 e.stopPropagation();
                 setIsEditing(true);
               }}
-              className="min-h-24 p-3 bg-white rounded border border-gray-200 cursor-text hover:border-gray-300 transition-colors"
+              className="min-h-24 p-3 bg-white rounded border border-gray-200 cursor-text hover:border-gray-300 transition-colors group"
             >
               {module.content ? (
-                <div className="text-sm text-gray-700 whitespace-pre-wrap">
-                  {module.content}
+                <div className="relative">
+                  <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                    {module.content}
+                  </div>
+                  
+                  {/* 悬停时显示快速统计 */}
+                  <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg">
+                      {getContentStatistics(module.content).wordCount} 词 • {getContentStatistics(module.content).readingTime} 分钟
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <div className="text-sm text-gray-400 italic">
-                  点击开始编写{module.title}...
+                <div className="flex items-center justify-center min-h-16">
+                  <div className="text-center">
+                    <div className="text-sm text-gray-400 italic mb-1">
+                      点击开始编写{module.title}...
+                    </div>
+                    <div className="text-xs text-gray-300">
+                      支持Markdown格式
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

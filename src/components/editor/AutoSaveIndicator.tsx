@@ -228,7 +228,7 @@ const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
         {(saveStatus === 'pending' || saveStatus === 'error') && (
           <button
             onClick={handleManualSave}
-            disabled={saveStatus === 'saving' || !isOnline}
+            disabled={!isOnline}
             className={`ml-2 px-2 py-1 text-xs rounded border transition-colors ${
               !isOnline 
                 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'

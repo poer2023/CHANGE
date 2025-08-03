@@ -1,16 +1,104 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, Plus, Trash2, Edit3, BookOpen, ExternalLink, FileText, Zap, Settings, Target } from 'lucide-react';
 import { usePaperStore } from '@/store';
+import OutlinePreference from '@/components/OutlinePreference';
+import { FormValidationError, FormData } from '@/types/form';
 
 const FormPage: React.FC = () => {
   const navigate = useNavigate();
-  const { formState, setFormStep } = usePaperStore();
+  const { formState, setFormStep, setFormData, createPaperFromForm } = usePaperStore();
   const { currentStep, steps, data } = formState;
+  const [errors, setErrors] = useState<FormValidationError[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const validateStep = useCallback((stepIndex: number): boolean => {
+    const newErrors: FormValidationError[] = [];
+    
+    switch (stepIndex) {
+      case 0:
+        if (!data.title) {
+          newErrors.push({ field: 'title', message: '请输入论文标题' });
+        }
+        if (!data.category) {
+          newErrors.push({ field: 'category', message: '请选择论文类别' });
+        }
+        break;
+      case 1:
+        if (!data.outlinePreference) {
+          newErrors.push({ field: 'outlinePreference', message: '请选择大纲结构' });
+        }
+        break;
+      case 2:
+        // 参考文献验证逻辑
+        break;
+      case 3:
+        // 生成论文验证逻辑
+        break;
+    }
+
+    setErrors(newErrors);
+    return newErrors.length === 0;
+  }, [data]);
+
+  const handleNext = useCallback(() => {
+    if (validateStep(currentStep)) {
+      // 标记当前步骤为已完成
+      const updatedSteps = formState.steps.map((s, index) => ({
+        ...s,
+        isCompleted: index <= currentStep
+      }));
+      
+      if (currentStep < steps.length - 1) {
+        setFormStep(currentStep + 1);
+      } else {
+        handleSubmit();
+      }
+    }
+  }, [currentStep, validateStep, formState.steps]);
+
+  const handlePrevious = useCallback(() => {
+    if (currentStep > 0) {
+      setFormStep(currentStep - 1);
+    }
+  }, [currentStep]);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const formData: FormData = {
+        title: data.title || '',
+        paperType: data.paperType || '',
+        field: data.field || '',
+        requirements: data.requirements || '',
+        wordCount: data.wordCount || 3000,
+        format: data.format || 'academic',
+        specialRequirements: data.specialRequirements || '',
+        outlinePreference: data.outlinePreference || '',
+        detailLevel: data.detailLevel || 'detailed',
+        citationStyle: data.citationStyle || 'apa',
+        abstract: data.abstract,
+        keywords: data.keywords,
+        category: data.category,
+        targetLength: data.targetLength,
+        language: data.language,
+        style: data.style,
+        references: data.references
+      };
+      
+      const newPaper = await createPaperFromForm(formData);
+      navigate(`/editor/${newPaper.id}`);
+    } catch (error) {
+      console.error('提交失败:', error);
+      alert('提交失败，请重试');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleStepClick = (stepIndex: number) => {
     // 只允许点击已完成的步骤或当前步骤
-    if (stepIndex <= currentStep || steps[stepIndex].isCompleted) {
+    if (stepIndex <= currentStep) {
       setFormStep(stepIndex);
     }
   };
@@ -18,15 +106,15 @@ const FormPage: React.FC = () => {
   const renderStepContent = () => {
     const currentStepData = steps[currentStep];
     
-    switch (currentStepData.id) {
+    switch (currentStepData.component) {
       case 'basic':
-        return <BasicInfoStep />;
+        return <BasicInfoStep onNext={handleNext} onPrevious={handlePrevious} errors={errors} />;
       case 'content':
-        return <ContentStructureStep />;
+        return <ContentStructureStep onNext={handleNext} onPrevious={handlePrevious} errors={errors} />;
       case 'references':
-        return <ReferencesStep />;
+        return <ReferencesStep onNext={handleNext} onPrevious={handlePrevious} errors={errors} />;
       case 'generate':
-        return <GenerateStep />;
+        return <GenerateStep onNext={handleNext} onPrevious={handlePrevious} errors={errors} isSubmitting={isSubmitting} />;
       default:
         return <div>未知步骤</div>;
     }
@@ -90,7 +178,7 @@ const FormPage: React.FC = () => {
                           {step.isCompleted ? (
                             <Check className="h-4 w-4" />
                           ) : (
-                            index + 1
+                            step.id + 1
                           )}
                         </div>
                         <div className="ml-3">
@@ -152,15 +240,15 @@ const FormPage: React.FC = () => {
 };
 
 // 基本信息步骤组件
-const BasicInfoStep: React.FC = () => {
-  const { formState, setFormData, setFormStep } = usePaperStore();
+const BasicInfoStep: React.FC<{
+  onNext: () => void;
+  onPrevious: () => void;
+  errors: FormValidationError[];
+}> = ({ onNext, onPrevious, errors }) => {
+  const { formState, setFormData } = usePaperStore();
   const navigate = useNavigate();
   
-  const handleNext = () => {
-    // TODO: 验证表单数据
-    setFormStep(1);
-  };
-
+  
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -269,7 +357,7 @@ const BasicInfoStep: React.FC = () => {
           返回
         </button>
         <button
-          onClick={handleNext}
+          onClick={onNext}
           className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
         >
           下一步
@@ -279,26 +367,471 @@ const BasicInfoStep: React.FC = () => {
   );
 };
 
-// 其他步骤组件的占位符
-const ContentStructureStep: React.FC = () => (
-  <div className="p-8">
-    <h2 className="text-2xl font-bold text-gray-900 mb-4">内容结构</h2>
-    <p className="text-gray-600">这里将是内容结构设置页面...</p>
-  </div>
-);
+// 内容结构步骤组件
+const ContentStructureStep: React.FC<{
+  onNext: () => void;
+  onPrevious: () => void;
+  errors: FormValidationError[];
+}> = ({ onNext, onPrevious, errors }) => {
+  const { formState, setFormData } = usePaperStore();
+  
+  // 将 formState.data 转换为 OutlinePreference 期望的格式
+  const formData = {
+    title: formState.data.title || '',
+    paperType: formState.data.paperType || '',
+    field: formState.data.field || '',
+    requirements: formState.data.requirements || '',
+    wordCount: formState.data.wordCount || 3000,
+    format: formState.data.format || 'academic',
+    specialRequirements: formState.data.specialRequirements || '',
+    outlinePreference: formState.data.outlinePreference || '',
+    detailLevel: formState.data.detailLevel || 'detailed',
+    citationStyle: formState.data.citationStyle || 'apa',
+    abstract: formState.data.abstract,
+    keywords: formState.data.keywords,
+    category: formState.data.category,
+    targetLength: formState.data.targetLength,
+    language: formState.data.language,
+    style: formState.data.style
+  };
+  
+  const updateFormData = (updates: Partial<FormData>) => {
+    setFormData(updates);
+  };
+  
+  return (
+    <div className="p-8">
+      <OutlinePreference 
+        formData={formData}
+        updateFormData={updateFormData}
+        errors={errors}
+      />
+      
+      {/* 导航按钮 */}
+      <div className="flex justify-between pt-8 border-t mt-8">
+        <button
+          onClick={onPrevious}
+          className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+        >
+          <ChevronLeft size={20} className="mr-2" />
+          上一步
+        </button>
+        <button
+          onClick={onNext}
+          className="flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+        >
+          下一步
+          <ChevronRight size={20} className="ml-2" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
-const ReferencesStep: React.FC = () => (
-  <div className="p-8">
-    <h2 className="text-2xl font-bold text-gray-900 mb-4">参考文献</h2>
-    <p className="text-gray-600">这里将是参考文献管理页面...</p>
-  </div>
-);
+const ReferencesStep: React.FC<{
+  onNext: () => void;
+  onPrevious: () => void;
+  errors: FormValidationError[];
+}> = ({ onNext, onPrevious, errors }) => {
+  const { formState, setFormData } = usePaperStore();
+  const [references, setReferences] = useState<string[]>(formState.data.references || []);
+  const [newReference, setNewReference] = useState('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState('');
 
-const GenerateStep: React.FC = () => (
-  <div className="p-8">
-    <h2 className="text-2xl font-bold text-gray-900 mb-4">生成论文</h2>
-    <p className="text-gray-600">这里将是论文生成页面...</p>
-  </div>
-);
+  const citationFormats = [
+    { id: 'apa', name: 'APA', example: 'Smith, J. (2023). Title of the article. Journal Name, 15(3), 123-145.' },
+    { id: 'mla', name: 'MLA', example: 'Smith, John. "Title of the Article." Journal Name, vol. 15, no. 3, 2023, pp. 123-145.' },
+    { id: 'chicago', name: 'Chicago', example: 'Smith, John. "Title of the Article." Journal Name 15, no. 3 (2023): 123-145.' }
+  ];
+
+  const selectedFormat = formState.data.citationStyle || 'apa';
+
+  const addReference = () => {
+    if (newReference.trim()) {
+      const updatedReferences = [...references, newReference.trim()];
+      setReferences(updatedReferences);
+      setFormData({ references: updatedReferences });
+      setNewReference('');
+    }
+  };
+
+  const removeReference = (index: number) => {
+    const updatedReferences = references.filter((_, i) => i !== index);
+    setReferences(updatedReferences);
+    setFormData({ references: updatedReferences });
+  };
+
+  const startEditing = (index: number) => {
+    setEditingIndex(index);
+    setEditingText(references[index]);
+  };
+
+  const saveEdit = () => {
+    if (editingIndex !== null && editingText.trim()) {
+      const updatedReferences = [...references];
+      updatedReferences[editingIndex] = editingText.trim();
+      setReferences(updatedReferences);
+      setFormData({ references: updatedReferences });
+      setEditingIndex(null);
+      setEditingText('');
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setEditingText('');
+  };
+
+  return (
+    <div className="p-8">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">参考文献管理</h2>
+        <p className="text-gray-600">添加和管理您论文中使用的参考文献，系统将按照选定的引用格式进行处理。</p>
+      </div>
+
+      {/* 引用格式说明 */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-center mb-3">
+          <BookOpen className="text-blue-500 mr-2" size={20} />
+          <h3 className="font-semibold text-blue-900">当前引用格式：{citationFormats.find(f => f.id === selectedFormat)?.name}</h3>
+        </div>
+        <p className="text-sm text-blue-700 mb-2">示例格式：</p>
+        <p className="text-sm text-blue-800 italic">{citationFormats.find(f => f.id === selectedFormat)?.example}</p>
+      </div>
+
+      {/* 添加新参考文献 */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          添加参考文献
+        </label>
+        <div className="flex gap-3">
+          <textarea
+            value={newReference}
+            onChange={(e) => setNewReference(e.target.value)}
+            placeholder="请输入完整的参考文献信息，建议按照上述格式..."
+            rows={3}
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+          />
+          <button
+            onClick={addReference}
+            disabled={!newReference.trim()}
+            className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          >
+            <Plus size={20} className="mr-2" />
+            添加
+          </button>
+        </div>
+      </div>
+
+      {/* 参考文献列表 */}
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          已添加的参考文献 ({references.length})
+        </h3>
+        
+        {references.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <BookOpen size={48} className="mx-auto mb-3 text-gray-300" />
+            <p>还没有添加参考文献</p>
+            <p className="text-sm">请在上方添加您论文中使用的参考文献</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {references.map((ref, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg p-4 bg-white">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 mr-4">
+                    <div className="flex items-center mb-2">
+                      <span className="text-sm font-medium text-gray-500 mr-2">
+                        [{index + 1}]
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        {citationFormats.find(f => f.id === selectedFormat)?.name} 格式
+                      </span>
+                    </div>
+                    
+                    {editingIndex === index ? (
+                      <div>
+                        <textarea
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                        />
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={saveEdit}
+                            className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                          >
+                            保存
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700"
+                          >
+                            取消
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-gray-800 leading-relaxed">{ref}</p>
+                    )}
+                  </div>
+                  
+                  {editingIndex !== index && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => startEditing(index)}
+                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded"
+                        title="编辑"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        onClick={() => removeReference(index)}
+                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
+                        title="删除"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 导航按钮 */}
+      <div className="flex justify-between pt-8 border-t mt-8">
+        <button
+          onClick={onPrevious}
+          className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+        >
+          <ChevronLeft size={20} className="mr-2" />
+          上一步
+        </button>
+        <button
+          onClick={onNext}
+          className="flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+        >
+          下一步
+          <ChevronRight size={20} className="ml-2" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const GenerateStep: React.FC<{
+  onNext: () => void;
+  onPrevious: () => void;
+  errors: FormValidationError[];
+  isSubmitting: boolean;
+}> = ({ onNext, onPrevious, errors, isSubmitting }) => {
+  const { formState } = usePaperStore();
+  const [selectedOptions, setSelectedOptions] = useState({
+    includeOutline: true,
+    includeDraft: true,
+    includeReferences: true,
+    generateImages: false
+  });
+
+  const formData = formState.data;
+  const outlineOptions = [
+    { id: 'traditional', name: '传统学术结构' },
+    { id: 'imrad', name: 'IMRAD结构' },
+    { id: 'progressive', name: '渐进式论证' },
+    { id: 'case-study', name: '案例研究结构' },
+    { id: 'comparative', name: '比较分析结构' },
+    { id: 'chronological', name: '时间序列结构' }
+  ];
+
+  const citationStyles = [
+    { id: 'apa', name: 'APA' },
+    { id: 'mla', name: 'MLA' },
+    { id: 'chicago', name: 'Chicago' },
+    { id: 'ieee', name: 'IEEE' },
+    { id: 'harvard', name: 'Harvard' },
+    { id: 'vancouver', name: 'Vancouver' }
+  ];
+
+  const selectedOutline = outlineOptions.find(opt => opt.id === formData.outlinePreference);
+  const selectedCitation = citationStyles.find(style => style.id === formData.citationStyle);
+
+  const estimatedTime = () => {
+    let time = 2; // 基础时间
+    if (selectedOptions.includeDraft) time += 3;
+    if (selectedOptions.includeReferences) time += 1;
+    if (selectedOptions.generateImages) time += 2;
+    return time;
+  };
+
+  return (
+    <div className="p-8">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">生成论文</h2>
+        <p className="text-gray-600">确认您的设置并生成最终论文，AI将根据您的配置创建完整的学术论文。</p>
+      </div>
+
+      {/* 配置摘要 */}
+      <div className="mb-8 p-6 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-center mb-4">
+          <Target className="text-green-500 mr-3" size={24} />
+          <h3 className="text-lg font-semibold text-green-800">论文配置摘要</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="font-medium text-green-700 mb-2">基本信息</h4>
+            <ul className="text-sm text-green-800 space-y-1">
+              <li><strong>标题：</strong> {formData.title || '未设置'}</li>
+              <li><strong>类别：</strong> {formData.category || '未设置'}</li>
+              <li><strong>字数：</strong> {formData.wordCount || 3000} 字</li>
+              <li><strong>语言：</strong> {formData.language === 'en' ? '英文' : '中文'}</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="font-medium text-green-700 mb-2">结构与格式</h4>
+            <ul className="text-sm text-green-800 space-y-1">
+              <li><strong>大纲结构：</strong> {selectedOutline?.name || '未选择'}</li>
+              <li><strong>详细程度：</strong> {formData.detailLevel === 'detailed' ? '详细' : formData.detailLevel === 'brief' ? '简要' : '全面'}</li>
+              <li><strong>引用格式：</strong> {selectedCitation?.name || 'APA'}</li>
+              <li><strong>参考文献：</strong> {formData.references?.length || 0} 条</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* 生成选项 */}
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">生成选项</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-center">
+              <FileText className="text-blue-500 mr-3" size={20} />
+              <div>
+                <h4 className="font-medium text-gray-900">生成详细大纲</h4>
+                <p className="text-sm text-gray-600">创建完整的论文结构大纲</p>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={selectedOptions.includeOutline}
+              onChange={(e) => setSelectedOptions(prev => ({...prev, includeOutline: e.target.checked}))}
+              className="w-5 h-5 text-primary-600 rounded"
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-center">
+              <Zap className="text-yellow-500 mr-3" size={20} />
+              <div>
+                <h4 className="font-medium text-gray-900">生成初稿内容</h4>
+                <p className="text-sm text-gray-600">基于大纲生成每个部分的初稿内容</p>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={selectedOptions.includeDraft}
+              onChange={(e) => setSelectedOptions(prev => ({...prev, includeDraft: e.target.checked}))}
+              className="w-5 h-5 text-primary-600 rounded"
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-center">
+              <BookOpen className="text-green-500 mr-3" size={20} />
+              <div>
+                <h4 className="font-medium text-gray-900">整合参考文献</h4>
+                <p className="text-sm text-gray-600">将参考文献按格式整合到论文中</p>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={selectedOptions.includeReferences}
+              onChange={(e) => setSelectedOptions(prev => ({...prev, includeReferences: e.target.checked}))}
+              className="w-5 h-5 text-primary-600 rounded"
+              disabled={!formData.references?.length}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div className="flex items-center">
+              <Settings className="text-purple-500 mr-3" size={20} />
+              <div>
+                <h4 className="font-medium text-gray-900">生成配图建议</h4>
+                <p className="text-sm text-gray-600">为论文各部分提供图表和配图建议</p>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={selectedOptions.generateImages}
+              onChange={(e) => setSelectedOptions(prev => ({...prev, generateImages: e.target.checked}))}
+              className="w-5 h-5 text-primary-600 rounded"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 预计生成时间 */}
+      <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="font-medium text-blue-900">预计生成时间</h4>
+            <p className="text-sm text-blue-700">基于您选择的选项和论文复杂度</p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-blue-900">{estimatedTime()}</div>
+            <div className="text-sm text-blue-700">分钟</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 生成须知 */}
+      <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <h4 className="font-medium text-yellow-900 mb-2">生成须知</h4>
+        <ul className="text-sm text-yellow-800 space-y-1">
+          <li>• 生成过程中请勿关闭页面，系统正在处理您的论文</li>
+          <li>• 生成完成后，您可以在编辑器中进一步完善内容</li>
+          <li>• AI生成的内容仅供参考，请结合实际情况进行调整</li>
+          <li>• 建议在生成后仔细检查引用格式和学术规范</li>
+        </ul>
+      </div>
+
+      {/* 导航按钮 */}
+      <div className="flex justify-between pt-8 border-t mt-8">
+        <button
+          onClick={onPrevious}
+          disabled={isSubmitting}
+          className="flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ChevronLeft size={20} className="mr-2" />
+          上一步
+        </button>
+        <button
+          onClick={onNext}
+          disabled={isSubmitting}
+          className="flex items-center px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3" />
+              生成中...
+            </>
+          ) : (
+            <>
+              <Zap size={20} className="mr-2" />
+              开始生成论文
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default FormPage;

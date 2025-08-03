@@ -486,9 +486,9 @@ export const getStaggeredAnimation = (index: number, baseDelay = 0) => ({
 export const getDelayedAnimation = (delay: number, variants: Variants) => ({
   ...variants,
   visible: {
-    ...variants.visible,
+    ...(typeof variants.visible === 'object' ? variants.visible : {}),
     transition: {
-      ...variants.visible.transition,
+      ...(typeof variants.visible === 'object' && variants.visible?.transition ? variants.visible.transition : {}),
       delay
     }
   }

@@ -12,18 +12,32 @@ import {
   Users,
   ChevronRight,
   Check,
-  X
+  X,
+  Wand2,
+  Lightbulb,
+  Zap
 } from 'lucide-react';
 import { ModuleTemplate, TemplateCategory } from '@/types/modular';
 
 interface TemplateLibraryProps {
   onTemplateSelect: (template: ModuleTemplate) => void;
+  onSmartFill?: (template: ModuleTemplate, userInput: any) => void;
+  currentModules?: any[];
 }
 
-const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateSelect }) => {
+const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateSelect, onSmartFill, currentModules }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [previewTemplate, setPreviewTemplate] = useState<ModuleTemplate | null>(null);
+  const [showSmartFillDialog, setShowSmartFillDialog] = useState<ModuleTemplate | null>(null);
+  const [smartFillData, setSmartFillData] = useState({
+    researchField: '',
+    topic: '',
+    methodology: '',
+    keywords: '',
+    academicLevel: 'master',
+    targetLength: ''
+  });
 
   // 模拟模板数据
   const templateCategories: TemplateCategory[] = [
@@ -277,6 +291,15 @@ const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateSelect }) =
                 >
                   <Eye className="h-4 w-4" />
                 </button>
+                {onSmartFill && (
+                  <button
+                    onClick={() => setShowSmartFillDialog(template)}
+                    className="p-2 text-purple-600 hover:text-purple-700 rounded-lg hover:bg-purple-50"
+                    title="智能填充"
+                  >
+                    <Wand2 className="h-4 w-4" />
+                  </button>
+                )}
                 <button
                   onClick={() => onTemplateSelect(template)}
                   className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
@@ -378,6 +401,137 @@ const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateSelect }) =
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 使用此模板
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 智能填充对话框 */}
+      {showSmartFillDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-lg w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <Wand2 className="h-5 w-5 text-purple-600" />
+                <h3 className="font-semibold text-gray-900">智能填充模板</h3>
+              </div>
+              <button
+                onClick={() => setShowSmartFillDialog(null)}
+                className="p-1 text-gray-500 hover:text-gray-700 rounded"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <Lightbulb className="h-4 w-4 inline mr-1" />
+                  提供以下信息，AI将为您智能生成论文大纲和内容框架
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">研究领域</label>
+                  <input
+                    type="text"
+                    value={smartFillData.researchField}
+                    onChange={(e) => setSmartFillData(prev => ({ ...prev, researchField: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="如：计算机科学、心理学、经济学等"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">研究主题</label>
+                  <input
+                    type="text"
+                    value={smartFillData.topic}
+                    onChange={(e) => setSmartFillData(prev => ({ ...prev, topic: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="简要描述您的研究主题"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">研究方法</label>
+                  <select
+                    value={smartFillData.methodology}
+                    onChange={(e) => setSmartFillData(prev => ({ ...prev, methodology: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">选择研究方法</option>
+                    <option value="quantitative">定量研究</option>
+                    <option value="qualitative">定性研究</option>
+                    <option value="mixed">混合方法</option>
+                    <option value="experimental">实验研究</option>
+                    <option value="survey">调查研究</option>
+                    <option value="case_study">案例研究</option>
+                    <option value="literature_review">文献综述</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">关键词</label>
+                  <input
+                    type="text"
+                    value={smartFillData.keywords}
+                    onChange={(e) => setSmartFillData(prev => ({ ...prev, keywords: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="用逗号分隔关键词"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">学术水平</label>
+                    <select
+                      value={smartFillData.academicLevel}
+                      onChange={(e) => setSmartFillData(prev => ({ ...prev, academicLevel: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="undergraduate">本科</option>
+                      <option value="master">硕士</option>
+                      <option value="doctoral">博士</option>
+                      <option value="postdoc">博士后</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">目标字数</label>
+                    <input
+                      type="text"
+                      value={smartFillData.targetLength}
+                      onChange={(e) => setSmartFillData(prev => ({ ...prev, targetLength: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      placeholder="如：8000"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 p-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowSmartFillDialog(null)}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => {
+                  if (onSmartFill && showSmartFillDialog) {
+                    onSmartFill(showSmartFillDialog, smartFillData);
+                    setShowSmartFillDialog(null);
+                  }
+                }}
+                disabled={!smartFillData.researchField || !smartFillData.topic}
+                className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Zap className="h-4 w-4 mr-1" />
+                开始智能填充
               </button>
             </div>
           </div>

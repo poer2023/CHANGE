@@ -11,6 +11,11 @@ export interface FormData {
   citationStyle: string;
   abstract?: string;
   keywords?: string[];
+  category?: string;
+  targetLength?: number;
+  language?: 'zh' | 'en';
+  style?: 'academic' | 'technical' | 'review';
+  references?: string[];
 }
 
 export interface PaperType {
@@ -52,7 +57,7 @@ export interface FormStep {
   isActive: boolean;
 }
 
-export interface ValidationError {
+export interface FormValidationError {
   field: string;
   message: string;
 }

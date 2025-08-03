@@ -69,6 +69,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
   
   const [inputValue, setInputValue] = useState('');
   const [activeTab, setActiveTab] = useState<'chat' | 'suggestions' | 'actions'>('chat');
+  const [currentStreamingMessageId, setCurrentStreamingMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -214,9 +215,6 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
       setCurrentStreamingMessageId(null);
     }
   }, [currentStreamingMessageId, streamingError]);
-
-  // 当前流式消息的ID
-  const [currentStreamingMessageId, setCurrentStreamingMessageId] = useState<string | null>(null);
 
   // 发送消息
   const sendMessage = useCallback(async () => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowLeft, ArrowRight, Skip, Check } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, SkipForward, Check } from 'lucide-react';
 import { Button } from './Button';
 import { cn } from '@/utils';
 
@@ -351,7 +351,7 @@ const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
                 size="sm"
                 onClick={skipTour}
               >
-                <Skip className="w-4 h-4 mr-1" />
+                <SkipForward className="w-4 h-4 mr-1" />
                 跳过
               </Button>
             )}

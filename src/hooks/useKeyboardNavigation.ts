@@ -31,7 +31,7 @@ export const useKeyboardNavigation = (options: KeyboardNavigationOptions = {}) =
     return Array.from(elements).filter((el): el is HTMLElement => {
       const element = el as HTMLElement;
       return (
-        !element.disabled &&
+        !(element as any).disabled &&
         element.tabIndex !== -1 &&
         element.offsetParent !== null && // 元素可见
         !element.hasAttribute('aria-hidden') &&
@@ -207,7 +207,7 @@ export const useFocusTrap = (isActive: boolean = true) => {
       return Array.from(elements).filter((el): el is HTMLElement => {
         const element = el as HTMLElement;
         return (
-          !element.disabled &&
+          !(element as any).disabled &&
           element.tabIndex !== -1 &&
           element.offsetParent !== null
         );

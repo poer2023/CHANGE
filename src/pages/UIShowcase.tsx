@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   LoadingSpinner,
-  Toast,
   Modal,
   ModalHeader,
   ModalBody,
@@ -296,8 +295,8 @@ const UIShowcase: React.FC = () => {
 
           {/* 表单组件展示 */}
           <motion.div variants={fadeInUp}>
-            <Card id="form-section" className="p-6">
-              <h2 className="text-2xl font-semibold mb-6">表单组件</h2>
+            <Card className="p-6">
+              <h2 id="form-section" className="text-2xl font-semibold mb-6">表单组件</h2>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
@@ -306,7 +305,7 @@ const UIShowcase: React.FC = () => {
                     placeholder="请输入您的姓名"
                     icon={<User className="w-4 h-4" />}
                     value={formData.name}
-                    onChange={(value) => handleFieldChange('name', value)}
+                    onChange={(e) => handleFieldChange('name', e.target.value)}
                     onBlur={(e) => handleFieldBlur('name', e.target.value)}
                     error={formValidation.getFieldError('name')}
                     required
@@ -318,7 +317,7 @@ const UIShowcase: React.FC = () => {
                     placeholder="请输入您的邮箱"
                     icon={<Mail className="w-4 h-4" />}
                     value={formData.email}
-                    onChange={(value) => handleFieldChange('email', value)}
+                    onChange={(e) => handleFieldChange('email', e.target.value)}
                     onBlur={(e) => handleFieldBlur('email', e.target.value)}
                     error={formValidation.getFieldError('email')}
                     required
@@ -329,7 +328,7 @@ const UIShowcase: React.FC = () => {
                     placeholder="请输入您的手机号"
                     icon={<Phone className="w-4 h-4" />}
                     value={formData.phone}
-                    onChange={(value) => handleFieldChange('phone', value)}
+                    onChange={(e) => handleFieldChange('phone', e.target.value)}
                     onBlur={(e) => handleFieldBlur('phone', e.target.value)}
                     error={formValidation.getFieldError('phone')}
                   />
@@ -339,7 +338,7 @@ const UIShowcase: React.FC = () => {
                     placeholder="请输入您的网站地址"
                     icon={<Globe className="w-4 h-4" />}
                     value={formData.website}
-                    onChange={(value) => handleFieldChange('website', value)}
+                    onChange={(e) => handleFieldChange('website', e.target.value)}
                     onBlur={(e) => handleFieldBlur('website', e.target.value)}
                     error={formValidation.getFieldError('website')}
                   />

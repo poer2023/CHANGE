@@ -157,12 +157,11 @@ export const lazyComponents = {
     () => import('@/components/editor/TemplateLibrary')
   ),
   
-  // Chart 组件（如果有的话）
+  // Chart 组件（占位符 - 组件不存在）
   Charts: createLazyComponent(
-    () => import('@/components/Charts').catch(() => 
-      // 如果组件不存在，返回一个占位符
-      ({ default: () => <div>图表组件暂未可用</div> })
-    )
+    () => Promise.resolve({ 
+      default: () => <div className="p-4 text-center text-gray-500">图表组件暂未可用</div> 
+    })
   )
 };
 

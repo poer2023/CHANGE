@@ -455,7 +455,7 @@ const EditorPage: React.FC = () => {
             
             <div className="flex items-center space-x-2">
               <button
-                onClick={handleExport}
+                onClick={() => handleExport()}
                 className="p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
               >
                 <Download className="h-4 w-4" />

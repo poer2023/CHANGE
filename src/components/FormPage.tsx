@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
-import { FormData, FormStep, ValidationError } from '@/types/form';
+import { FormData, FormStep, FormValidationError } from '@/types/form';
 import { usePaperStore } from '@/store';
 import PaperTypeSelector from './PaperTypeSelector';
 import FieldSelector from './FieldSelector';
@@ -30,7 +30,7 @@ const FormPage: React.FC = () => {
     abstract: storeFormData.abstract || '',
     keywords: storeFormData.keywords || []
   });
-  const [errors, setErrors] = useState<ValidationError[]>([]);
+  const [errors, setErrors] = useState<FormValidationError[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const steps: FormStep[] = [
@@ -74,7 +74,7 @@ const FormPage: React.FC = () => {
   }, []);
 
   const validateStep = useCallback((stepIndex: number): boolean => {
-    const newErrors: ValidationError[] = [];
+    const newErrors: FormValidationError[] = [];
     
     switch (stepIndex) {
       case 0:

@@ -43,7 +43,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     this.props.onError?.(error, errorInfo);
 
     // 在开发环境中记录错误
-    if (process.env.NODE_ENV === 'development') {
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
       console.error('ErrorBoundary caught an error:', error, errorInfo);
     }
   }
@@ -101,7 +101,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </p>
 
             {/* 错误详情 (仅在开发环境或允许显示详情时显示) */}
-            {(process.env.NODE_ENV === 'development' || this.props.showDetails) && this.state.error && (
+            {((typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') || this.props.showDetails) && this.state.error && (
               <details className="mb-6 text-left bg-gray-50 rounded-lg p-4">
                 <summary className="cursor-pointer text-sm font-medium text-gray-700 mb-2">
                   <Bug className="inline w-4 h-4 mr-1" />

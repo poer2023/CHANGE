@@ -675,7 +675,7 @@ ${content}
 
 // 导出默认实例
 export const contentAnalyzer = new ContentAnalyzer({
-  apiKey: process.env.VITE_GLM_API_KEY || '',
+  apiKey: (typeof process !== 'undefined' ? process.env?.VITE_GLM_API_KEY : '') || import.meta.env?.VITE_GLM_API_KEY || '',
   model: 'glm-4.5-turbo'
 });
 

@@ -3,63 +3,22 @@ import {
   PaperTypeRecommendation, 
   RecommendationInput,
   PaperTypeDefinition,
-  AcademicLevel
+  AcademicLevel,
+  PaperTypeValidation,
+  ValidationIssue
 } from '@/types/paper-types';
 import { GLMClient } from './glm-client';
+import { 
+  PAPER_TYPE_DEFINITIONS, 
+  getPaperTypeDefinition,
+  getWordCountRange,
+  validatePaperTypeLevel 
+} from '@/data/paper-type-definitions';
 
-// 论文类型关键词映射
-const PAPER_TYPE_KEYWORDS: Record<EnglishPaperType, string[]> = {
-  'literary-analysis': [
-    'literature', 'literary', 'text', 'poetry', 'novel', 'drama', 'analysis', 'interpretation',
-    'symbolism', 'theme', 'character', 'narrative', 'style', 'author', 'writing techniques',
-    'close reading', 'textual analysis', 'literary criticism', 'motif', 'allegory'
-  ],
-  'comparative-analysis': [
-    'compare', 'comparison', 'contrast', 'versus', 'similarities', 'differences', 'parallel',
-    'both', 'whereas', 'unlike', 'similar', 'different', 'between', 'among', 'comparative',
-    'relationship', 'connection', 'distinction', 'analogy'
-  ],
-  'cultural-analysis': [
-    'culture', 'cultural', 'society', 'social', 'anthropology', 'ethnography', 'community',
-    'tradition', 'customs', 'identity', 'values', 'beliefs', 'practices', 'ritual',
-    'cultural studies', 'postcolonial', 'gender', 'race', 'class', 'power'
-  ],
-  'literature-review': [
-    'review', 'literature', 'research', 'studies', 'findings', 'previous', 'existing',
-    'scholars', 'academic', 'sources', 'synthesis', 'overview', 'survey', 'examination',
-    'current state', 'gaps', 'trends', 'developments', 'publications'
-  ],
-  'critical-review': [
-    'critical', 'critique', 'evaluation', 'assessment', 'judgment', 'analysis', 'review',
-    'strengths', 'weaknesses', 'limitations', 'merits', 'flaws', 'effectiveness',
-    'validity', 'reliability', 'bias', 'perspective', 'argument', 'position'
-  ],
-  'empirical-research': [
-    'research', 'study', 'data', 'methodology', 'method', 'experiment', 'survey',
-    'interview', 'questionnaire', 'analysis', 'results', 'findings', 'statistics',
-    'quantitative', 'qualitative', 'evidence', 'investigation', 'empirical', 'observation'
-  ],
-  'case-study': [
-    'case', 'study', 'specific', 'particular', 'individual', 'example', 'instance',
-    'detailed', 'in-depth', 'comprehensive', 'examination', 'investigation', 'analysis',
-    'real-world', 'practical', 'situation', 'context', 'application'
-  ],
-  'discourse-analysis': [
-    'discourse', 'language', 'communication', 'speech', 'conversation', 'text', 'linguistic',
-    'rhetoric', 'power', 'ideology', 'social construction', 'meaning', 'context',
-    'pragmatics', 'semiotics', 'narrative', 'dialogue', 'verbal', 'non-verbal'
-  ],
-  'theoretical-discussion': [
-    'theory', 'theoretical', 'concept', 'conceptual', 'framework', 'model', 'philosophy',
-    'philosophical', 'abstract', 'principle', 'idea', 'notion', 'construct', 'paradigm',
-    'hypothesis', 'assumption', 'proposition', 'speculation', 'reflection'
-  ],
-  'dissertation-thesis': [
-    'dissertation', 'thesis', 'degree', 'phd', 'doctoral', 'master', 'graduate',
-    'comprehensive', 'extensive', 'original', 'contribution', 'research', 'academic',
-    'scholarship', 'investigation', 'detailed study', 'in-depth analysis'
-  ]
-};
+// 增强的论文类型关键词映射 - 使用详细定义中的关键词
+const PAPER_TYPE_KEYWORDS: Record<EnglishPaperType, string[]> = Object.fromEntries(
+  Object.entries(PAPER_TYPE_DEFINITIONS).map(([type, def]) => [type, def.keywords])
+) as Record<EnglishPaperType, string[]>;
 
 // 学术层次关键词
 const ACADEMIC_LEVEL_KEYWORDS: Record<AcademicLevel, string[]> = {
@@ -77,18 +36,81 @@ const ACADEMIC_LEVEL_KEYWORDS: Record<AcademicLevel, string[]> = {
   ]
 };
 
-// 字数范围权重
-const WORD_COUNT_WEIGHTS: Record<EnglishPaperType, { min: number; max: number; optimal: number }> = {
-  'literary-analysis': { min: 1500, max: 15000, optimal: 5000 },
-  'comparative-analysis': { min: 2000, max: 12000, optimal: 6000 },
-  'cultural-analysis': { min: 2500, max: 20000, optimal: 8000 },
-  'literature-review': { min: 2000, max: 15000, optimal: 6000 },
-  'critical-review': { min: 1500, max: 10000, optimal: 4000 },
-  'empirical-research': { min: 3000, max: 25000, optimal: 10000 },
-  'case-study': { min: 2500, max: 18000, optimal: 8000 },
-  'discourse-analysis': { min: 3000, max: 20000, optimal: 10000 },
-  'theoretical-discussion': { min: 4000, max: 30000, optimal: 15000 },
-  'dissertation-thesis': { min: 8000, max: 100000, optimal: 40000 }
+// 增强的字数范围权重 - 使用详细定义中的数据
+const WORD_COUNT_WEIGHTS: Record<EnglishPaperType, Record<AcademicLevel, { min: number; max: number; optimal: number }>> = 
+  Object.fromEntries(
+    Object.entries(PAPER_TYPE_DEFINITIONS).map(([type, def]) => [
+      type,
+      Object.fromEntries(
+        Object.entries(def.typicalWordCount).map(([level, range]) => [
+          level,
+          {
+            min: range.min,
+            max: range.max,
+            optimal: Math.floor((range.min + range.max) / 2)
+          }
+        ])
+      )
+    ])
+  ) as Record<EnglishPaperType, Record<AcademicLevel, { min: number; max: number; optimal: number }>>;
+
+// 论文结构特征权重
+const STRUCTURE_FEATURES: Record<EnglishPaperType, string[]> = Object.fromEntries(
+  Object.entries(PAPER_TYPE_DEFINITIONS).map(([type, def]) => [type, def.coreFeatures])
+) as Record<EnglishPaperType, string[]>;
+
+// 语言模式匹配
+const LANGUAGE_PATTERNS: Record<EnglishPaperType, RegExp[]> = {
+  'literary-analysis': [
+    /\b(symbolizes?|represents?|suggests?|implies?|metaphor|imagery)\b/gi,
+    /\b(the author|the text|the work|the poem|the novel)\b/gi,
+    /\b(theme|motif|character development|narrative technique)\b/gi
+  ],
+  'comparative-analysis': [
+    /\b(in contrast|however|whereas|while|both|similarly|unlike)\b/gi,
+    /\b(compare[sd]?|comparison|differ[s]?|similar|contrast)\b/gi,
+    /\b(on one hand|on the other hand|in comparison)\b/gi
+  ],
+  'cultural-analysis': [
+    /\b(cultural|society|social|community|tradition|ritual)\b/gi,
+    /\b(identity|representation|ideology|power|discourse)\b/gi,
+    /\b(anthropological|ethnographic|postcolonial|gender)\b/gi
+  ],
+  'literature-review': [
+    /\b(previous research|studies show|according to|researchers found)\b/gi,
+    /\b(literature suggests|current research|existing studies)\b/gi,
+    /\b(meta-analysis|systematic review|research gap)\b/gi
+  ],
+  'critical-review': [
+    /\b(strengths?|weaknesses?|limitations?|advantages?|disadvantages?)\b/gi,
+    /\b(effective|ineffective|successful|problematic|flawed)\b/gi,
+    /\b(critique|evaluation|assessment|judgment)\b/gi
+  ],
+  'empirical-research': [
+    /\b(methodology|data collection|statistical analysis|results)\b/gi,
+    /\b(hypothesis|variables?|participants?|procedure)\b/gi,
+    /\b(significant|correlation|regression|p-value)\b/gi
+  ],
+  'case-study': [
+    /\b(case study|specific case|particular instance|real-world)\b/gi,
+    /\b(in-depth|detailed analysis|comprehensive examination)\b/gi,
+    /\b(triangulation|multiple sources|stakeholders?)\b/gi
+  ],
+  'discourse-analysis': [
+    /\b(discourse|language use|communication|speech act)\b/gi,
+    /\b(power relations|social construction|meaning making)\b/gi,
+    /\b(linguistic|pragmatic|semantic|syntactic)\b/gi
+  ],
+  'theoretical-discussion': [
+    /\b(theory|theoretical|framework|paradigm|concept)\b/gi,
+    /\b(philosophical|abstract|principle|assumption)\b/gi,
+    /\b(conceptual|model|proposition|speculation)\b/gi
+  ],
+  'dissertation-thesis': [
+    /\b(dissertation|thesis|doctoral|comprehensive|extensive)\b/gi,
+    /\b(original contribution|research question|methodology)\b/gi,
+    /\b(literature review|theoretical framework|implications)\b/gi
+  ]
 };
 
 export class PaperTypeService {
@@ -130,7 +152,7 @@ export class PaperTypeService {
   }
 
   /**
-   * 基于关键词的基础分析
+   * 增强的基于关键词和模式的基础分析
    */
   private analyzeByKeywords(input: RecommendationInput): PaperTypeRecommendation[] {
     const recommendations: PaperTypeRecommendation[] = [];
@@ -141,8 +163,9 @@ export class PaperTypeService {
     Object.entries(PAPER_TYPE_KEYWORDS).forEach(([paperType, typeKeywords]) => {
       let matchScore = 0;
       const matchedKeywords: string[] = [];
+      const reasons: string[] = [];
 
-      // 关键词匹配
+      // 1. 关键词匹配 (40%权重)
       typeKeywords.forEach(keyword => {
         if (combinedText.includes(keyword.toLowerCase()) || 
             keywords.some(k => k.toLowerCase().includes(keyword.toLowerCase()))) {
@@ -150,43 +173,113 @@ export class PaperTypeService {
           matchedKeywords.push(keyword);
         }
       });
+      const keywordScore = Math.min(matchScore / typeKeywords.length, 1) * 0.4;
 
-      // 字数匹配权重
-      if (input.targetLength) {
-        const range = WORD_COUNT_WEIGHTS[paperType as EnglishPaperType];
-        if (input.targetLength >= range.min && input.targetLength <= range.max) {
-          matchScore += 2;
+      // 2. 语言模式匹配 (25%权重)
+      const patterns = LANGUAGE_PATTERNS[paperType as EnglishPaperType] || [];
+      let patternMatches = 0;
+      patterns.forEach(pattern => {
+        const matches = combinedText.match(pattern);
+        if (matches) {
+          patternMatches += matches.length;
+        }
+      });
+      const patternScore = Math.min(patternMatches / 10, 1) * 0.25;
+
+      // 3. 字数匹配权重 (20%权重)
+      let wordCountScore = 0;
+      if (input.targetLength && input.academicLevel) {
+        const range = WORD_COUNT_WEIGHTS[paperType as EnglishPaperType]?.[input.academicLevel];
+        if (range && input.targetLength >= range.min && input.targetLength <= range.max) {
+          const deviation = Math.abs(input.targetLength - range.optimal) / range.optimal;
+          wordCountScore = Math.max(0, 1 - deviation) * 0.2;
+          if (deviation < 0.1) {
+            reasons.push(`字数范围完美匹配 (${input.targetLength.toLocaleString()}字)`);
+          } else if (deviation < 0.3) {
+            reasons.push(`字数范围良好匹配 (${input.targetLength.toLocaleString()}字)`);
+          }
         }
       }
 
-      // 学术层次匹配
+      // 4. 学术层次匹配 (10%权重)
+      let levelScore = 0;
       if (input.academicLevel) {
+        const definition = getPaperTypeDefinition(paperType as EnglishPaperType);
+        if (definition.academicLevels.includes(input.academicLevel)) {
+          levelScore = 0.1;
+          reasons.push(`适合${input.academicLevel}层次`);
+        }
+
+        // 检查学术层次关键词
         const levelKeywords = ACADEMIC_LEVEL_KEYWORDS[input.academicLevel];
         levelKeywords.forEach(keyword => {
           if (combinedText.includes(keyword)) {
-            matchScore += 1;
+            levelScore += 0.01;
           }
         });
       }
 
+      // 5. 结构特征匹配 (5%权重)
+      let structureScore = 0;
+      const structureFeatures = STRUCTURE_FEATURES[paperType as EnglishPaperType] || [];
+      structureFeatures.forEach(feature => {
+        if (combinedText.includes(feature.toLowerCase()) ||
+            input.requirements?.toLowerCase().includes(feature.toLowerCase())) {
+          structureScore += 0.01;
+        }
+      });
+      structureScore = Math.min(structureScore, 0.05);
+
+      // 计算总分
+      const totalScore = keywordScore + patternScore + wordCountScore + levelScore + structureScore;
+      const confidence = Math.min(totalScore, 1);
+
       // 生成推荐
-      if (matchScore > 0) {
-        const confidence = Math.min(matchScore / typeKeywords.length, 1);
+      if (confidence > 0.1) { // 提高阈值，减少噪音
+        if (matchedKeywords.length > 0) {
+          reasons.unshift(`匹配关键词: ${matchedKeywords.slice(0, 5).join(', ')}`);
+        }
+        if (patternMatches > 0) {
+          reasons.push(`发现${patternMatches}个相关语言模式`);
+        }
+
         recommendations.push({
           paperType: paperType as EnglishPaperType,
           confidence,
-          matchScore,
-          reasons: [
-            `匹配关键词: ${matchedKeywords.slice(0, 3).join(', ')}`,
-            ...(input.targetLength ? [`字数范围适合 (${input.targetLength.toLocaleString()}字)`] : []),
-            ...(input.academicLevel ? [`适合${input.academicLevel}层次`] : [])
-          ],
-          suggestedAcademicLevel: input.academicLevel || 'undergraduate'
+          matchScore: Math.round(totalScore * 100),
+          reasons: reasons.slice(0, 4), // 限制原因数量
+          suggestedAcademicLevel: input.academicLevel || this.suggestAcademicLevel(
+            paperType as EnglishPaperType, 
+            input.targetLength
+          )
         });
       }
     });
 
     return recommendations;
+  }
+
+  /**
+   * 建议学术层次
+   */
+  private suggestAcademicLevel(paperType: EnglishPaperType, targetLength?: number): AcademicLevel {
+    const definition = getPaperTypeDefinition(paperType);
+    
+    if (!targetLength) {
+      return definition.academicLevels[0]; // 返回最低支持层次
+    }
+
+    // 根据字数建议层次
+    for (const level of ['undergraduate', 'master', 'doctoral'] as AcademicLevel[]) {
+      if (definition.academicLevels.includes(level)) {
+        const range = definition.typicalWordCount[level];
+        if (targetLength >= range.min && targetLength <= range.max) {
+          return level;
+        }
+      }
+    }
+
+    return definition.academicLevels[0];
   }
 
   /**

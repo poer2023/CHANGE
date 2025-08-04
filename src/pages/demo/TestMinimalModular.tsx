@@ -34,7 +34,7 @@ const TestMinimalModular: React.FC = () => {
         
         {/* 尝试渲染ModularEditor */}
         <div className="mt-4 border border-gray-300 rounded">
-          <ModularEditor />
+          <ModularEditor paperId="test-paper" />
         </div>
       </div>
     );

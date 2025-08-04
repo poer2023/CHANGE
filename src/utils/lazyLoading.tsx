@@ -356,12 +356,12 @@ export const performanceMonitor = {
       const end = performance.now();
       const duration = end - start;
       
-      if (process.env.NODE_ENV === 'development') {
+      if ((typeof process !== 'undefined' && process.env?.NODE_ENV) === 'development') {
         console.log(`Component ${componentName} loaded in ${duration.toFixed(2)}ms`);
       }
       
       // 在生产环境中，可以发送到分析服务
-      if (process.env.NODE_ENV === 'production' && duration > 1000) {
+      if ((typeof process !== 'undefined' && process.env?.NODE_ENV) === 'production' && duration > 1000) {
         // 记录慢加载组件
         console.warn(`Slow component load: ${componentName} took ${duration.toFixed(2)}ms`);
       }
@@ -375,7 +375,7 @@ export const performanceMonitor = {
       const end = performance.now();
       const duration = end - start;
       
-      if (process.env.NODE_ENV === 'development') {
+      if ((typeof process !== 'undefined' && process.env?.NODE_ENV) === 'development') {
         console.log(`Chunk ${chunkName} loaded in ${duration.toFixed(2)}ms`);
       }
     };

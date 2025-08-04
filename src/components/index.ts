@@ -1,6 +1,7 @@
 // Export all components
 export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as NotificationToast } from './NotificationToast';
+export { default as ErrorBoundary } from './ErrorBoundary';
 
 // Layout components
 export * from './Layout';
@@ -24,3 +25,7 @@ export * from './analytics';
 
 // Analysis components
 export * from './analysis';
+
+// Test components
+export { default as GLMChatTest } from './test/GLMChatTest';
+export { default as GLMContentTest } from './test/GLMContentTest';

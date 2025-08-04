@@ -100,7 +100,7 @@ export const validateImports = () => {
 };
 
 // 仅在开发环境下运行验证
-if (process.env.NODE_ENV === 'development') {
+if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
   try {
     const validation = validateImports();
     console.log('🔍 Agent系统导入验证结果:', validation);

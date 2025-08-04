@@ -329,8 +329,8 @@ class GLMClientService {
 
   constructor() {
     // 这里应该从环境变量或配置中获取
-    this.apiKey = process.env.REACT_APP_GLM_API_KEY || '';
-    this.baseURL = process.env.REACT_APP_GLM_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4';
+    this.apiKey = (typeof process !== 'undefined' ? process.env?.REACT_APP_GLM_API_KEY : '') || '';
+    this.baseURL = (typeof process !== 'undefined' ? process.env?.REACT_APP_GLM_BASE_URL : '') || 'https://open.bigmodel.cn/api/paas/v4';
     this.defaultModel = 'glm-4.5-flash'; // 使用免费版本作为默认
   }
 

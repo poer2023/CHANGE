@@ -380,7 +380,7 @@ export const performanceMonitor = {
       const end = performance.now();
       const duration = end - start;
       
-      if (process.env.NODE_ENV === 'development') {
+      if ((typeof process !== 'undefined' && process.env?.NODE_ENV) === 'development') {
         console.log(`${componentName} render time: ${duration.toFixed(2)}ms`);
       }
       
@@ -427,7 +427,7 @@ export const performanceMonitor = {
 export const bundleAnalyzer = {
   // 获取已加载的模块信息
   getLoadedModules: () => {
-    if (process.env.NODE_ENV === 'development') {
+    if ((typeof process !== 'undefined' && process.env?.NODE_ENV) === 'development') {
       // 在开发环境中，webpack 会在 window 上暴露模块信息
       return (window as any).__webpack_require__ ? 
         Object.keys((window as any).__webpack_require__.cache || {}) : [];

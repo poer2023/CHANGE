@@ -88,13 +88,77 @@ export type TemplateCategory =
 export interface Reference {
   id: string;
   title: string;
-  authors: string[];
-  journal?: string;
+  authors: Author[];
+  type: ReferenceType;
   year: number;
   doi?: string;
   url?: string;
   paperId: string;
+  // Journal/Conference fields
+  journal?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  publisher?: string;
+  // Book fields
+  bookTitle?: string;
+  editor?: Author[];
+  edition?: string;
+  chapterTitle?: string;
+  // Conference fields
+  conferenceName?: string;
+  conferenceLocation?: string;
+  conferenceDate?: string;
+  // Thesis/Dissertation fields
+  institution?: string;
+  degree?: string;
+  advisor?: string;
+  // Web/Online fields
+  accessDate?: Date;
+  lastModified?: Date;
+  // Additional metadata
+  abstract?: string;
+  keywords?: string[];
+  language?: string;
+  isbn?: string;
+  issn?: string;
+  pmid?: string;
+  citationCount?: number;
+  notes?: string;
+  tags?: string[];
+  isUsed?: boolean;
+  usageCount?: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
+
+export interface Author {
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  suffix?: string;
+  affiliation?: string;
+  email?: string;
+  orcid?: string;
+}
+
+export type ReferenceType = 
+  | 'journal'
+  | 'conference'
+  | 'book'
+  | 'bookChapter'
+  | 'thesis'
+  | 'dissertation'
+  | 'techReport'
+  | 'webpage'
+  | 'preprint'
+  | 'patent'
+  | 'software'
+  | 'dataset'
+  | 'presentation'
+  | 'newspaper'
+  | 'magazine'
+  | 'other';
 
 export interface WritingSession {
   id: string;
@@ -608,7 +672,198 @@ export interface ActionableInsight {
 }
 
 // 引用格式类型
-export type CitationStyle = 'APA' | 'MLA' | 'Chicago' | 'IEEE' | 'Harvard';
+export type CitationStyle = 
+  | 'APA'        // American Psychological Association
+  | 'MLA'        // Modern Language Association
+  | 'Chicago'    // Chicago Manual of Style
+  | 'IEEE'       // Institute of Electrical and Electronics Engineers
+  | 'Harvard'    // Harvard referencing system
+  | 'Vancouver'  // Vancouver system (medical journals)
+  | 'AMA'        // American Medical Association
+  | 'ASA'        // American Sociological Association
+  | 'APSA'       // American Political Science Association
+  | 'CSE'        // Council of Science Editors
+  | 'GB7714'     // 中国国家标准
+  | 'Custom';    // Custom style
+
+// 文献管理相关类型
+export interface ReferenceCollection {
+  id: string;
+  name: string;
+  description?: string;
+  references: Reference[];
+  isShared: boolean;
+  ownerId: string;
+  collaborators: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CitationInText {
+  id: string;
+  referenceId: string;
+  position: {
+    start: number;
+    end: number;
+  };
+  type: 'parenthetical' | 'narrative' | 'footnote';
+  customText?: string;
+  pageNumbers?: string;
+  chapter?: string;
+  suppressAuthor?: boolean;
+  suppressYear?: boolean;
+  prefix?: string;
+  suffix?: string;
+}
+
+export interface Bibliography {
+  id: string;
+  paperId: string;
+  style: CitationStyle;
+  entries: BibliographyEntry[];
+  settings: BibliographySettings;
+  generatedAt: Date;
+}
+
+export interface BibliographyEntry {
+  referenceId: string;
+  formattedText: string;
+  sortKey: string;
+  order: number;
+}
+
+export interface BibliographySettings {
+  sortBy: 'author' | 'year' | 'title' | 'type' | 'citation-order';
+  groupByType: boolean;
+  includeAbstract: boolean;
+  includeDOI: boolean;
+  includeURL: boolean;
+  hangingIndent: boolean;
+  lineSpacing: number;
+  fontSize: number;
+}
+
+export interface ReferenceImport {
+  source: 'bibtex' | 'endnote' | 'ris' | 'csv' | 'zotero' | 'mendeley';
+  content: string;
+  filename?: string;
+  encoding?: string;
+}
+
+export interface ReferenceExport {
+  format: 'bibtex' | 'endnote' | 'ris' | 'csv' | 'word' | 'pdf';
+  references: Reference[];
+  options: ExportOptions;
+}
+
+export interface ExportOptions {
+  includeAbstract?: boolean;
+  includeNotes?: boolean;
+  includeTags?: boolean;
+  sortBy?: string;
+  groupBy?: string;
+  template?: string;
+}
+
+export interface ReferenceSearchQuery {
+  query?: string;
+  type?: ReferenceType[];
+  authors?: string[];
+  year?: {
+    from?: number;
+    to?: number;
+  };
+  journal?: string;
+  tags?: string[];
+  isUsed?: boolean;
+  hasAbstract?: boolean;
+  hasDOI?: boolean;
+  sortBy?: 'relevance' | 'year' | 'title' | 'author' | 'citationCount';
+  sortOrder?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+}
+
+export interface ReferenceSearchResult {
+  references: Reference[];
+  total: number;
+  facets: {
+    types: { type: ReferenceType; count: number }[];
+    years: { year: number; count: number }[];
+    journals: { journal: string; count: number }[];
+    authors: { author: string; count: number }[];
+  };
+  suggestions: string[];
+}
+
+// 学术搜索API相关类型
+export interface AcademicSearchQuery {
+  query: string;
+  source: 'crossref' | 'pubmed' | 'arxiv' | 'google-scholar' | 'semantic-scholar';
+  maxResults?: number;
+  year?: {
+    from?: number;
+    to?: number;
+  };
+  fieldOfStudy?: string[];
+  publicationType?: string[];
+}
+
+export interface AcademicSearchResult {
+  id: string;
+  title: string;
+  authors: Author[];
+  abstract?: string;
+  year?: number;
+  journal?: string;
+  venue?: string;
+  doi?: string;
+  url?: string;
+  citationCount?: number;
+  source: string;
+  relevanceScore?: number;
+  isOpenAccess?: boolean;
+}
+
+// 引用完整性检查
+export interface CitationIntegrityCheck {
+  paperId: string;
+  issues: CitationIssue[];
+  statistics: {
+    totalCitations: number;
+    orphanedCitations: number;
+    duplicateReferences: number;
+    missingFields: number;
+    formattingErrors: number;
+  };
+  checkedAt: Date;
+}
+
+export interface CitationIssue {
+  id: string;
+  type: 'orphaned-citation' | 'missing-reference' | 'duplicate-reference' | 'missing-field' | 'format-error';
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+  position?: {
+    start: number;
+    end: number;
+  };
+  referenceId?: string;
+  suggestions: string[];
+  autoFixable: boolean;
+}
+
+// 引用推荐
+export interface CitationRecommendation {
+  reference: AcademicSearchResult;
+  relevanceScore: number;
+  reason: string;
+  context: {
+    similarPapers: string[];
+    commonKeywords: string[];
+    citationPatterns: string[];
+  };
+}
 
 // 内容分析设置
 export interface AnalysisSettings {
@@ -619,6 +874,24 @@ export interface AnalysisSettings {
   showQuickResults: boolean;
   analysisDepth: 'basic' | 'detailed' | 'comprehensive';
   glmApiKey?: string;
+}
+
+// 文献管理设置
+export interface ReferenceManagerSettings {
+  defaultCitationStyle: CitationStyle;
+  defaultReferenceType: ReferenceType;
+  autoSyncWithEditor: boolean;
+  enableDuplicateDetection: boolean;
+  enableAutoFormat: boolean;
+  showAbstractInList: boolean;
+  groupReferencesByType: boolean;
+  enableRealTimeSearch: boolean;
+  backupToCloud: boolean;
+  defaultExportFormat: 'bibtex' | 'endnote' | 'ris';
+  academicSearchSources: string[];
+  maxSearchResults: number;
+  cacheSearchResults: boolean;
+  enableCitationRecommendations: boolean;
 }
 
 // 分析历史

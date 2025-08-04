@@ -670,7 +670,7 @@ export function createGLMClient(config: GLMClientConfig): GLMClient {
 export const defaultGLMClient = (() => {
   try {
     const apiKey = import.meta.env?.VITE_GLM_API_KEY || 
-                   process.env?.REACT_APP_GLM_API_KEY ||
+                   (typeof process !== 'undefined' ? process.env?.REACT_APP_GLM_API_KEY : '') ||
                    '';
                    
     if (!apiKey) {
@@ -681,7 +681,7 @@ export const defaultGLMClient = (() => {
     const config: GLMClientConfig = {
       apiKey,
       baseURL: import.meta.env?.VITE_GLM_BASE_URL || 
-               process.env?.REACT_APP_GLM_BASE_URL ||
+               (typeof process !== 'undefined' ? process.env?.REACT_APP_GLM_BASE_URL : '') ||
                'https://open.bigmodel.cn/api/paas/v4',
       timeout: Number(import.meta.env?.VITE_GLM_TIMEOUT) || 30000,
       maxRetries: Number(import.meta.env?.VITE_GLM_MAX_RETRIES) || 3,

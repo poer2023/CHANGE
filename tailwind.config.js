@@ -74,5 +74,6 @@ module.exports = {
   },
   plugins: [
     require('@tailwindcss/typography'),
+    // Note: @tailwindcss/line-clamp has been integrated into Tailwind CSS v3.3+
   ],
 }

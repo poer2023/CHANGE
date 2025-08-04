@@ -1,8 +1,14 @@
 import { useState, useCallback, useRef } from 'react';
+import { defaultGLMClient } from '../services/glm-client';
+import { defaultHealthMonitor } from '../services/api-health-monitor';
+import { GLMMessage, AIServiceOptions } from '../types';
 
 interface StreamingOptions {
   delay?: number; // 每个字符的延迟（毫秒）
   chunkSize?: number; // 每次流式输出的字符数
+  temperature?: number; // AI温度参数
+  maxTokens?: number; // 最大token数
+  systemMessage?: string; // 系统消息
 }
 
 interface StreamingState {
@@ -10,23 +16,209 @@ interface StreamingState {
   isStreaming: boolean;
   isComplete: boolean;
   error: string | null;
+  connectionStatus: 'unknown' | 'healthy' | 'degraded' | 'failed';
+  usingFallback: boolean;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
 }
 
 export const useStreamingAI = (options: StreamingOptions = {}) => {
-  const { delay = 50, chunkSize = 1 } = options;
+  const { 
+    delay = 50, 
+    chunkSize = 1, 
+    temperature = 0.7,
+    maxTokens = 4096,
+    systemMessage 
+  } = options;
   
   const [state, setState] = useState<StreamingState>({
     content: '',
     isStreaming: false,
     isComplete: false,
-    error: null
+    error: null,
+    connectionStatus: 'unknown',
+    usingFallback: false
   });
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 模拟AI响应生成
+  // 真实AI响应生成（使用智能调用和降级处理）
   const generateAIResponse = useCallback(async (prompt: string): Promise<string> => {
+    // 更新连接状态
+    const healthStatus = defaultHealthMonitor.getHealthStatus();
+    setState(prev => ({ 
+      ...prev, 
+      connectionStatus: healthStatus.status,
+      usingFallback: healthStatus.recommendedMode !== 'api'
+    }));
+
+    // 使用智能调用，自动处理降级
+    return await defaultHealthMonitor.smartCall(
+      // API调用
+      async () => {
+        if (!defaultGLMClient) {
+          throw new Error('GLM客户端未配置，请检查API密钥设置');
+        }
+
+        const response = await defaultGLMClient.simpleChat(
+          prompt, 
+          systemMessage,
+          {
+            temperature,
+            maxTokens,
+          }
+        );
+
+        // 更新状态为健康
+        setState(prev => ({ 
+          ...prev, 
+          connectionStatus: 'healthy',
+          usingFallback: false 
+        }));
+
+        return response;
+      },
+      // 降级调用
+      async () => {
+        console.info('使用降级模式生成响应');
+        setState(prev => ({ 
+          ...prev, 
+          connectionStatus: 'degraded',
+          usingFallback: true 
+        }));
+        return await generateMockAIResponse(prompt);
+      }
+    );
+  }, [temperature, maxTokens, systemMessage]);
+
+  // 流式AI响应生成（使用智能调用和降级处理）
+  const generateStreamingResponse = useCallback(async (
+    prompt: string, 
+    onChunk?: (chunk: string) => void
+  ): Promise<void> => {
+    // 更新连接状态
+    const healthStatus = defaultHealthMonitor.getHealthStatus();
+    setState(prev => ({ 
+      ...prev, 
+      connectionStatus: healthStatus.status,
+      usingFallback: healthStatus.recommendedMode !== 'api'
+    }));
+
+    try {
+      await defaultHealthMonitor.smartCall(
+        // API调用
+        async () => {
+          if (!defaultGLMClient) {
+            throw new Error('GLM客户端未配置，请检查API密钥设置');
+          }
+
+          const streamResponse = await defaultGLMClient.simpleChatStream(
+            prompt,
+            systemMessage,
+            {
+              temperature,
+              maxTokens,
+              onStream: onChunk,
+              onComplete: (content) => {
+                setState(prev => ({
+                  ...prev,
+                  content,
+                  isStreaming: false,
+                  isComplete: true,
+                  connectionStatus: 'healthy',
+                  usingFallback: false
+                }));
+              },
+              onError: (error) => {
+                setState(prev => ({
+                  ...prev,
+                  isStreaming: false,
+                  error,
+                  connectionStatus: 'failed'
+                }));
+              }
+            }
+          );
+
+          // 初始化流式响应状态
+          setState(prev => ({
+            ...prev,
+            content: streamResponse.content,
+            isStreaming: !streamResponse.isComplete,
+            isComplete: streamResponse.isComplete,
+            error: streamResponse.error || null,
+            connectionStatus: 'healthy',
+            usingFallback: false
+          }));
+
+          return streamResponse;
+        },
+        // 降级调用 - 使用模拟流式响应
+        async () => {
+          console.info('使用降级模式进行流式响应');
+          setState(prev => ({ 
+            ...prev, 
+            connectionStatus: 'degraded',
+            usingFallback: true 
+          }));
+
+          const response = await generateMockAIResponse(prompt);
+          const characters = response.split('');
+          let currentContent = '';
+
+          const streamCharacters = (index: number) => {
+            if (abortControllerRef.current?.signal.aborted) {
+              return;
+            }
+
+            if (index >= characters.length) {
+              setState(prev => ({
+                ...prev,
+                isStreaming: false,
+                isComplete: true
+              }));
+              return;
+            }
+
+            // 添加字符到内容
+            const chunk = characters.slice(index, index + chunkSize).join('');
+            currentContent += chunk;
+
+            setState(prev => ({
+              ...prev,
+              content: currentContent
+            }));
+
+            onChunk?.(chunk);
+
+            // 继续下一个字符
+            timeoutRef.current = setTimeout(() => {
+              streamCharacters(index + chunkSize);
+            }, delay);
+          };
+
+          streamCharacters(0);
+          return { content: response, isComplete: false, error: undefined };
+        }
+      );
+
+    } catch (error) {
+      console.error('流式响应生成失败:', error);
+      setState(prev => ({
+        ...prev,
+        isStreaming: false,
+        error: error instanceof Error ? error.message : '生成内容时发生错误',
+        connectionStatus: 'failed'
+      }));
+    }
+  }, [temperature, maxTokens, systemMessage, chunkSize, delay]);
+
+  // 模拟AI响应生成（保持向后兼容）
+  const generateMockAIResponse = useCallback(async (prompt: string): Promise<string> => {
     // 模拟不同类型的响应
     const responses = {
       '写作建议': `基于您的内容，我建议以下几点改进：
@@ -166,8 +358,12 @@ export const useStreamingAI = (options: StreamingOptions = {}) => {
     return response;
   }, []);
 
-  // 开始流式输出
-  const startStreaming = useCallback(async (prompt: string, onChunk?: (chunk: string) => void) => {
+  // 开始流式输出（真实GLM API）
+  const startStreaming = useCallback(async (
+    prompt: string, 
+    onChunk?: (chunk: string) => void,
+    useRealAPI = true
+  ) => {
     // 取消之前的流式输出
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -182,46 +378,54 @@ export const useStreamingAI = (options: StreamingOptions = {}) => {
       content: '',
       isStreaming: true,
       isComplete: false,
-      error: null
+      error: null,
+      connectionStatus: 'unknown',
+      usingFallback: false
     });
 
     try {
-      const response = await generateAIResponse(prompt);
-      const characters = response.split('');
-      let currentContent = '';
+      if (useRealAPI && defaultGLMClient) {
+        // 使用真实GLM API进行流式生成
+        await generateStreamingResponse(prompt, onChunk);
+      } else {
+        // 使用模拟响应（向后兼容）
+        const response = await generateMockAIResponse(prompt);
+        const characters = response.split('');
+        let currentContent = '';
 
-      const streamCharacters = (index: number) => {
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
+        const streamCharacters = (index: number) => {
+          if (abortControllerRef.current?.signal.aborted) {
+            return;
+          }
 
-        if (index >= characters.length) {
+          if (index >= characters.length) {
+            setState(prev => ({
+              ...prev,
+              isStreaming: false,
+              isComplete: true
+            }));
+            return;
+          }
+
+          // 添加字符到内容
+          const chunk = characters.slice(index, index + chunkSize).join('');
+          currentContent += chunk;
+
           setState(prev => ({
             ...prev,
-            isStreaming: false,
-            isComplete: true
+            content: currentContent
           }));
-          return;
-        }
 
-        // 添加字符到内容
-        const chunk = characters.slice(index, index + chunkSize).join('');
-        currentContent += chunk;
+          onChunk?.(chunk);
 
-        setState(prev => ({
-          ...prev,
-          content: currentContent
-        }));
+          // 继续下一个字符
+          timeoutRef.current = setTimeout(() => {
+            streamCharacters(index + chunkSize);
+          }, delay);
+        };
 
-        onChunk?.(chunk);
-
-        // 继续下一个字符
-        timeoutRef.current = setTimeout(() => {
-          streamCharacters(index + chunkSize);
-        }, delay);
-      };
-
-      streamCharacters(0);
+        streamCharacters(0);
+      }
 
     } catch (error) {
       setState(prev => ({
@@ -230,7 +434,49 @@ export const useStreamingAI = (options: StreamingOptions = {}) => {
         error: error instanceof Error ? error.message : '生成内容时发生错误'
       }));
     }
-  }, [delay, chunkSize, generateAIResponse]);
+  }, [delay, chunkSize, generateStreamingResponse, generateMockAIResponse]);
+
+  // 非流式生成（直接获取完整响应）
+  const generateContent = useCallback(async (
+    prompt: string,
+    useRealAPI = true
+  ): Promise<string> => {
+    setState(prev => ({
+      ...prev,
+      isStreaming: true,
+      error: null
+    }));
+
+    try {
+      let response: string;
+      
+      if (useRealAPI && defaultGLMClient) {
+        response = await generateAIResponse(prompt);
+      } else {
+        response = await generateMockAIResponse(prompt);
+      }
+
+      setState(prev => ({
+        ...prev,
+        content: response,
+        isStreaming: false,
+        isComplete: true
+      }));
+
+      return response;
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '生成内容时发生错误';
+      
+      setState(prev => ({
+        ...prev,
+        isStreaming: false,
+        error: errorMessage
+      }));
+
+      throw new Error(errorMessage);
+    }
+  }, [generateAIResponse, generateMockAIResponse]);
 
   // 停止流式输出
   const stopStreaming = useCallback(() => {
@@ -255,15 +501,86 @@ export const useStreamingAI = (options: StreamingOptions = {}) => {
       content: '',
       isStreaming: false,
       isComplete: false,
-      error: null
+      error: null,
+      connectionStatus: 'unknown',
+      usingFallback: false
     });
   }, [stopStreaming]);
+
+  // 测试API连接
+  const testConnection = useCallback(async (): Promise<{
+    success: boolean;
+    latency: number;
+    error?: string;
+  }> => {
+    if (!defaultGLMClient) {
+      return {
+        success: false,
+        latency: 0,
+        error: 'GLM客户端未配置'
+      };
+    }
+
+    try {
+      const result = await defaultGLMClient.testConnection();
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        latency: 0,
+        error: error instanceof Error ? error.message : '连接测试失败'
+      };
+    }
+  }, []);
+
+  // 获取客户端状态
+  const getClientStatus = useCallback(() => {
+    return {
+      isConfigured: !!defaultGLMClient,
+      modelInfo: defaultGLMClient?.getModelInfo(),
+    };
+  }, []);
+
+  // 获取API健康状态
+  const getHealthStatus = useCallback(() => {
+    return defaultHealthMonitor.getHealthStatus();
+  }, []);
+
+  // 获取GLM客户端状态
+  const getGLMStatus = useCallback(() => {
+    return defaultHealthMonitor.getGLMClientStatus();
+  }, []);
+
+  // 强制使用降级模式
+  const forceFallbackMode = useCallback(() => {
+    defaultHealthMonitor.forceFallbackMode();
+    setState(prev => ({
+      ...prev,
+      connectionStatus: 'degraded',
+      usingFallback: true
+    }));
+  }, []);
+
+  // 强制使用API模式
+  const forceAPIMode = useCallback(() => {
+    defaultHealthMonitor.forceAPIMode();
+  }, []);
 
   return {
     ...state,
     startStreaming,
+    generateContent,
     stopStreaming,
-    reset
+    reset,
+    testConnection,
+    getClientStatus,
+    getHealthStatus,
+    getGLMStatus,
+    forceFallbackMode,
+    forceAPIMode,
+    // 便捷方法
+    isReady: !!defaultGLMClient || state.usingFallback,
+    hasValidConfig: !!defaultGLMClient,
   };
 };
 

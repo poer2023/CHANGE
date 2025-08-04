@@ -15,6 +15,9 @@ import {
   LoginPage,
   RegisterPage
 } from '@/pages';
+import AIWritingPage from '@/pages/ai-writing/AIWritingPage';
+import GLMChatTest from '@/components/test/GLMChatTest';
+import GLMContentTest from '@/components/test/GLMContentTest';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import NotificationToast from '@/components/NotificationToast';
 
@@ -35,11 +38,16 @@ function App() {
             {/* Editor Routes */}
             <Route path="/editor/:id" element={<EditorPage />} />
             <Route path="/modular-editor/:id" element={<ModularEditorPage />} />
+            <Route path="/ai-writing/:id" element={<AIWritingPage />} />
             <Route path="/create" element={<CreatePage />} />
             
             {/* Demo Routes */}
             <Route path="/demo" element={<ModularEditorDemo />} />
             <Route path="/agent-demo" element={<AgentDemo />} />
+            
+            {/* GLM API Test Routes */}
+            <Route path="/test/glm-chat" element={<GLMChatTest />} />
+            <Route path="/test/glm-content" element={<GLMContentTest />} />
             
             {/* Dashboard Routes */}
             <Route path="/dashboard" element={<Layout />}>

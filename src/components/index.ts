@@ -17,3 +17,10 @@ export { default as StructureTree } from './editor/StructureTree';
 export { default as ModuleCard } from './editor/ModuleCard';
 export { default as ModuleDragDrop } from './editor/ModuleDragDrop';
 export { default as TemplateLibrary } from './editor/TemplateLibrary';
+export * from './editor';
+
+// Analytics components
+export * from './analytics';
+
+// Analysis components
+export * from './analysis';

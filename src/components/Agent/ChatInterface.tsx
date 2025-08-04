@@ -3,6 +3,7 @@ import { Agent, AgentMessage, ChatSession } from '../../types';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
 import ChatMessage from './ChatMessage';
+import glmClient from '../../services/glmClient';
 
 interface ChatInterfaceProps {
   session: ChatSession | undefined;
@@ -11,6 +12,7 @@ interface ChatInterfaceProps {
   isLoading?: boolean;
   selectedText?: string;
   className?: string;
+  enableStreaming?: boolean;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -19,12 +21,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage,
   isLoading = false,
   selectedText = '',
-  className = ''
+  className = '',
+  enableStreaming = true
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [isComposing, setIsComposing] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const streamingControllerRef = useRef<AbortController | null>(null);
 
   // 自动滚动到底部
   const scrollToBottom = () => {
@@ -40,11 +46,92 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     inputRef.current?.focus();
   }, [session]);
 
+  // 清理流式控制器
+  useEffect(() => {
+    return () => {
+      if (streamingControllerRef.current) {
+        streamingControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   // 处理发送消息
-  const handleSendMessage = () => {
-    if (inputValue.trim() && !isLoading) {
-      onSendMessage(inputValue.trim());
+  const handleSendMessage = async () => {
+    if (inputValue.trim() && !isLoading && !isStreaming) {
+      const message = inputValue.trim();
       setInputValue('');
+
+      if (enableStreaming) {
+        await handleStreamingMessage(message);
+      } else {
+        onSendMessage(message);
+      }
+    }
+  };
+
+  // 处理流式消息
+  const handleStreamingMessage = async (message: string) => {
+    if (!session) return;
+
+    setIsStreaming(true);
+    setStreamingMessage('');
+
+    // 取消之前的流式请求
+    if (streamingControllerRef.current) {
+      streamingControllerRef.current.abort();
+    }
+
+    streamingControllerRef.current = new AbortController();
+
+    try {
+      // 添加用户消息
+      const userMessage: AgentMessage = {
+        id: `msg-${Date.now()}-user`,
+        content: message,
+        role: 'user',
+        timestamp: new Date(),
+        messageType: 'text',
+        agentRole: agent.role
+      };
+
+      // 这里应该通过回调更新会话
+      // 暂时先添加到本地状态，实际使用时需要通过props传递更新函数
+
+      let accumulatedContent = '';
+      
+      // 调用流式API
+      for await (const chunk of glmClient.agentChatStream(agent.role, message, selectedText)) {
+        if (streamingControllerRef.current?.signal.aborted) {
+          break;
+        }
+        
+        accumulatedContent += chunk;
+        setStreamingMessage(accumulatedContent);
+        scrollToBottom();
+      }
+
+      // 流式完成后，通过正常渠道发送消息
+      if (!streamingControllerRef.current?.signal.aborted) {
+        onSendMessage(message);
+      }
+
+    } catch (error) {
+      console.error('流式聊天失败:', error);
+      // 降级到普通消息发送
+      onSendMessage(message);
+    } finally {
+      setIsStreaming(false);
+      setStreamingMessage('');
+      streamingControllerRef.current = null;
+    }
+  };
+
+  // 停止流式输出
+  const stopStreaming = () => {
+    if (streamingControllerRef.current) {
+      streamingControllerRef.current.abort();
+      setIsStreaming(false);
+      setStreamingMessage('');
     }
   };
 
@@ -126,8 +213,33 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               />
             ))}
             
+            {/* 流式消息显示 */}
+            {isStreaming && streamingMessage && (
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm">{agent.avatar}</span>
+                </div>
+                <div className="flex-1">
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 relative">
+                    <div className="prose prose-sm max-w-none">
+                      {streamingMessage}
+                      <span className="inline-block w-2 h-4 bg-blue-500 animate-pulse ml-1"></span>
+                    </div>
+                    <button
+                      onClick={stopStreaming}
+                      className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-xs"
+                      title="停止生成"
+                    >
+                      ⏹️
+                    </button>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1 ml-2">正在生成回复...</div>
+                </div>
+              </div>
+            )}
+
             {/* 加载中指示器 */}
-            {isLoading && (
+            {(isLoading || isStreaming) && !streamingMessage && (
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-sm">{agent.avatar}</span>
@@ -139,7 +251,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                     </div>
-                    <span className="text-xs text-gray-500">正在思考...</span>
+                    <span className="text-xs text-gray-500">
+                      {isStreaming ? '正在连接...' : '正在思考...'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -183,16 +297,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={() => setIsComposing(false)}
               placeholder={`向${agent.name}提问...`}
-              disabled={isLoading}
+              disabled={isLoading || isStreaming}
               className="w-full"
             />
           </div>
           <Button
             onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isLoading}
+            disabled={!inputValue.trim() || isLoading || isStreaming}
             className="px-4"
           >
-            {isLoading ? (
+            {isLoading || isStreaming ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             ) : (
               '发送'

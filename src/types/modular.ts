@@ -86,7 +86,7 @@ export interface ModularEditorState {
   showDependencyView: boolean;
   bulkSelection: string[];
   viewMode: 'card' | 'list' | 'outline';
-  sidebarTab: 'structure' | 'properties' | 'ai' | 'templates';
+  sidebarTab: 'structure' | 'properties' | 'ai' | 'templates' | 'ai-agent' | 'ai-assistant' | 'suggestions' | 'smart-templates';
 }
 
 export interface TemplateCategory {

@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   Search, 
@@ -15,22 +16,35 @@ import {
   Network,
   Lightbulb,
   BarChart3,
-  X
+  X,
+  ArrowLeft,
+  ArrowRight,
+  PenTool,
+  Zap
 } from 'lucide-react';
 import StructureTree from './StructureTree';
 import ModuleCard from './ModuleCard';
 import ModuleDragDrop from './ModuleDragDrop';
 import DependencyVisualization from './DependencyVisualization';
 import TemplateLibrary from './TemplateLibrary';
+import AIWritingAssistant from './AIWritingAssistant';
+import ContentSuggestions from './ContentSuggestions';
+import SmartTemplates from './SmartTemplates';
 import { PaperModule, ModularEditorState, ModuleType, ModuleTemplate } from '@/types/modular';
 import { usePaperStore } from '@/store';
+import { useAIWritingAssist, AISuggestion } from '@/hooks/useAIWritingAssist';
+import { useEditorPerformance, useOptimizedContentAnalysis } from '@/hooks/useEditorPerformance';
+import { useEditorAgentIntegration } from '@/hooks/useEditorAgentIntegration';
+import SmartFeaturesPanel from './SmartFeaturesPanel';
+import AgentPanel from '../Agent/AgentPanel';
 
 interface ModularEditorProps {
   paperId: string;
 }
 
 const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
-  const { currentPaper } = usePaperStore();
+  const { currentPaper, workflowState, navigateBack, navigateForward, setWorkflowMode } = usePaperStore();
+  const navigate = useNavigate();
   
   const [editorState, setEditorState] = useState<ModularEditorState>({
     modules: [],
@@ -43,10 +57,83 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
     sidebarTab: 'structure'
   });
 
+  // AI写作助手
+  const {
+    suggestions,
+    currentAnalysis,
+    isAnalyzing,
+    performRealTimeAnalysis,
+    generateContinuation,
+    applySuggestion,
+    dismissSuggestion
+  } = useAIWritingAssist();
+
+  // 性能优化
+  const {
+    metrics,
+    warnings,
+    debouncedUpdate,
+    trackRenderStart,
+    trackRenderEnd,
+    config: performanceConfig
+  } = useEditorPerformance({
+    debounceDelay: 300,
+    virtualScrollThreshold: 20,
+    lazyLoadingEnabled: true
+  });
+
+  // 优化的内容分析
+  const { analyzeContent } = useOptimizedContentAnalysis();
+
+  // 编辑器与Agent系统集成
+  const {
+    handleTextSelection: handleAgentTextSelection,
+    applyAgentSuggestion,
+    generateSmartSuggestions,
+    getEditorSummary
+  } = useEditorAgentIntegration();
+
   const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDependencyVisualization, setShowDependencyVisualization] = useState(false);
+
+  // 设置当前工作流模式
+  React.useEffect(() => {
+    setWorkflowMode('modular');
+  }, [setWorkflowMode]);
+
+  // 监听文本选择
+  React.useEffect(() => {
+    const handleTextSelection = () => {
+      const selection = window.getSelection();
+      const selectedText = selection?.toString() || '';
+      setSelectedText(selectedText);
+      // 同步到Agent系统
+      handleAgentTextSelection(selectedText);
+    };
+
+    document.addEventListener('selectionchange', handleTextSelection);
+    return () => {
+      document.removeEventListener('selectionchange', handleTextSelection);
+    };
+  }, [handleAgentTextSelection]);
+
+  // 导航处理函数
+  const handleNavigateBack = () => {
+    const backPath = navigateBack();
+    if (backPath) {
+      navigate(backPath);
+    }
+  };
+
+  const handleNavigateForward = () => {
+    const forwardPath = navigateForward();
+    if (forwardPath) {
+      navigate(forwardPath);
+    }
+  };
 
   // 初始化模块数据
   React.useEffect(() => {
@@ -189,21 +276,38 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
   }, []);
 
   const handleModuleUpdate = useCallback((moduleId: string, updates: Partial<PaperModule>) => {
-    setEditorState(prev => ({
-      ...prev,
-      modules: prev.modules.map(module =>
-        module.id === moduleId
-          ? { 
-              ...module, 
-              ...updates, 
-              updatedAt: new Date(),
-              // 保持wordCount数据的一致性
-              wordCount: updates.wordCount !== undefined ? updates.wordCount : module.wordCount
-            }
-          : module
-      )
-    }));
-  }, []);
+    // 使用性能优化的防抖更新
+    debouncedUpdate(() => {
+      trackRenderStart();
+      
+      setEditorState(prev => ({
+        ...prev,
+        modules: prev.modules.map(module =>
+          module.id === moduleId
+            ? { 
+                ...module, 
+                ...updates, 
+                updatedAt: new Date(),
+                // 保持wordCount数据的一致性
+                wordCount: updates.wordCount !== undefined ? updates.wordCount : module.wordCount
+              }
+            : module
+        )
+      }));
+
+      trackRenderEnd();
+    });
+
+    // 触发优化的AI实时分析
+    if (updates.content !== undefined) {
+      const module = editorState.modules.find(m => m.id === moduleId);
+      if (module) {
+        analyzeContent(updates.content, (content: string) => {
+          performRealTimeAnalysis(content, module.type, moduleId);
+        });
+      }
+    }
+  }, [editorState.modules, debouncedUpdate, trackRenderStart, trackRenderEnd, analyzeContent, performRealTimeAnalysis]);
 
   const handleModuleReorder = useCallback((dragIndex: number, hoverIndex: number) => {
     setEditorState(prev => {
@@ -300,6 +404,40 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
   }, []);
 
   // 智能填充
+  // 处理AI建议应用
+  const handleSuggestionApply = useCallback((suggestion: AISuggestion) => {
+    const module = editorState.modules.find(m => m.id === suggestion.moduleId);
+    if (module) {
+      const updatedContent = applySuggestion(suggestion.id, module.content);
+      handleModuleUpdate(module.id, { content: updatedContent });
+    }
+  }, [editorState.modules, applySuggestion, handleModuleUpdate]);
+
+  // 处理Agent建议应用到编辑器
+  const handleAgentSuggestionApply = useCallback((suggestionText: string) => {
+    applyAgentSuggestion(suggestionText, selectedText);
+    // 自动生成新的智能建议
+    setTimeout(() => {
+      generateSmartSuggestions();
+    }, 1000);
+  }, [applyAgentSuggestion, selectedText, generateSmartSuggestions]);
+
+  // 获取当前选中模块的内容作为上下文
+  const getCurrentModuleContext = useCallback(() => {
+    if (editorState.selectedModuleId) {
+      const module = editorState.modules.find(m => m.id === editorState.selectedModuleId);
+      return module?.content || '';
+    }
+    return editorState.modules.map(m => `## ${m.title}\n${m.content}`).join('\n\n');
+  }, [editorState.selectedModuleId, editorState.modules]);
+
+  // 处理智能模板选择
+  const handleSmartTemplateSelect = useCallback((template: any) => {
+    // 应用智能模板逻辑
+    console.log('Selected smart template:', template);
+    // 这里可以集成更复杂的模板应用逻辑
+  }, []);
+
   const applySmartFill = useCallback((template: any, userInput: any) => {
     const generateSmartContent = (section: any) => {
       const { researchField, topic, methodology, keywords, academicLevel } = userInput;
@@ -424,6 +562,42 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
     <div className="h-screen flex flex-col bg-gray-50">
       {/* 顶部工具栏 */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+        {/* 导航栏 */}
+        <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+          <div className="flex items-center space-x-4">
+            {workflowState.canNavigateBack && (
+              <button
+                onClick={handleNavigateBack}
+                className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {workflowState.entryPoint === 'form-basic' ? '返回表单' : '返回'}
+              </button>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                模块化编辑器
+              </span>
+              {workflowState.entryPoint === 'form-basic' && (
+                <span className="text-xs text-gray-400">• 来自表单流程</span>
+              )}
+            </div>
+            {workflowState.canNavigateForward && currentPaper && (
+              <button
+                onClick={handleNavigateForward}
+                className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              >
+                <PenTool className="h-4 w-4 mr-2" />
+                进入AI写作
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -585,19 +759,31 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
                 <nav className="flex">
                   {[
                     { key: 'properties', label: '属性' },
-                    { key: 'ai', label: 'AI建议' },
-                    { key: 'templates', label: '模板' }
+                    { key: 'ai-agent', label: 'AI助手' },
+                    { key: 'ai-assistant', label: 'AI写作' },
+                    { key: 'suggestions', label: '建议' },
+                    { key: 'smart-templates', label: '智能模板' }
                   ].map((tab) => (
                     <button
                       key={tab.key}
                       onClick={() => setEditorState(prev => ({ ...prev, sidebarTab: tab.key as any }))}
-                      className={`flex-1 px-4 py-3 text-sm font-medium ${
+                      className={`flex-1 px-2 py-3 text-xs font-medium ${
                         editorState.sidebarTab === tab.key
                           ? 'text-blue-600 border-b-2 border-blue-600'
                           : 'text-gray-500 hover:text-gray-700'
                       }`}
                     >
                       {tab.label}
+                      {tab.key === 'suggestions' && suggestions.length > 0 && (
+                        <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                          {suggestions.length}
+                        </span>
+                      )}
+                      {tab.key === 'ai-agent' && selectedText && (
+                        <span className="ml-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                          •
+                        </span>
+                      )}
                     </button>
                   ))}
                 </nav>
@@ -700,59 +886,42 @@ const ModularEditor: React.FC<ModularEditorProps> = ({ paperId }) => {
                   </div>
                 )}
 
-                {editorState.sidebarTab === 'ai' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-gray-900">AI建议</h3>
-                      <button
-                        onClick={() => setShowDependencyVisualization(true)}
-                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center space-x-1"
-                      >
-                        <Lightbulb className="h-3 w-3" />
-                        <span>查看依赖建议</span>
-                      </button>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="bg-blue-50 p-3 rounded-lg">
-                        <p className="text-sm text-blue-900 font-medium mb-1">结构建议</p>
-                        <p className="text-sm text-blue-700">建议在引言部分添加更多研究背景</p>
-                        <button className="mt-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">
-                          应用建议
-                        </button>
-                      </div>
-                      
-                      <div className="bg-green-50 p-3 rounded-lg">
-                        <p className="text-sm text-green-900 font-medium mb-1">内容检查</p>
-                        <p className="text-sm text-green-700">方法论模块内容完整度良好</p>
-                      </div>
-                      
-                      <div className="bg-yellow-50 p-3 rounded-lg">
-                        <p className="text-sm text-yellow-900 font-medium mb-1">依赖关系</p>
-                        <p className="text-sm text-yellow-700">检测到缺少引言模块依赖</p>
-                        <button className="mt-2 px-2 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700">
-                          修复依赖
-                        </button>
-                      </div>
-                    </div>
+                {editorState.sidebarTab === 'ai-agent' && (
+                  <div className="h-full flex flex-col">
+                    <AgentPanel 
+                      className="h-full"
+                      selectedText={selectedText}
+                      documentContext={getCurrentModuleContext()}
+                      onApplySuggestion={handleAgentSuggestionApply}
+                    />
                   </div>
                 )}
 
-                {editorState.sidebarTab === 'templates' && (
-                  <TemplateLibrary
-                    onTemplateSelect={(template) => {
-                      // 应用模板逻辑
-                      console.log('Selected template:', template);
-                      applyTemplate(template);
-                    }}
-                    onSmartFill={(template: ModuleTemplate, userInput: any) => {
-                      // 智能填充逻辑
-                      console.log('Smart fill:', template, userInput);
-                      applySmartFill(template, userInput);
-                    }}
-                    currentModules={editorState.modules}
+                {editorState.sidebarTab === 'ai-assistant' && (
+                  <AIWritingAssistant
+                    selectedModule={editorState.modules.find(m => m.id === editorState.selectedModuleId) || null}
+                    onModuleUpdate={handleModuleUpdate}
+                    onSuggestionApply={handleSuggestionApply}
                   />
                 )}
+
+                {editorState.sidebarTab === 'suggestions' && (
+                  <ContentSuggestions
+                    suggestions={suggestions}
+                    onApplySuggestion={handleSuggestionApply}
+                    onDismissSuggestion={dismissSuggestion}
+                    isCompact={true}
+                  />
+                )}
+
+                {editorState.sidebarTab === 'smart-templates' && (
+                  <SmartTemplates
+                    onTemplateSelect={handleSmartTemplateSelect}
+                    onTemplatePreview={(template) => console.log('Preview template:', template)}
+                    compactMode={true}
+                  />
+                )}
+
               </div>
             </>
           )}

@@ -1,5 +1,15 @@
 export { default as RichTextEditor } from './RichTextEditor';
 export { default as DocumentOutline } from './DocumentOutline';
-export { default as AgentPanel } from './AgentPanel';
+export { default as EditorAgentPanel } from './AgentPanel';
 export { default as ProgressTracker } from './ProgressTracker';
 export { default as AutoSaveIndicator, useAutoSave } from './AutoSaveIndicator';
+export { default as AIWritingAssistant } from './AIWritingAssistant';
+export { default as ContentSuggestions } from './ContentSuggestions';
+export { default as SmartTemplates } from './SmartTemplates';
+export { default as SmartFeaturesPanel } from './SmartFeaturesPanel';
+export { default as ModularEditor } from './ModularEditor';
+export { default as StructureTree } from './StructureTree';
+export { default as ModuleCard } from './ModuleCard';
+export { default as ModuleDragDrop } from './ModuleDragDrop';
+export { default as TemplateLibrary } from './TemplateLibrary';
+export { default as DependencyVisualization } from './DependencyVisualization';

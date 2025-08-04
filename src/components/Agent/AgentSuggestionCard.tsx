@@ -18,6 +18,8 @@ const AgentSuggestionCard: React.FC<AgentSuggestionCardProps> = ({
 }) => {
   const [isDismissed, setIsDismissed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [feedbackGiven, setFeedbackGiven] = useState<'helpful' | 'not-helpful' | null>(null);
 
   if (isDismissed) {
     return null;
@@ -85,16 +87,32 @@ const AgentSuggestionCard: React.FC<AgentSuggestionCardProps> = ({
   };
 
   // 处理操作点击
-  const handleActionClick = () => {
-    if (suggestion.action) {
-      onActionClick?.(suggestion.action);
+  const handleActionClick = async () => {
+    if (suggestion.action && !isActionLoading) {
+      setIsActionLoading(true);
+      try {
+        await onActionClick?.(suggestion.action);
+        // 模拟延迟，给用户反馈
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        console.error('执行操作失败:', error);
+      } finally {
+        setIsActionLoading(false);
+      }
     }
+  };
+  
+  // 处理反馈
+  const handleFeedback = (type: 'helpful' | 'not-helpful') => {
+    setFeedbackGiven(type);
+    console.log(`用户反馈建议 ${suggestion.id} 为:`, type);
   };
 
   return (
     <Card className={`
-      border transition-all duration-200 hover:shadow-sm
+      border transition-all duration-300 hover:shadow-md group relative overflow-hidden
       ${style.borderColor} ${style.bgColor} ${className}
+      ${isExpanded ? 'shadow-lg' : 'shadow-sm'}
     `}>
       <div className="p-3">
         {/* 建议头部 */}
@@ -125,16 +143,20 @@ const AgentSuggestionCard: React.FC<AgentSuggestionCardProps> = ({
               size="sm"
               variant="ghost"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1 h-auto text-xs hover:bg-gray-200"
+              className="p-1 h-auto text-xs hover:bg-white hover:bg-opacity-70 transition-all duration-200"
               title={isExpanded ? "收起" : "展开"}
             >
-              {isExpanded ? '▲' : '▼'}
+              <span className={`transition-transform duration-200 ${
+                isExpanded ? 'rotate-180' : ''
+              }`}>
+                ▼
+              </span>
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={handleDismiss}
-              className="p-1 h-auto text-xs hover:bg-gray-200"
+              className="p-1 h-auto text-xs hover:bg-red-100 hover:text-red-600 transition-all duration-200"
               title="忽略建议"
             >
               ✕
@@ -143,10 +165,27 @@ const AgentSuggestionCard: React.FC<AgentSuggestionCardProps> = ({
         </div>
 
         {/* 建议内容 */}
-        <div className={`${style.textColor} ${isExpanded ? '' : 'line-clamp-2'}`}>
-          <div className="text-sm leading-relaxed whitespace-pre-wrap">
+        <div className={`${style.textColor} transition-all duration-300`}>
+          <div className={`text-sm leading-relaxed whitespace-pre-wrap ${
+            isExpanded ? '' : 'line-clamp-2'
+          }`}>
             {suggestion.content}
           </div>
+          
+          {/* 显示更多按钮 */}
+          {suggestion.content.length > 100 && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className={`mt-2 text-xs underline transition-colors duration-200 ${
+                style.textColor.includes('blue') ? 'hover:text-blue-800' :
+                style.textColor.includes('green') ? 'hover:text-green-800' :
+                style.textColor.includes('red') ? 'hover:text-red-800' :
+                'hover:text-gray-800'
+              }`}
+            >
+              {isExpanded ? '收起' : '查看更多'}
+            </button>
+          )}
         </div>
 
         {/* 操作按钮 */}
@@ -155,16 +194,32 @@ const AgentSuggestionCard: React.FC<AgentSuggestionCardProps> = ({
             <Button
               size="sm"
               onClick={handleActionClick}
+              disabled={isActionLoading}
               className={`
-                w-full text-sm transition-colors
-                ${style.textColor.includes('blue') ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}
-                ${style.textColor.includes('green') ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
-                ${style.textColor.includes('red') ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
-                ${style.textColor.includes('yellow') ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : ''}
+                w-full text-sm transition-all duration-200 relative overflow-hidden
+                ${style.textColor.includes('blue') ? 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400' : ''}
+                ${style.textColor.includes('green') ? 'bg-green-600 hover:bg-green-700 text-white disabled:bg-green-400' : ''}
+                ${style.textColor.includes('red') ? 'bg-red-600 hover:bg-red-700 text-white disabled:bg-red-400' : ''}
+                ${style.textColor.includes('yellow') ? 'bg-yellow-600 hover:bg-yellow-700 text-white disabled:bg-yellow-400' : ''}
+                ${isActionLoading ? 'cursor-not-allowed' : 'hover:shadow-md'}
               `}
             >
-              <span className="mr-2">{suggestion.action.icon}</span>
-              {suggestion.action.label}
+              {isActionLoading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>执行中...</span>
+                </div>
+              ) : (
+                <>
+                  <span className="mr-2">{suggestion.action.icon}</span>
+                  {suggestion.action.label}
+                </>
+              )}
+              
+              {/* 按钮波纹动画 */}
+              {!isActionLoading && (
+                <span className="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
+              )}
             </Button>
           </div>
         )}
@@ -193,9 +248,8 @@ const AgentSuggestionCard: React.FC<AgentSuggestionCardProps> = ({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="flex-1 text-xs"
+                  className="flex-1 text-xs hover:bg-blue-50 hover:border-blue-300 transition-colors"
                   onClick={() => {
-                    // 复制建议内容
                     navigator.clipboard.writeText(suggestion.content);
                   }}
                 >
@@ -203,27 +257,38 @@ const AgentSuggestionCard: React.FC<AgentSuggestionCardProps> = ({
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="flex-1 text-xs"
-                  onClick={() => {
-                    // 标记为有用
-                    console.log('标记建议为有用:', suggestion.id);
-                  }}
+                  variant={feedbackGiven === 'helpful' ? 'default' : 'outline'}
+                  className={`flex-1 text-xs transition-colors ${
+                    feedbackGiven === 'helpful' 
+                      ? 'bg-green-100 border-green-300 text-green-700' 
+                      : 'hover:bg-green-50 hover:border-green-300'
+                  }`}
+                  onClick={() => handleFeedback('helpful')}
+                  disabled={feedbackGiven !== null}
                 >
-                  👍 有用
+                  👍 {feedbackGiven === 'helpful' ? '已有用' : '有用'}
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="flex-1 text-xs"
-                  onClick={() => {
-                    // 请求更详细的解释
-                    console.log('请求详细解释:', suggestion.id);
-                  }}
+                  variant={feedbackGiven === 'not-helpful' ? 'default' : 'outline'}
+                  className={`flex-1 text-xs transition-colors ${
+                    feedbackGiven === 'not-helpful' 
+                      ? 'bg-red-100 border-red-300 text-red-700' 
+                      : 'hover:bg-red-50 hover:border-red-300'
+                  }`}
+                  onClick={() => handleFeedback('not-helpful')}
+                  disabled={feedbackGiven !== null}
                 >
-                  📖 详细
+                  👎 {feedbackGiven === 'not-helpful' ? '已反馈' : '无用'}
                 </Button>
               </div>
+              
+              {/* 反馈感谢 */}
+              {feedbackGiven && (
+                <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700 text-center animate-fade-in">
+                  🙏 感谢您的反馈！这将帮助我们改进 AI 建议质量。
+                </div>
+              )}
             </div>
           </div>
         )}

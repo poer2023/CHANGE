@@ -14,6 +14,14 @@ interface FormState {
   data: Partial<FormData>;
 }
 
+interface WorkflowState {
+  currentMode: 'form' | 'modular' | 'ai-writing' | null;
+  previousMode: 'form' | 'modular' | 'ai-writing' | null;
+  entryPoint: 'create' | 'form-basic' | 'direct' | null;
+  canNavigateBack: boolean;
+  canNavigateForward: boolean;
+}
+
 interface PaperState {
   papers: Paper[];
   currentPaper: Paper | null;
@@ -22,6 +30,7 @@ interface PaperState {
   editorState: EditorState;
   formData: Partial<FormData>;
   formState: FormState;
+  workflowState: WorkflowState;
 }
 
 interface PaperActions {
@@ -37,6 +46,9 @@ interface PaperActions {
   resetForm: () => void;
   createPaperFromForm: (formData: FormData) => Promise<Paper>;
   clearError: () => void;
+  setWorkflowMode: (mode: 'form' | 'modular' | 'ai-writing', entryPoint?: 'create' | 'form-basic' | 'direct') => void;
+  navigateBack: () => string | null;
+  navigateForward: () => string | null;
 }
 
 type PaperStore = PaperState & PaperActions;
@@ -62,6 +74,13 @@ export const usePaperStore = create<PaperStore>((set, get) => ({
       { id: 3, title: '生成论文', description: '生成最终论文', component: 'generate', isCompleted: false, isActive: false }
     ],
     data: {}
+  },
+  workflowState: {
+    currentMode: null,
+    previousMode: null,
+    entryPoint: null,
+    canNavigateBack: false,
+    canNavigateForward: false
   },
 
   fetchPapers: async () => {
@@ -290,6 +309,67 @@ export const usePaperStore = create<PaperStore>((set, get) => ({
     } catch (error) {
       set({ error: 'Failed to create paper from form', loading: false });
       throw error;
+    }
+  },
+
+  setWorkflowMode: (mode: 'form' | 'modular' | 'ai-writing', entryPoint?: 'create' | 'form-basic' | 'direct') => {
+    set(state => ({
+      workflowState: {
+        ...state.workflowState,
+        previousMode: state.workflowState.currentMode,
+        currentMode: mode,
+        entryPoint: entryPoint || state.workflowState.entryPoint,
+        canNavigateBack: true,
+        canNavigateForward: mode !== 'ai-writing'
+      }
+    }));
+  },
+
+  navigateBack: () => {
+    const state = get();
+    const { workflowState, currentPaper } = state;
+    
+    if (!workflowState.canNavigateBack) return null;
+    
+    switch (workflowState.currentMode) {
+      case 'modular':
+        if (workflowState.entryPoint === 'form-basic') {
+          return '/form';
+        } else if (workflowState.entryPoint === 'create') {
+          return '/create';
+        }
+        return '/';
+      case 'ai-writing':
+        if (currentPaper) {
+          return `/modular-editor/${currentPaper.id}`;
+        }
+        return '/form';
+      case 'form':
+        return '/create';
+      default:
+        return '/';
+    }
+  },
+
+  navigateForward: () => {
+    const state = get();
+    const { workflowState, currentPaper } = state;
+    
+    if (!workflowState.canNavigateForward) return null;
+    
+    switch (workflowState.currentMode) {
+      case 'form':
+        if (currentPaper) {
+          return `/ai-writing/${currentPaper.id}`;
+        }
+        return null;
+      case 'modular':
+        if (currentPaper) {
+          return `/ai-writing/${currentPaper.id}`;
+        }
+        return null;
+      default:
+        return null;
     }
   },
 }));

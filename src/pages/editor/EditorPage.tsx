@@ -20,10 +20,10 @@ import { usePaperStore } from '@/store';
 import {
   RichTextEditor,
   DocumentOutline,
-  AgentPanel,
   ProgressTracker,
   AutoSaveIndicator
 } from '@/components/editor';
+import { AgentPanel } from '@/components/Agent';
 import { 
   exportToMarkdown, 
   exportToHTML, 

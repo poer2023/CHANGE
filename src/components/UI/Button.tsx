@@ -9,6 +9,7 @@ interface ButtonProps extends ComponentProps {
   onClick?: () => void;
   type?: 'button' | 'submit' | 'reset';
   title?: string;
+  style?: React.CSSProperties;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -20,6 +21,7 @@ export const Button: React.FC<ButtonProps> = ({
   loading = false,
   onClick,
   type = 'button',
+  style,
   ...props
 }) => {
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
@@ -54,6 +56,7 @@ export const Button: React.FC<ButtonProps> = ({
       className={classes}
       disabled={disabled || loading}
       onClick={onClick}
+      style={style}
       {...props}
     >
       {loading && (

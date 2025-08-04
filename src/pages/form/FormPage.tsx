@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Plus, Trash2, Edit3, BookOpen, ExternalLink, FileText, Zap, Settings, Target } from 'lucide-react';
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, Plus, Trash2, Edit3, BookOpen, ExternalLink, FileText, Zap, Settings, Target, LayoutGrid, Sparkles } from 'lucide-react';
 import { usePaperStore } from '@/store';
 import OutlinePreference from '@/components/OutlinePreference';
 import { FormValidationError, FormData } from '@/types/form';
 
 const FormPage: React.FC = () => {
   const navigate = useNavigate();
-  const { formState, setFormStep, setFormData, createPaperFromForm } = usePaperStore();
+  const { formState, setFormStep, setFormData, createPaperFromForm, setWorkflowMode } = usePaperStore();
   const { currentStep, steps, data } = formState;
   const [errors, setErrors] = useState<FormValidationError[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,7 +87,8 @@ const FormPage: React.FC = () => {
       };
       
       const newPaper = await createPaperFromForm(formData);
-      navigate(`/editor/${newPaper.id}`);
+      setWorkflowMode('ai-writing');
+      navigate(`/ai-writing/${newPaper.id}`);
     } catch (error) {
       console.error('提交失败:', error);
       alert('提交失败，请重试');
@@ -245,8 +246,31 @@ const BasicInfoStep: React.FC<{
   onPrevious: () => void;
   errors: FormValidationError[];
 }> = ({ onNext, onPrevious, errors }) => {
-  const { formState, setFormData } = usePaperStore();
+  const { formState, setFormData, createPaper, setCurrentPaper, setWorkflowMode } = usePaperStore();
   const navigate = useNavigate();
+
+  const handleModularEditor = async () => {
+    // 验证基本信息
+    if (!formState.data.title) {
+      alert('请先输入论文标题');
+      return;
+    }
+
+    try {
+      // 创建论文记录
+      const newPaper = await createPaper({ title: formState.data.title });
+      setCurrentPaper(newPaper);
+      
+      // 设置工作流状态
+      setWorkflowMode('modular', 'form-basic');
+      
+      // 导航到模块化编辑器
+      navigate(`/modular-editor/${newPaper.id}`);
+    } catch (error) {
+      console.error('创建论文失败:', error);
+      alert('创建论文失败，请重试');
+    }
+  };
   
   
   return (
@@ -346,6 +370,44 @@ const BasicInfoStep: React.FC<{
               <option value="review">综述文章</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      {/* 高级功能区域 */}
+      <div className="mt-8 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center mb-2">
+              <Sparkles className="h-5 w-5 text-purple-600 mr-2" />
+              <h3 className="text-lg font-semibold text-purple-900">高级功能</h3>
+              <span className="ml-2 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full">推荐</span>
+            </div>
+            <p className="text-purple-700 text-sm mb-3">
+              使用模块化编辑器进行更精细的结构设计和内容编辑
+            </p>
+            <div className="flex items-center space-x-4 text-xs text-purple-600">
+              <span className="flex items-center">
+                <LayoutGrid className="h-3 w-3 mr-1" />
+                模块化编辑
+              </span>
+              <span className="flex items-center">
+                <FileText className="h-3 w-3 mr-1" />
+                依赖关系可视化
+              </span>
+              <span className="flex items-center">
+                <Settings className="h-3 w-3 mr-1" />
+                智能模板系统
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleModularEditor}
+            disabled={!formState.data.title}
+            className="flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors shadow-lg hover:shadow-xl"
+          >
+            <LayoutGrid className="h-5 w-5 mr-2" />
+            进入模块化编辑器
+          </button>
         </div>
       </div>
 

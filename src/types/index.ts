@@ -290,6 +290,347 @@ export interface UIState {
   };
 }
 
+// GLM-4.5 API 类型定义
+export interface GLMMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export interface GLMChatRequest {
+  model: string;
+  messages: GLMMessage[];
+  stream?: boolean;
+  max_tokens?: number;
+  temperature?: number;
+  top_p?: number;
+  stop?: string[];
+}
+
+export interface GLMChatResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: GLMChoice[];
+  usage?: GLMUsage;
+}
+
+export interface GLMChoice {
+  index: number;
+  message: GLMMessage;
+  finish_reason: string | null;
+}
+
+export interface GLMUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+export interface GLMStreamChunk {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: GLMStreamChoice[];
+}
+
+export interface GLMStreamChoice {
+  index: number;
+  delta: {
+    role?: string;
+    content?: string;
+  };
+  finish_reason: string | null;
+}
+
+export interface GLMError {
+  error: {
+    message: string;
+    type: string;
+    code?: string;
+  };
+}
+
+export interface GLMClientConfig {
+  apiKey: string;
+  baseURL?: string;
+  timeout?: number;
+  maxRetries?: number;
+  retryDelay?: number;
+  rateLimit?: number;
+  enableCache?: boolean;
+  cacheTimeout?: number;
+  enableErrorReporting?: boolean;
+  maxErrorLogs?: number;
+  enablePerformanceMonitoring?: boolean;
+}
+
+export interface StreamingResponse {
+  content: string;
+  isComplete: boolean;
+  error?: string;
+}
+
+export interface AIServiceOptions {
+  temperature?: number;
+  maxTokens?: number;
+  stream?: boolean;
+  onStream?: (chunk: string) => void;
+  onComplete?: (content: string) => void;
+  onError?: (error: string) => void;
+}
+
+// GLM 客户端状态类型
+export interface GLMClientStatus {
+  isConfigured: boolean;
+  rateLimitStatus: {
+    current: number;
+    limit: number;
+    resetTime: number;
+  };
+  cacheStatus: {
+    size: number;
+    enabled: boolean;
+  };
+  errorLogs: GLMErrorLog[];
+  performanceMetrics: GLMPerformanceMetrics;
+}
+
+export interface GLMErrorLog {
+  error: string;
+  timestamp: number;
+  context: Record<string, any>;
+}
+
+export interface GLMPerformanceMetrics {
+  averageLatency: number;
+  requestCount: number;
+  errorRate: number;
+}
+
+export interface GLMPerformanceEntry {
+  endpoint: string;
+  duration: number;
+  timestamp: number;
+}
+
+// 网络连接状态类型
+export interface ConnectionStatus {
+  success: boolean;
+  latency: number;
+  model?: string;
+  error?: string;
+}
+
+// 环境配置验证类型
+export interface EnvironmentConfig {
+  glmApiKey?: string;
+  glmBaseUrl?: string;
+  glmTimeout?: number;
+  glmMaxRetries?: number;
+  glmRetryDelay?: number;
+  glmRateLimit?: number;
+  glmEnableCache?: boolean;
+  glmCacheDuration?: number;
+  glmEnableErrorReporting?: boolean;
+  glmMaxErrorLogs?: number;
+  glmEnablePerformanceMonitoring?: boolean;
+  debugMode?: boolean;
+  useMockData?: boolean;
+}
+
+// 内容分析相关类型
+export interface ContentAnalysis {
+  id: string;
+  paperId: string;
+  result: ContentAnalysisResult;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ContentAnalysisResult {
+  overall: {
+    score: number;
+    grade: 'A' | 'B' | 'C' | 'D' | 'F';
+    summary: string;
+  };
+  academics: AcademicStandardsResult;
+  language: LanguageQualityResult;
+  structure: StructuralIntegrityResult;
+  innovation: InnovationResult;
+  statistics: ContentStatistics;
+  actionableInsights: ActionableInsight[];
+  timestamp: Date;
+}
+
+export interface AcademicStandardsResult {
+  score: number;
+  issues: AcademicIssue[];
+  recommendations: string[];
+}
+
+export interface AcademicIssue {
+  type: 'citation' | 'format' | 'structure' | 'terminology';
+  severity: 'low' | 'medium' | 'high';
+  position: { start: number; end: number };
+  message: string;
+  suggestion?: string;
+}
+
+export interface LanguageQualityResult {
+  score: number;
+  grammar: {
+    score: number;
+    errors: GrammarError[];
+  };
+  spelling: {
+    score: number;
+    errors: SpellingError[];
+  };
+  style: {
+    score: number;
+    suggestions: StyleSuggestion[];
+  };
+  readability: {
+    score: number;
+    level: 'elementary' | 'middle-school' | 'high-school' | 'college' | 'graduate';
+    metrics: ReadabilityMetrics;
+  };
+}
+
+export interface GrammarError {
+  position: { start: number; end: number };
+  message: string;
+  suggestion: string;
+  type: 'syntax' | 'tense' | 'agreement' | 'punctuation';
+}
+
+export interface SpellingError {
+  position: { start: number; end: number };
+  word: string;
+  suggestions: string[];
+}
+
+export interface StyleSuggestion {
+  position: { start: number; end: number };
+  message: string;
+  suggestion: string;
+  type: 'clarity' | 'conciseness' | 'formality' | 'vocabulary';
+}
+
+export interface ReadabilityMetrics {
+  averageSentenceLength: number;
+  averageWordsPerSentence: number;
+  complexWords: number;
+  fleschKincaidGrade: number;
+  fleschReadingEase: number;
+}
+
+export interface StructuralIntegrityResult {
+  score: number;
+  sections: SectionAnalysis[];
+  flow: {
+    score: number;
+    issues: FlowIssue[];
+  };
+  coherence: {
+    score: number;
+    suggestions: string[];
+  };
+}
+
+export interface SectionAnalysis {
+  title: string;
+  wordCount: number;
+  isComplete: boolean;
+  issues: string[];
+  suggestions: string[];
+}
+
+export interface FlowIssue {
+  section: string;
+  type: 'transition' | 'logic' | 'repetition';
+  message: string;
+  suggestion: string;
+}
+
+export interface InnovationResult {
+  score: number;
+  novelty: {
+    score: number;
+    aspects: NoveltyAspect[];
+  };
+  contribution: {
+    score: number;
+    analysis: string;
+  };
+  originality: {
+    score: number;
+    similarityChecks: SimilarityCheck[];
+  };
+}
+
+export interface NoveltyAspect {
+  aspect: string;
+  score: number;
+  description: string;
+}
+
+export interface SimilarityCheck {
+  source: string;
+  similarity: number;
+  matchedText: string;
+}
+
+export interface ContentStatistics {
+  wordCount: number;
+  characterCount: number;
+  paragraphCount: number;
+  sentenceCount: number;
+  averageWordsPerSentence: number;
+  keywordDensity: KeywordDensity[];
+}
+
+export interface KeywordDensity {
+  keyword: string;
+  count: number;
+  density: number;
+}
+
+export interface ActionableInsight {
+  priority: 'high' | 'medium' | 'low';
+  category: 'improvement' | 'correction' | 'enhancement';
+  title: string;
+  description: string;
+  action: string;
+  estimatedImpact: number;
+}
+
+// 引用格式类型
+export type CitationStyle = 'APA' | 'MLA' | 'Chicago' | 'IEEE' | 'Harvard';
+
+// 内容分析设置
+export interface AnalysisSettings {
+  citationStyle: CitationStyle;
+  enableRealTimeAnalysis: boolean;
+  enableCache: boolean;
+  autoAnalyze: boolean;
+  showQuickResults: boolean;
+  analysisDepth: 'basic' | 'detailed' | 'comprehensive';
+  glmApiKey?: string;
+}
+
+// 分析历史
+export interface AnalysisHistory {
+  id: string;
+  paperId: string;
+  version: string;
+  analysisResult: ContentAnalysisResult;
+  settings: AnalysisSettings;
+  createdAt: Date;
+}
+
 // Re-export modular types
 export * from './modular';
 

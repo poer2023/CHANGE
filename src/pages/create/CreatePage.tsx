@@ -5,7 +5,7 @@ import { usePaperStore } from '@/store';
 
 const CreatePage: React.FC = () => {
   const navigate = useNavigate();
-  const { setFormData, resetForm, createPaper, setCurrentPaper } = usePaperStore();
+  const { setFormData, resetForm, createPaper, setCurrentPaper, setWorkflowMode } = usePaperStore();
   const [title, setTitle] = useState('');
   const [createMethod, setCreateMethod] = useState<'form' | 'upload' | 'modular' | null>(null);
 
@@ -17,6 +17,7 @@ const CreatePage: React.FC = () => {
     
     resetForm();
     setFormData({ title: title.trim() });
+    setWorkflowMode('form', 'create');
     navigate('/form');
   };
 
@@ -35,6 +36,9 @@ const CreatePage: React.FC = () => {
       
       // 设置为当前论文
       setCurrentPaper(newPaper);
+      
+      // 设置工作流状态
+      setWorkflowMode('modular', 'create');
       
       // 导航到模块化编辑器页面
       navigate(`/modular-editor/${newPaper.id}`);

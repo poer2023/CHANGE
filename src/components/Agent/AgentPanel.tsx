@@ -1,29 +1,51 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Agent, AgentRole, AgentMessage, ChatSession, QuickAction } from '../../types';
-import { AGENTS, QUICK_ACTIONS, MOCK_RESPONSES } from '../../data/agents';
+import { AGENTS, QUICK_ACTIONS } from '../../data/agents';
 import { Button } from '../UI/Button';
 import { Card } from '../UI/Card';
 import AgentRoleSwitcher from './AgentRoleSwitcher';
 import ChatInterface from './ChatInterface';
 import QuickActionBar from './QuickActionBar';
 import AgentSuggestionCard from './AgentSuggestionCard';
+import glmClient from '../../services/glmClient';
 
 interface AgentPanelProps {
   className?: string;
+  selectedText?: string;
+  documentContext?: string;
+  content?: string;
+  onContentChange?: (content: string) => void;
+  onInsertText?: (text: string) => void;
+  onApplySuggestion?: (suggestion: string) => void;
 }
 
 type PanelMode = 'chat' | 'agent';
 
-const AgentPanel: React.FC<AgentPanelProps> = ({ className = '' }) => {
+const AgentPanel: React.FC<AgentPanelProps> = ({ 
+  className = '', 
+  selectedText: propSelectedText = '',
+  documentContext = '',
+  content = '',
+  onContentChange,
+  onInsertText,
+  onApplySuggestion
+}) => {
   const [currentRole, setCurrentRole] = useState<AgentRole>('academic-writing-expert');
   const [panelMode, setPanelMode] = useState<PanelMode>('agent');
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedText, setSelectedText] = useState<string>('');
+  const [currentSelectedText, setCurrentSelectedText] = useState<string>('');
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   
   const currentAgent = AGENTS[currentRole];
   const activeSession = chatSessions.find(session => session.id === activeSessionId);
+
+  // 获取文档上下文
+  const getDocumentContext = (): string => {
+    // 优先使用传入的文档上下文，其次是内容，然后是选中文本，最后使用默认文本
+    return documentContext || content || propSelectedText || '当前文档内容...';
+  };
 
   // 创建新的对话会话
   const createNewSession = (role: AgentRole, title?: string) => {
@@ -46,12 +68,16 @@ const AgentPanel: React.FC<AgentPanelProps> = ({ className = '' }) => {
     return newSession;
   };
 
-  // 发送消息
+  // 发送消息 - 使用真实GLM API
   const sendMessage = async (content: string, messageType: AgentMessage['messageType'] = 'text') => {
     if (!activeSession) {
-      createNewSession(currentRole);
-      return;
+      const newSession = createNewSession(currentRole);
+      // 等待状态更新
+      await new Promise(resolve => setTimeout(resolve, 0));
     }
+
+    const session = activeSession || chatSessions.find(s => s.agentRole === currentRole);
+    if (!session) return;
 
     setIsLoading(true);
 
@@ -65,34 +91,70 @@ const AgentPanel: React.FC<AgentPanelProps> = ({ className = '' }) => {
       agentRole: currentRole
     };
 
-    // 模拟AI响应
-    setTimeout(() => {
+    // 立即更新用户消息
+    setChatSessions(prev => prev.map(s => 
+      s.id === session.id
+        ? {
+            ...s,
+            messages: [...s.messages, userMessage],
+            updatedAt: new Date()
+          }
+        : s
+    ));
+
+    try {
+      // 调用真实GLM API
+      const response = await glmClient.agentChat(currentRole, content, propSelectedText);
+      
       const aiResponse: AgentMessage = {
         id: `msg-${Date.now()}-ai`,
-        content: generateAIResponse(content, currentRole),
+        content: response,
         role: 'assistant',
         timestamp: new Date(),
         messageType: 'text',
         agentRole: currentRole,
-        suggestions: generateSuggestions(content, currentRole),
-        actions: generateActions(content, currentRole)
+        suggestions: [], // GLM响应中可以解析建议
+        actions: [] // GLM响应中可以解析操作
       };
 
-      setChatSessions(prev => prev.map(session => 
-        session.id === activeSessionId
+      setChatSessions(prev => prev.map(s => 
+        s.id === session.id
           ? {
-              ...session,
-              messages: [...session.messages, userMessage, aiResponse],
+              ...s,
+              messages: [...s.messages.filter(m => m.id !== userMessage.id), userMessage, aiResponse],
               updatedAt: new Date()
             }
-          : session
+          : s
       ));
 
+    } catch (error) {
+      console.error('GLM API调用失败:', error);
+      
+      // 显示错误消息
+      const errorMessage: AgentMessage = {
+        id: `msg-${Date.now()}-error`,
+        content: `抱歉，AI服务暂时不可用。错误信息: ${error instanceof Error ? error.message : '未知错误'}`,
+        role: 'assistant',
+        timestamp: new Date(),
+        messageType: 'text',
+        agentRole: currentRole
+      };
+
+      setChatSessions(prev => prev.map(s => 
+        s.id === session.id
+          ? {
+              ...s,
+              messages: [...s.messages.filter(m => m.id !== userMessage.id), userMessage, errorMessage],
+              updatedAt: new Date()
+            }
+          : s
+      ));
+    } finally {
       setIsLoading(false);
-    }, 1000 + Math.random() * 1500); // 1-2.5秒随机延迟
+    }
   };
 
-  // 执行快捷操作
+  // 执行快捷操作 - 使用真实GLM API
   const executeQuickAction = async (action: QuickAction) => {
     if (!activeSession && panelMode === 'chat') {
       createNewSession(action.agentRole, `${action.label}咨询`);
@@ -101,25 +163,35 @@ const AgentPanel: React.FC<AgentPanelProps> = ({ className = '' }) => {
     setIsLoading(true);
     setCurrentRole(action.agentRole);
 
-    // 模拟处理时间
-    setTimeout(() => {
-      const mockResponse = MOCK_RESPONSES[action.id as keyof typeof MOCK_RESPONSES];
+    try {
+      // 获取当前文档内容作为上下文
+      const documentContext = getDocumentContext();
       
-      if (mockResponse) {
-        const actionMessage: AgentMessage = {
-          id: `msg-${Date.now()}-action`,
-          content: `正在执行"${action.label}"...`,
-          role: 'assistant',
-          timestamp: new Date(),
-          messageType: 'action',
-          agentRole: action.agentRole,
-          suggestions: mockResponse.suggestions,
-          actions: mockResponse.actions
-        };
+      // 调用真实GLM API执行快捷操作
+      const response = await glmClient.executeQuickAction(action, documentContext, propSelectedText);
+      
+      const actionMessage: AgentMessage = {
+        id: `msg-${Date.now()}-action`,
+        content: response,
+        role: 'assistant',
+        timestamp: new Date(),
+        messageType: 'action',
+        agentRole: action.agentRole,
+        suggestions: [], // 可以从响应中解析建议
+        actions: [{
+          id: `apply-${action.id}`,
+          type: 'apply-suggestion',
+          label: '应用建议',
+          description: '将AI建议应用到文档中',
+          icon: '✅'
+        }]
+      };
 
-        if (panelMode === 'chat' && activeSession) {
+      if (panelMode === 'chat' && (activeSession || chatSessions.length > 0)) {
+        const targetSession = activeSession || chatSessions.find(s => s.agentRole === action.agentRole);
+        if (targetSession) {
           setChatSessions(prev => prev.map(session => 
-            session.id === activeSessionId
+            session.id === targetSession.id
               ? {
                   ...session,
                   messages: [...session.messages, actionMessage],
@@ -130,50 +202,51 @@ const AgentPanel: React.FC<AgentPanelProps> = ({ className = '' }) => {
         }
       }
 
+    } catch (error) {
+      console.error('快捷操作执行失败:', error);
+      
+      // 显示错误消息
+      const errorMessage: AgentMessage = {
+        id: `msg-${Date.now()}-error`,
+        content: `执行"${action.label}"失败。错误信息: ${error instanceof Error ? error.message : '未知错误'}`,
+        role: 'assistant',
+        timestamp: new Date(),
+        messageType: 'action',
+        agentRole: action.agentRole
+      };
+
+      if (panelMode === 'chat' && (activeSession || chatSessions.length > 0)) {
+        const targetSession = activeSession || chatSessions.find(s => s.agentRole === action.agentRole);
+        if (targetSession) {
+          setChatSessions(prev => prev.map(session => 
+            session.id === targetSession.id
+              ? {
+                  ...session,
+                  messages: [...session.messages, errorMessage],
+                  updatedAt: new Date()
+                }
+              : session
+          ));
+        }
+      }
+    } finally {
       setIsLoading(false);
-    }, 800 + Math.random() * 1200);
+    }
   };
 
-  // 生成AI响应
-  const generateAIResponse = (userInput: string, role: AgentRole): string => {
-    const responses = {
-      'academic-writing-expert': [
-        '我来帮您提升学术写作质量。根据您的描述，我建议从以下几个方面优化：',
-        '作为学术写作专家，我注意到您的表达可以更加严谨。让我为您提供一些建议：',
-        '从学术规范的角度来看，这段内容有几个需要改进的地方：'
-      ],
-      'research-assistant': [
-        '我来协助您的研究工作。基于您的需求，我推荐以下研究方法：',
-        '作为您的研究助手，我可以帮您找到相关的文献和数据源：',
-        '让我分析一下您的研究问题，并提供一些建议：'
-      ],
-      'format-expert': [
-        '我来检查您的格式规范。发现以下需要调整的地方：',
-        '从格式标准来看，这里有几个需要注意的细节：',
-        '让我帮您确保文档符合学术出版的格式要求：'
-      ],
-      'content-advisor': [
-        '我来分析您的内容结构。总体来说，逻辑清晰，但有几个可以强化的地方：',
-        '从内容策略的角度，我建议调整以下部分：',
-        '让我帮您优化论证结构和内容组织：'
-      ]
+  // 监听选中文本变化
+  useEffect(() => {
+    const handleTextSelection = () => {
+      const selection = window.getSelection();
+      const selectedText = selection?.toString() || '';
+      setCurrentSelectedText(selectedText);
     };
 
-    const roleResponses = responses[role];
-    return roleResponses[Math.floor(Math.random() * roleResponses.length)];
-  };
-
-  // 生成建议
-  const generateSuggestions = (userInput: string, role: AgentRole) => {
-    // 这里可以根据用户输入和角色生成相应的建议
-    return [];
-  };
-
-  // 生成操作
-  const generateActions = (userInput: string, role: AgentRole) => {
-    // 这里可以根据用户输入和角色生成相应的操作
-    return [];
-  };
+    document.addEventListener('selectionchange', handleTextSelection);
+    return () => {
+      document.removeEventListener('selectionchange', handleTextSelection);
+    };
+  }, []);
 
   // 切换角色时创建新会话
   const handleRoleChange = (newRole: AgentRole) => {
@@ -189,6 +262,22 @@ const AgentPanel: React.FC<AgentPanelProps> = ({ className = '' }) => {
     if (mode === 'chat' && !activeSession) {
       createNewSession(currentRole);
     }
+  };
+
+  // 处理建议操作
+  const handleSuggestionAction = (action: any) => {
+    if (action.type === 'apply-suggestion' && action.content) {
+      if (onApplySuggestion) {
+        onApplySuggestion(action.content);
+      } else if (onInsertText) {
+        onInsertText(action.content);
+      }
+    }
+  };
+
+  // 处理建议关闭
+  const handleSuggestionDismiss = (suggestionId: string) => {
+    setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
   };
 
   return (
@@ -239,6 +328,8 @@ const AgentPanel: React.FC<AgentPanelProps> = ({ className = '' }) => {
           actions={QUICK_ACTIONS.filter(action => action.agentRole === currentRole)}
           onActionClick={executeQuickAction}
           isLoading={isLoading}
+          selectedText={propSelectedText}
+          documentContext={getDocumentContext()}
         />
       </div>
 
@@ -250,7 +341,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({ className = '' }) => {
             agent={currentAgent}
             onSendMessage={sendMessage}
             isLoading={isLoading}
-            selectedText={selectedText}
+            selectedText={propSelectedText}
           />
         ) : (
           <div className="flex-1 p-4 overflow-y-auto">
@@ -276,7 +367,17 @@ const AgentPanel: React.FC<AgentPanelProps> = ({ className = '' }) => {
                 </div>
               </div>
 
-              {/* 显示最近的建议 */}
+              {/* 显示建议卡片 */}
+              {suggestions.map((suggestion) => (
+                <AgentSuggestionCard
+                  key={suggestion.id}
+                  suggestion={suggestion}
+                  onActionClick={handleSuggestionAction}
+                  onDismiss={handleSuggestionDismiss}
+                />
+              ))}
+
+              {/* 显示加载状态 */}
               {isLoading && (
                 <Card className="p-4">
                   <div className="flex items-center space-x-2">

@@ -4,17 +4,6 @@ import {
   Button,
   Card,
   LoadingSpinner,
-  Modal,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  FormInput,
-  SearchInput,
-  Textarea,
-  Select,
-  ProgressBar,
-  CircularProgress,
-  Stepper,
   LikeButton,
   Rating,
   CopyButton,
@@ -22,12 +11,15 @@ import {
   ShareButton,
   HoverCard,
   Pulse,
-  Breathe,
-  useModal,
-  useToastActions,
-  OnboardingProvider,
-  useOnboardingState
+  Breathe
 } from '@/components/UI';
+
+// 暂时注释掉不可用的组件导入
+// import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/UI';
+// import { FormInput, SearchInput, Textarea, Select } from '@/components/UI';
+// import { ProgressBar, CircularProgress, Stepper } from '@/components/UI';
+// import { useModal, useToastActions } from '@/components/UI';
+// import { OnboardingProvider, useOnboardingState } from '@/components/UI';
 import { useFormValidation, validationRules } from '@/utils/formValidation';
 import { fadeInUp, staggerContainer } from '@/utils/animations';
 import { Heart, Star, Settings, User, Mail, Phone, Globe } from 'lucide-react';

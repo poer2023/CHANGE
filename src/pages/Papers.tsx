@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Input } from '@/components';
+import { Card, Button, Input } from '@/components/UI';
 import { Search, Plus, Filter, MoreVertical } from 'lucide-react';
 
 const Papers: React.FC = () => {

@@ -5,9 +5,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import { Button } from '../UI/Button';
-import { Input } from '../UI/Input';
-import { Card } from '../UI/Card';
+import { Button, Input, Card } from '../UI';
 import { useStreamingAI } from '../../hooks/useStreamingAI';
 
 interface Message {

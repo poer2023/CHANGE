@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button } from '@/components';
+import { Card, Button } from '@/components/UI';
 import { Plus, FileText, FolderOpen, TrendingUp, Clock } from 'lucide-react';
 
 const Dashboard: React.FC = () => {

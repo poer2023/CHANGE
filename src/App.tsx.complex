@@ -1,0 +1,121 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Layout } from '@/components';
+import { 
+  Dashboard, 
+  Papers, 
+  HomePage,
+  CreatePage,
+  EditorPage,
+  ModularEditorPage,
+  FormPage,
+  ModularEditorDemo,
+  ComprehensiveDemo,
+  AgentDemo,
+  LoginPage,
+  RegisterPage,
+  AnalyticsPage,
+  AIWritingPage,
+  ContentAnalysisDemo,
+  AgentDemoSimple,
+  SimpleAIWritingPage,
+  SimpleContentAnalysisDemo,
+  SimpleModularEditorDemo
+} from '@/pages';
+import { GLMChatTest, GLMContentTest, ErrorBoundary, NotificationToast } from '@/components';
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          <Routes>
+            {/* Landing and Form Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/form" element={<FormPage />} />
+            
+            {/* Auth Routes */}
+            <Route path="/auth/login" element={<LoginPage />} />
+            <Route path="/auth/register" element={<RegisterPage />} />
+            
+            {/* Editor Routes - gradually restored */}
+            <Route path="/editor/:id" element={
+              <ErrorBoundary fallback={<div>编辑器加载失败，请刷新重试</div>}>
+                <EditorPage />
+              </ErrorBoundary>
+            } />
+            <Route path="/modular-editor/:id" element={
+              <ErrorBoundary fallback={<div>模块化编辑器加载失败，请刷新重试</div>}>
+                <ModularEditorPage />
+              </ErrorBoundary>
+            } />
+            <Route path="/ai-writing/:id" element={
+              <ErrorBoundary fallback={<div>AI写作页面加载失败，请刷新重试</div>}>
+                <AIWritingPage />
+              </ErrorBoundary>
+            } />
+            <Route path="/create" element={<CreatePage />} />
+            
+            {/* Demo Routes */}
+            <Route path="/demo" element={
+              <ErrorBoundary fallback={<div>演示页面加载失败，请刷新重试</div>}>
+                <ModularEditorDemo />
+              </ErrorBoundary>
+            } />
+            <Route path="/agent-demo" element={
+              <ErrorBoundary fallback={<div>Agent演示加载失败，使用简化版本</div>}>
+                <AgentDemo />
+              </ErrorBoundary>
+            } />
+            <Route path="/agent-demo-simple" element={<AgentDemoSimple />} />
+            <Route path="/content-analysis-demo" element={
+              <ErrorBoundary fallback={<div>内容分析演示加载失败，使用简化版本</div>}>
+                <ContentAnalysisDemo />
+              </ErrorBoundary>
+            } />
+            
+            {/* Simplified versions as fallbacks */}
+            <Route path="/simple-modular-editor" element={<SimpleModularEditorDemo />} />
+            <Route path="/simple-ai-writing" element={<SimpleAIWritingPage />} />
+            <Route path="/simple-content-analysis" element={<SimpleContentAnalysisDemo />} />
+            <Route path="/comprehensive-demo" element={<ComprehensiveDemo />} />
+            
+            {/* GLM API Test Routes */}
+            <Route path="/test/glm-chat" element={<GLMChatTest />} />
+            <Route path="/test/glm-content" element={<GLMContentTest />} />
+            
+            {/* Dashboard Routes */}
+            <Route path="/dashboard" element={<Layout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="papers" element={<Papers />} />
+              <Route path="projects" element={<div className="p-6">Projects Page (Coming Soon)</div>} />
+              <Route path="templates" element={<div className="p-6">Templates Page (Coming Soon)</div>} />
+              <Route path="chat" element={<div className="p-6">AI Assistant Page (Coming Soon)</div>} />
+              <Route path="references" element={<div className="p-6">References Page (Coming Soon)</div>} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+            </Route>
+            
+            {/* 404 Route */}
+            <Route path="*" element={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                  <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
+                  <p className="text-xl text-gray-600 mb-8">页面不存在</p>
+                  <a 
+                    href="/" 
+                    className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    返回首页
+                  </a>
+                </div>
+              </div>
+            } />
+          </Routes>
+          <NotificationToast />
+        </div>
+      </Router>
+    </ErrorBoundary>
+  );
+}
+
+export default App;

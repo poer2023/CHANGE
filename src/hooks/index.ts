@@ -32,3 +32,6 @@ export {
 
 // 编辑器与Agent系统集成
 export { useEditorAgentIntegration } from './useEditorAgentIntegration';
+
+// 论文类型适配hooks
+export { usePaperTypeAdapter } from './usePaperTypeAdapter';

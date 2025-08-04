@@ -13,3 +13,4 @@ export { default as ModuleCard } from './ModuleCard';
 export { default as ModuleDragDrop } from './ModuleDragDrop';
 export { default as TemplateLibrary } from './TemplateLibrary';
 export { default as DependencyVisualization } from './DependencyVisualization';
+export { default as PaperTypeSelector } from './PaperTypeSelector';

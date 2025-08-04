@@ -636,3 +636,6 @@ export * from './modular';
 
 // Re-export form types
 export * from './form';
+
+// Re-export paper types
+export * from './paper-types';

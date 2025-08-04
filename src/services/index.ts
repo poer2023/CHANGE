@@ -22,6 +22,11 @@ export {
 // 内容分析服务（如果存在）
 export { default as ContentAnalyzer } from './content-analyzer';
 
+// 论文类型相关服务
+export { PaperTypeService } from './paper-type-service';
+export { ModuleStructureGenerator } from './module-structure-generator';
+export { PaperStyleManager, PAPER_TYPE_STYLES, PAPER_FORMAT_CONFIGS } from './paper-style-config';
+
 // 类型导出
 export type {
   HealthCheckResult,

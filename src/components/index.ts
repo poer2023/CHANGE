@@ -20,6 +20,9 @@ export { default as ModuleDragDrop } from './editor/ModuleDragDrop';
 export { default as TemplateLibrary } from './editor/TemplateLibrary';
 export * from './editor';
 
+// Intelligent Editor components
+export * from './intelligent-editor';
+
 // Analytics components
 export * from './analytics';
 

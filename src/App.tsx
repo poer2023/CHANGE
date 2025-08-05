@@ -18,10 +18,11 @@ import Papers from './pages/Papers';
 import SimpleModularEditorDemo from './pages/demo/SimpleModularEditorDemo';
 import SimpleAIWritingPage from './pages/ai-writing/SimpleAIWritingPage';
 import SimpleContentAnalysisDemo from './pages/demo/SimpleContentAnalysisDemo';
+import ProfessionalEditorDemo from './pages/demo/ProfessionalEditorDemo';
 
 // 复杂编辑器组件（小心添加）
-import EditorPage from './pages/editor/EditorPage';
-import ModularEditorPage from './pages/editor/ModularEditorPage';
+import ProfessionalEditorPage from './pages/editor/ProfessionalEditorPage';
+import IntelligentModularEditorPage from './pages/editor/IntelligentModularEditorPage';
 
 // Agent相关组件
 import AgentDemoSimple from './pages/AgentDemo.simple';
@@ -52,14 +53,14 @@ function App() {
             <Route path="/auth/register" element={<RegisterPage />} />
             
             {/* 编辑器路由 */}
-            <Route path="/editor/:id" element={
-              <ErrorBoundary fallback={<div>编辑器加载失败，请刷新重试</div>}>
-                <EditorPage />
+            <Route path="/professional-editor/:id" element={
+              <ErrorBoundary fallback={<div>专业编辑器加载失败，请刷新重试</div>}>
+                <ProfessionalEditorPage />
               </ErrorBoundary>
             } />
             <Route path="/modular-editor/:id" element={
-              <ErrorBoundary fallback={<div>模块化编辑器加载失败，请刷新重试</div>}>
-                <ModularEditorPage />
+              <ErrorBoundary fallback={<div>智能模块化编辑器加载失败，请刷新重试</div>}>
+                <IntelligentModularEditorPage />
               </ErrorBoundary>
             } />
             <Route path="/ai-writing/:id" element={
@@ -97,6 +98,11 @@ function App() {
             <Route path="/simple-content-analysis" element={
               <ErrorBoundary fallback={<div>内容分析演示加载失败</div>}>
                 <SimpleContentAnalysisDemo />
+              </ErrorBoundary>
+            } />
+            <Route path="/professional-editor-demo" element={
+              <ErrorBoundary fallback={<div>专业编辑器演示加载失败</div>}>
+                <ProfessionalEditorDemo />
               </ErrorBoundary>
             } />
             

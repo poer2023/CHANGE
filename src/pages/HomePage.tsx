@@ -48,10 +48,10 @@ const HomePage: React.FC = () => {
               <br />
               从构思到成稿，让论文写作变得高效有序
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="mt-8">
               <Link
                 to="/create"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-lg text-base font-medium transition-colors"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-lg text-base font-medium transition-colors inline-block"
               >
                 免费开始写作
               </Link>

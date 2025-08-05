@@ -15,7 +15,17 @@ import {
   AlignCenter,
   AlignRight,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Type,
+  Palette,
+  Minus,
+  Table,
+  FileText,
+  Strikethrough,
+  Superscript,
+  Subscript,
+  Save,
+  Upload
 } from 'lucide-react';
 
 interface RichTextEditorProps {
@@ -26,12 +36,39 @@ interface RichTextEditorProps {
   readOnly?: boolean;
   autoFocus?: boolean;
   onSelectionChange?: (start: number, end: number) => void;
+  showToolbar?: boolean;
+  showStatusBar?: boolean;
+  minHeight?: number;
+  maxHeight?: number;
+  fontSize?: number;
+  fontFamily?: string;
+  theme?: 'light' | 'dark';
+  onSave?: () => void;
 }
 
 interface EditorAction {
-  type: 'format' | 'insert' | 'replace';
+  type: 'format' | 'insert' | 'replace' | 'heading' | 'align';
   action: string;
   value?: string;
+  level?: number;
+}
+
+interface ToolbarGroup {
+  id: string;
+  label: string;
+  buttons: ToolbarButton[];
+}
+
+interface ToolbarButton {
+  id: string;
+  action: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  type?: EditorAction['type'];
+  value?: string;
+  level?: number;
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -41,13 +78,25 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   className = "",
   readOnly = false,
   autoFocus = false,
-  onSelectionChange
+  onSelectionChange,
+  showToolbar = true,
+  showStatusBar = true,
+  minHeight = 400,
+  maxHeight,
+  fontSize = 16,
+  fontFamily = 'Inter',
+  theme = 'light',
+  onSave
 }) => {
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [history, setHistory] = useState<string[]>([value]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [currentFontSize, setCurrentFontSize] = useState(fontSize);
+  const [currentFontFamily, setCurrentFontFamily] = useState(fontFamily);
+  const [wordCount, setWordCount] = useState({ characters: 0, words: 0, lines: 0 });
+  const [activeFormats, setActiveFormats] = useState<string[]>([]);
 
   // 处理选择变化
   const handleSelectionChange = useCallback(() => {
@@ -86,6 +135,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           case 'underline':
             formattedText = `<u>${selectedText}</u>`;
             break;
+          case 'strikethrough':
+            formattedText = `~~${selectedText}~~`;
+            break;
+          case 'superscript':
+            formattedText = `<sup>${selectedText}</sup>`;
+            break;
+          case 'subscript':
+            formattedText = `<sub>${selectedText}</sub>`;
+            break;
           case 'code':
             formattedText = selectedText.includes('\n') 
               ? `\`\`\`\n${selectedText}\n\`\`\`` 
@@ -110,6 +168,25 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         const insertText = action.value || '';
         newValue = currentValue.substring(0, selectionStart) + insertText + currentValue.substring(selectionEnd);
         newSelectionStart = newSelectionEnd = selectionStart + insertText.length;
+        break;
+
+      case 'heading':
+        const level = action.level || 1;
+        const headingPrefix = '#'.repeat(level);
+        const headingSelectedText = currentValue.substring(selectionStart, selectionEnd);
+        const lines = headingSelectedText ? [headingSelectedText] : ['标题'];
+        formattedText = lines.map(line => `${headingPrefix} ${line}`).join('\n');
+        newValue = currentValue.substring(0, selectionStart) + formattedText + currentValue.substring(selectionEnd);
+        newSelectionEnd = selectionStart + formattedText.length;
+        break;
+
+      case 'align':
+        // 对于文本对齐，我们使用HTML标签或特殊标记
+        const alignSelectedText = currentValue.substring(selectionStart, selectionEnd);
+        const alignTag = action.action === 'alignCenter' ? 'center' : action.action === 'alignRight' ? 'right' : 'left';
+        formattedText = `<div align="${alignTag}">${alignSelectedText}</div>`;
+        newValue = currentValue.substring(0, selectionStart) + formattedText + currentValue.substring(selectionEnd);
+        newSelectionEnd = selectionStart + formattedText.length;
         break;
 
       case 'replace':

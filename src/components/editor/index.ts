@@ -1,5 +1,7 @@
 export { default as RichTextEditor } from './RichTextEditor';
+export { default as EnhancedRichTextEditor } from './EnhancedRichTextEditor';
 export { default as DocumentOutline } from './DocumentOutline';
+export { default as DocumentStructureSidebar } from './DocumentStructureSidebar';
 export { default as EditorAgentPanel } from './AgentPanel';
 export { default as ProgressTracker } from './ProgressTracker';
 export { default as AutoSaveIndicator, useAutoSave } from './AutoSaveIndicator';

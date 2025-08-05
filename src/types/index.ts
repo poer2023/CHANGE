@@ -20,6 +20,9 @@ export interface Paper {
   id: string;
   title: string;
   content: string;
+  description?: string;
+  type?: string;
+  template?: string;
   abstract?: string;
   keywords: string[];
   status: PaperStatus;
@@ -28,6 +31,8 @@ export interface Paper {
   updatedAt: Date;
   wordCount: number;
   sections: PaperSection[];
+  isFavorite?: boolean;
+  isShared?: boolean;
   // Form data fields
   paperType?: string;
   field?: string;
@@ -189,6 +194,9 @@ export interface ApiResponse<T> {
 // 表单类型
 export interface CreatePaperForm {
   title: string;
+  description?: string;
+  type?: string;
+  template?: string;
   templateId?: string;
   projectId?: string;
 }
@@ -912,3 +920,6 @@ export * from './form';
 
 // Re-export paper types
 export * from './paper-types';
+
+// Re-export document types
+export * from './document';

@@ -7,12 +7,14 @@ import {
   LayoutTemplate, 
   MessageSquare, 
   BarChart3, 
-  BookOpen 
+  BookOpen,
+  Layers
 } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: Home, label: 'Dashboard' },
   { to: '/papers', icon: FileText, label: 'Papers' },
+  { to: '/modular-editor', icon: Layers, label: 'Modular Editor' },
   { to: '/projects', icon: FolderOpen, label: 'Projects' },
   { to: '/templates', icon: LayoutTemplate, label: 'Templates' },
   { to: '/chat', icon: MessageSquare, label: 'AI Assistant' },

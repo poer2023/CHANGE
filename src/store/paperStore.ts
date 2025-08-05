@@ -130,6 +130,9 @@ export const usePaperStore = create<PaperStore>((set, get) => ({
       const newPaper: Paper = {
         id: Date.now().toString(),
         title: data.title,
+        description: data.description,
+        type: data.type || 'research',
+        template: data.template,
         content: '',
         keywords: [],
         status: 'draft',
@@ -138,6 +141,8 @@ export const usePaperStore = create<PaperStore>((set, get) => ({
         updatedAt: new Date(),
         wordCount: 0,
         sections: [],
+        isFavorite: false,
+        isShared: false,
       };
       set(state => ({ 
         papers: [...state.papers, newPaper], 

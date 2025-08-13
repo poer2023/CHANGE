@@ -66,24 +66,25 @@ const ProgressiveForm = () => {
     ],
     []
   );
-
-  const sections = useMemo(
-    () => [{ key: "assignmentType", label: "任务类型" }, ...steps],
-    [steps]
-  );
   const [currentStep, setCurrentStep] = useState(0); // 0 表示“任务类型”卡片
-  const totalSteps = sections.length; // 全部步骤（含任务类型）
+  const totalSteps = 1 + steps.length; // 首步 + 其余步骤
   const progress = Math.round(((currentStep + 1) / totalSteps) * 100);
 
-  const handleSave = () => {
-    const currentLabel = sections[currentStep]?.label || "当前步骤";
-    const isValid = (() => {
-      const key = sections[currentStep].key as keyof FormState;
-      const v = form[key];
-      if (Array.isArray(v)) return v.length > 0;
-      if (typeof v === "string") return v.trim().length > 0;
-      return !!v;
-    })();
+  const handleSave = (targetKey?: keyof FormState) => {
+    const getLabelByKey = (key: keyof FormState) =>
+      key === "assignmentType" ? "任务类型" : steps.find((s) => s.key === key)?.label || "当前步骤";
+
+    // 目标校验的字段
+    const key: keyof FormState = targetKey
+      ? targetKey
+      : currentStep === 0
+      ? "assignmentType"
+      : (steps[currentStep - 1].key as keyof FormState);
+
+    const currentLabel = getLabelByKey(key);
+
+    const v = form[key];
+    const isValid = Array.isArray(v) ? v.length > 0 : typeof v === "string" ? v.trim().length > 0 : !!v;
 
     if (!isValid) {
       toast({ title: "未完成", description: `请先填写${currentLabel}` });
@@ -92,15 +93,20 @@ const ProgressiveForm = () => {
 
     toast({ title: "已保存", description: `${currentLabel} 已保存` });
 
-    const nextStep = Math.min(currentStep + 1, totalSteps - 1);
-    setCurrentStep(nextStep);
+    // 计算应前进到的步骤编号（0: 任务类型, 1: service, 2: level, ...）
+    const stepNumber = key === "assignmentType" ? 0 : 1 + steps.findIndex((s) => s.key === key);
 
-    // 自动滚动到下一项（仅针对手风琴部分）
-    if (nextStep >= 1) {
-      const nextId = `section-${nextStep - 1}`;
-      setTimeout(() => {
-        document.getElementById(nextId)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 50);
+    // 仅当保存的是当前步骤时前进；否则保持当前步骤
+    if (currentStep === stepNumber) {
+      const nextStep = Math.min(currentStep + 1, totalSteps - 1);
+      setCurrentStep(nextStep);
+
+      if (nextStep >= 1) {
+        const nextId = `section-${nextStep - 1}`;
+        setTimeout(() => {
+          document.getElementById(nextId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 50);
+      }
     }
   };
   const summaryValue = (key: keyof FormState) => {
@@ -174,7 +180,7 @@ const ProgressiveForm = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button onClick={handleSave} className="px-6">
+                  <Button onClick={() => handleSave("assignmentType")} className="px-6">
                     <Save className="mr-2 h-4 w-4" /> 保存
                   </Button>
                   <Button variant="secondary" size="icon" aria-label="更多">
@@ -188,7 +194,7 @@ const ProgressiveForm = () => {
         <section aria-label="表单分节">
           {currentStep >= 1 && (
             <Accordion type="single" collapsible value={`item-${currentStep - 1}`}>
-              {sections.slice(0, currentStep).map((s, i) => (
+              {steps.slice(0, currentStep).map((s, i) => (
                 <AccordionItem value={`item-${i}`} key={s.key} id={`section-${i}`}>
                   <AccordionTrigger className="px-4">
                     <div className="flex-1 text-left">
@@ -212,45 +218,6 @@ const ProgressiveForm = () => {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="px-4 pb-4">
-                      {s.key === "assignmentType" && (
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-2">选择</p>
-                            <Select
-                              value={form.assignmentType}
-                              onValueChange={(v) => setForm((f) => ({ ...f, assignmentType: v }))}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="选择类型" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {popularTypes.map((t) => (
-                                  <SelectItem key={t} value={t}>
-                                    {t}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-2">常用</p>
-                            <div className="flex flex-wrap gap-2">
-                              {popularTypes.map((t) => (
-                                <Button
-                                  key={t}
-                                  variant={form.assignmentType === t ? "default" : "secondary"}
-                                  size="sm"
-                                  onClick={() => setForm((f) => ({ ...f, assignmentType: t }))}
-                                >
-                                  {t}
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
                       {s.key === "service" && (
                         <Select
                           value={form.service}
@@ -358,7 +325,7 @@ const ProgressiveForm = () => {
 
                       <Separator className="my-4" />
                       <div className="flex items-center gap-2">
-                        <Button onClick={handleSave} className="px-6">
+                        <Button onClick={() => handleSave(s.key as keyof FormState)} className="px-6">
                           <Save className="mr-2 h-4 w-4" /> 保存该项
                         </Button>
                         <Button
@@ -369,7 +336,7 @@ const ProgressiveForm = () => {
                         </Button>
                         <Button
                           variant="secondary"
-                          onClick={handleSave}
+                          onClick={() => handleSave(s.key as keyof FormState)}
                         >
                           下一步
                         </Button>

@@ -38,22 +38,21 @@ const popularTypes = [
 
 const ProgressiveForm = () => {
   const [form, setForm] = useState<FormState>({
-    assignmentType: popularTypes[0],
-    service: "写作",
-    level: "本科",
-    language: "英语（美式）",
-    size: "6 页（约1650词），双倍行距",
-    deadline: "今天 3 小时后",
-    addons: ["摘要 1 页", "图表 1 项"],
-    topic: "玉米地里的生物有哪些",
-    subject: "社会工作",
-    instruction: "需列举多种生物并进行简要说明",
-    sourcesStyle: "APA（含参考文献）",
+    assignmentType: undefined,
+    service: undefined,
+    level: undefined,
+    language: undefined,
+    size: "",
+    deadline: "",
+    addons: [],
+    topic: "",
+    subject: "",
+    instruction: "",
+    sourcesStyle: undefined,
   });
 
   const steps = useMemo(
     () => [
-      { key: "assignmentType", label: "任务类型" },
       { key: "service", label: "服务" },
       { key: "level", label: "学术等级" },
       { key: "language", label: "语言" },
@@ -68,17 +67,38 @@ const ProgressiveForm = () => {
     []
   );
 
-  const [currentStep, setCurrentStep] = useState(0);
-  const progress = Math.round(((currentStep + 1) / steps.length) * 100);
+  const [currentStep, setCurrentStep] = useState(0); // 0 表示“任务类型”卡片
+  const totalSteps = 1 + steps.length; // 首步 + 其余步骤
+  const progress = Math.round(((currentStep + 1) / totalSteps) * 100);
 
   const handleSave = () => {
-    toast({ title: "已保存", description: `${steps[currentStep].label} 已保存` });
-    setCurrentStep((s) => Math.min(s + 1, steps.length - 1));
-    // 自动滚动到下一项
-    const nextId = `section-${Math.min(currentStep + 1, steps.length - 1)}`;
-    setTimeout(() => {
-      document.getElementById(nextId)?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 50);
+    const currentLabel = currentStep === 0 ? "任务类型" : steps[currentStep - 1].label;
+    const isValid = (() => {
+      if (currentStep === 0) return !!form.assignmentType;
+      const key = steps[currentStep - 1].key as keyof FormState;
+      const v = form[key];
+      if (Array.isArray(v)) return v.length > 0;
+      if (typeof v === "string") return v.trim().length > 0;
+      return !!v;
+    })();
+
+    if (!isValid) {
+      toast({ title: "未完成", description: `请先填写${currentLabel}` });
+      return;
+    }
+
+    toast({ title: "已保存", description: `${currentLabel} 已保存` });
+
+    const nextStep = Math.min(currentStep + 1, totalSteps - 1);
+    setCurrentStep(nextStep);
+
+    // 自动滚动到下一项（仅针对手风琴部分）
+    if (nextStep >= 1) {
+      const nextId = `section-${nextStep - 1}`;
+      setTimeout(() => {
+        document.getElementById(nextId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+    }
   };
 
   const summaryValue = (key: keyof FormState) => {
@@ -163,160 +183,162 @@ const ProgressiveForm = () => {
         </Card>
 
         <section aria-label="表单分节">
-          <Accordion type="single" collapsible value={`item-${currentStep}`}>
-            {steps.map((s, i) => (
-              <AccordionItem value={`item-${i}`} key={s.key} id={`section-${i}`}>
-                <AccordionTrigger className="px-4">
-                  <div className="flex-1 text-left">
-                    <div className="font-medium">{s.label}</div>
-                    <div className="text-sm text-muted-foreground truncate">{summaryValue(s.key as keyof FormState)}</div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="ml-4"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const el = document.getElementById(`section-${i}`);
-                      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                      setCurrentStep(i);
-                    }}
-                  >
-                    <Edit2 className="mr-2 h-4 w-4" /> 编辑
-                  </Button>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="px-4 pb-4">
-                    {s.key === "service" && (
-                      <Select
-                        value={form.service}
-                        onValueChange={(v) => setForm((f) => ({ ...f, service: v }))}
-                      >
-                        <SelectTrigger className="w-full"><SelectValue placeholder="选择服务" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="写作">写作</SelectItem>
-                          <SelectItem value="校对">校对</SelectItem>
-                          <SelectItem value="改写">改写</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    {s.key === "level" && (
-                      <Select
-                        value={form.level}
-                        onValueChange={(v) => setForm((f) => ({ ...f, level: v }))}
-                      >
-                        <SelectTrigger className="w-full"><SelectValue placeholder="选择等级" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="高中">高中</SelectItem>
-                          <SelectItem value="本科">本科</SelectItem>
-                          <SelectItem value="硕士">硕士</SelectItem>
-                          <SelectItem value="博士">博士</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    {s.key === "language" && (
-                      <Select
-                        value={form.language}
-                        onValueChange={(v) => setForm((f) => ({ ...f, language: v }))}
-                      >
-                        <SelectTrigger className="w-full"><SelectValue placeholder="选择语言" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="中文">中文</SelectItem>
-                          <SelectItem value="英语（美式）">英语（美式）</SelectItem>
-                          <SelectItem value="英语（英式）">英语（英式）</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    {s.key === "size" && (
-                      <Input
-                        value={form.size}
-                        onChange={(e) => setForm((f) => ({ ...f, size: e.target.value }))}
-                        placeholder="请输入篇幅（例：6 页，双倍行距）"
-                      />
-                    )}
-
-                    {s.key === "deadline" && (
-                      <Input
-                        value={form.deadline}
-                        onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
-                        placeholder="请输入截止时间"
-                      />
-                    )}
-
-                    {s.key === "addons" && (
-                      <Input
-                        value={form.addons?.join(", ") || ""}
-                        onChange={(e) => setForm((f) => ({ ...f, addons: e.target.value.split(/,\s*/).filter(Boolean) }))}
-                        placeholder="以逗号分隔输入附加项"
-                      />
-                    )}
-
-                    {s.key === "topic" && (
-                      <Input
-                        value={form.topic}
-                        onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))}
-                        placeholder="请输入题目"
-                      />
-                    )}
-
-                    {s.key === "subject" && (
-                      <Input
-                        value={form.subject}
-                        onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-                        placeholder="请输入学科"
-                      />
-                    )}
-
-                    {s.key === "instruction" && (
-                      <Textarea
-                        value={form.instruction}
-                        onChange={(e) => setForm((f) => ({ ...f, instruction: e.target.value }))}
-                        placeholder="填写详细说明"
-                        className="min-h-28"
-                      />
-                    )}
-
-                    {s.key === "sourcesStyle" && (
-                      <Select
-                        value={form.sourcesStyle}
-                        onValueChange={(v) => setForm((f) => ({ ...f, sourcesStyle: v }))}
-                      >
-                        <SelectTrigger className="w-full"><SelectValue placeholder="选择引用格式" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="APA（含参考文献）">APA（含参考文献）</SelectItem>
-                          <SelectItem value="MLA">MLA</SelectItem>
-                          <SelectItem value="Chicago">Chicago</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    <Separator className="my-4" />
-                    <div className="flex items-center gap-2">
-                      <Button onClick={handleSave} className="px-6">
-                        <Save className="mr-2 h-4 w-4" /> 保存该项
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={() => setCurrentStep((s) => Math.max(s - 1, 0))}
-                      >
-                        上一步
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={() => setCurrentStep((s) => Math.min(s + 1, steps.length - 1))}
-                      >
-                        下一步
-                      </Button>
+          {currentStep >= 1 && (
+            <Accordion type="single" collapsible value={`item-${currentStep - 1}`}>
+              {steps.slice(0, currentStep).map((s, i) => (
+                <AccordionItem value={`item-${i}`} key={s.key} id={`section-${i}`}>
+                  <AccordionTrigger className="px-4">
+                    <div className="flex-1 text-left">
+                      <div className="font-medium">{s.label}</div>
+                      <div className="text-sm text-muted-foreground truncate">{summaryValue(s.key as keyof FormState)}</div>
                     </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="ml-4"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const el = document.getElementById(`section-${i}`);
+                        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        setCurrentStep(i + 1);
+                      }}
+                    >
+                      <Edit2 className="mr-2 h-4 w-4" /> 编辑
+                    </Button>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="px-4 pb-4">
+                      {s.key === "service" && (
+                        <Select
+                          value={form.service}
+                          onValueChange={(v) => setForm((f) => ({ ...f, service: v }))}
+                        >
+                          <SelectTrigger className="w-full"><SelectValue placeholder="选择服务" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="写作">写作</SelectItem>
+                            <SelectItem value="校对">校对</SelectItem>
+                            <SelectItem value="改写">改写</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      {s.key === "level" && (
+                        <Select
+                          value={form.level}
+                          onValueChange={(v) => setForm((f) => ({ ...f, level: v }))}
+                        >
+                          <SelectTrigger className="w-full"><SelectValue placeholder="选择等级" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="高中">高中</SelectItem>
+                            <SelectItem value="本科">本科</SelectItem>
+                            <SelectItem value="硕士">硕士</SelectItem>
+                            <SelectItem value="博士">博士</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      {s.key === "language" && (
+                        <Select
+                          value={form.language}
+                          onValueChange={(v) => setForm((f) => ({ ...f, language: v }))}
+                        >
+                          <SelectTrigger className="w-full"><SelectValue placeholder="选择语言" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="中文">中文</SelectItem>
+                            <SelectItem value="英语（美式）">英语（美式）</SelectItem>
+                            <SelectItem value="英语（英式）">英语（英式）</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      {s.key === "size" && (
+                        <Input
+                          value={form.size || ""}
+                          onChange={(e) => setForm((f) => ({ ...f, size: e.target.value }))}
+                          placeholder="请输入篇幅（例：6 页，双倍行距）"
+                        />
+                      )}
+
+                      {s.key === "deadline" && (
+                        <Input
+                          value={form.deadline || ""}
+                          onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
+                          placeholder="请输入截止时间"
+                        />
+                      )}
+
+                      {s.key === "addons" && (
+                        <Input
+                          value={form.addons?.join(", ") || ""}
+                          onChange={(e) => setForm((f) => ({ ...f, addons: e.target.value.split(/,\s*/).filter(Boolean) }))}
+                          placeholder="以逗号分隔输入附加项"
+                        />
+                      )}
+
+                      {s.key === "topic" && (
+                        <Input
+                          value={form.topic || ""}
+                          onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))}
+                          placeholder="请输入题目"
+                        />
+                      )}
+
+                      {s.key === "subject" && (
+                        <Input
+                          value={form.subject || ""}
+                          onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+                          placeholder="请输入学科"
+                        />
+                      )}
+
+                      {s.key === "instruction" && (
+                        <Textarea
+                          value={form.instruction || ""}
+                          onChange={(e) => setForm((f) => ({ ...f, instruction: e.target.value }))}
+                          placeholder="填写详细说明"
+                          className="min-h-28"
+                        />
+                      )}
+
+                      {s.key === "sourcesStyle" && (
+                        <Select
+                          value={form.sourcesStyle}
+                          onValueChange={(v) => setForm((f) => ({ ...f, sourcesStyle: v }))}
+                        >
+                          <SelectTrigger className="w-full"><SelectValue placeholder="选择引用格式" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="APA（含参考文献）">APA（含参考文献）</SelectItem>
+                            <SelectItem value="MLA">MLA</SelectItem>
+                            <SelectItem value="Chicago">Chicago</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      <Separator className="my-4" />
+                      <div className="flex items-center gap-2">
+                        <Button onClick={handleSave} className="px-6">
+                          <Save className="mr-2 h-4 w-4" /> 保存该项
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          onClick={() => setCurrentStep((s) => Math.max(s - 1, 0))}
+                        >
+                          上一步
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          onClick={handleSave}
+                        >
+                          下一步
+                        </Button>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
         </section>
       </div>
     </div>

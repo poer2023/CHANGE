@@ -67,15 +67,18 @@ const ProgressiveForm = () => {
     []
   );
 
+  const sections = useMemo(
+    () => [{ key: "assignmentType", label: "任务类型" }, ...steps],
+    [steps]
+  );
   const [currentStep, setCurrentStep] = useState(0); // 0 表示“任务类型”卡片
-  const totalSteps = 1 + steps.length; // 首步 + 其余步骤
+  const totalSteps = sections.length; // 全部步骤（含任务类型）
   const progress = Math.round(((currentStep + 1) / totalSteps) * 100);
 
   const handleSave = () => {
-    const currentLabel = currentStep === 0 ? "任务类型" : steps[currentStep - 1].label;
+    const currentLabel = sections[currentStep]?.label || "当前步骤";
     const isValid = (() => {
-      if (currentStep === 0) return !!form.assignmentType;
-      const key = steps[currentStep - 1].key as keyof FormState;
+      const key = sections[currentStep].key as keyof FormState;
       const v = form[key];
       if (Array.isArray(v)) return v.length > 0;
       if (typeof v === "string") return v.trim().length > 0;
@@ -100,7 +103,6 @@ const ProgressiveForm = () => {
       }, 50);
     }
   };
-
   const summaryValue = (key: keyof FormState) => {
     const v = form[key];
     if (Array.isArray(v)) return v.join("，");
@@ -128,64 +130,65 @@ const ProgressiveForm = () => {
           </div>
         </header>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>任务类型</CardTitle>
-            <CardDescription>请选择要完成的任务类型</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">选择</p>
-                <Select
-                  value={form.assignmentType}
-                  onValueChange={(v) => setForm((f) => ({ ...f, assignmentType: v }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="选择类型" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {popularTypes.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        {currentStep === 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>任务类型</CardTitle>
+              <CardDescription>请选择要完成的任务类型</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">选择</p>
+                  <Select
+                    value={form.assignmentType}
+                    onValueChange={(v) => setForm((f) => ({ ...f, assignmentType: v }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="选择类型" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {popularTypes.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">常用</p>
-                <div className="flex flex-wrap gap-2">
-                  {popularTypes.map((t) => (
-                    <Button
-                      key={t}
-                      variant={form.assignmentType === t ? "default" : "secondary"}
-                      size="sm"
-                      onClick={() => setForm((f) => ({ ...f, assignmentType: t }))}
-                    >
-                      {t}
-                    </Button>
-                  ))}
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">常用</p>
+                  <div className="flex flex-wrap gap-2">
+                    {popularTypes.map((t) => (
+                      <Button
+                        key={t}
+                        variant={form.assignmentType === t ? "default" : "secondary"}
+                        size="sm"
+                        onClick={() => setForm((f) => ({ ...f, assignmentType: t }))}
+                      >
+                        {t}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button onClick={handleSave} className="px-6">
+                    <Save className="mr-2 h-4 w-4" /> 保存
+                  </Button>
+                  <Button variant="secondary" size="icon" aria-label="更多">
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2">
-                <Button onClick={handleSave} className="px-6">
-                  <Save className="mr-2 h-4 w-4" /> 保存
-                </Button>
-                <Button variant="secondary" size="icon" aria-label="更多">
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+            </CardContent>
+          </Card>
+        )}
         <section aria-label="表单分节">
           {currentStep >= 1 && (
             <Accordion type="single" collapsible value={`item-${currentStep - 1}`}>
-              {steps.slice(0, currentStep).map((s, i) => (
+              {sections.slice(0, currentStep).map((s, i) => (
                 <AccordionItem value={`item-${i}`} key={s.key} id={`section-${i}`}>
                   <AccordionTrigger className="px-4">
                     <div className="flex-1 text-left">
@@ -209,6 +212,45 @@ const ProgressiveForm = () => {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="px-4 pb-4">
+                      {s.key === "assignmentType" && (
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">选择</p>
+                            <Select
+                              value={form.assignmentType}
+                              onValueChange={(v) => setForm((f) => ({ ...f, assignmentType: v }))}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="选择类型" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {popularTypes.map((t) => (
+                                  <SelectItem key={t} value={t}>
+                                    {t}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">常用</p>
+                            <div className="flex flex-wrap gap-2">
+                              {popularTypes.map((t) => (
+                                <Button
+                                  key={t}
+                                  variant={form.assignmentType === t ? "default" : "secondary"}
+                                  size="sm"
+                                  onClick={() => setForm((f) => ({ ...f, assignmentType: t }))}
+                                >
+                                  {t}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {s.key === "service" && (
                         <Select
                           value={form.service}
@@ -222,7 +264,6 @@ const ProgressiveForm = () => {
                           </SelectContent>
                         </Select>
                       )}
-
                       {s.key === "level" && (
                         <Select
                           value={form.level}

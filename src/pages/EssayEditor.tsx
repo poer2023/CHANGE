@@ -1,0 +1,334 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, Download, Settings, FileText, Eye } from "lucide-react";
+import EssayNavigation from "@/components/essay/EssayNavigation";
+import EssayContent from "@/components/essay/EssayContent";
+import AgentPanel from "@/components/essay/AgentPanel";
+import OperationFlow from "@/components/essay/OperationFlow";
+import { useToast } from "@/hooks/use-toast";
+
+export type EssaySection = {
+  id: string;
+  heading: string;
+  content: string;
+  order: number;
+};
+
+export type AgentOperation = {
+  id: string;
+  tool: string;
+  input: string;
+  output?: string;
+  status: "queued" | "generating" | "proposed_diff" | "waiting_user" | "applied" | "reverted";
+  diff?: {
+    added: string[];
+    removed: string[];
+  };
+  timestamp: Date;
+  duration?: number;
+  tokens?: number;
+};
+
+export type EssayData = {
+  id: string;
+  title: string;
+  status: "idea" | "outline" | "draft" | "review" | "polished";
+  outline: string[];
+  sections: EssaySection[];
+  metadata: {
+    type: string;
+    language: string;
+    wordRange: string;
+    audience: string;
+  };
+};
+
+const EssayEditor = () => {
+  const { toast } = useToast();
+  const [essay, setEssay] = useState<EssayData>({
+    id: "essay-001",
+    title: "AI与教育的未来发展",
+    status: "draft",
+    outline: ["引言", "AI在教育中的现状", "技术优势与挑战", "未来发展方向", "结论"],
+    sections: [
+      {
+        id: "intro",
+        heading: "引言",
+        content: "人工智能技术的快速发展正在深刻改变着教育领域。从个性化学习到智能辅导，AI技术为教育带来了前所未有的机遇。本文将探讨AI在教育中的应用现状、面临的挑战以及未来的发展方向。",
+        order: 0
+      },
+      {
+        id: "current",
+        heading: "AI在教育中的现状",
+        content: "当前，AI技术在教育领域的应用主要集中在几个方面：自适应学习平台能够根据学生的学习进度和能力调整教学内容；智能评测系统可以快速准确地评估学生的学习成果；虚拟助教为学生提供24小时的学习支持。这些应用已经在全球范围内得到了广泛的实践。",
+        order: 1
+      },
+      {
+        id: "challenges",
+        heading: "技术优势与挑战",
+        content: "AI技术的优势在于其能够处理大量数据，提供个性化的学习体验，并且不受时间和地点的限制。然而，这一技术也面临着诸多挑战：数据隐私和安全问题、算法偏见、教师角色的重新定义以及技术依赖性等。这些挑战需要教育工作者、技术开发者和政策制定者共同努力来解决。",
+        order: 2
+      },
+      {
+        id: "future",
+        heading: "未来发展方向",
+        content: "展望未来，AI在教育中的应用将更加深入和广泛。我们可以预期看到更加智能的学习环境、更精准的能力评估、更有效的教学方法。同时，人机协作将成为新的教学模式，教师的作用将从知识传授者转变为学习引导者和情感支持者。",
+        order: 3
+      },
+      {
+        id: "conclusion",
+        heading: "结论",
+        content: "AI技术为教育发展带来了巨大的潜力，但也需要我们谨慎应对其中的挑战。只有在确保技术服务于教育本质的前提下，我们才能真正实现AI与教育的良性发展，为学习者创造更好的教育体验。",
+        order: 4
+      }
+    ],
+    metadata: {
+      type: "学术评论",
+      language: "中文",
+      wordRange: "800-1200字",
+      audience: "学术读者"
+    }
+  });
+
+  const [operations, setOperations] = useState<AgentOperation[]>([]);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [selectedText, setSelectedText] = useState<string>("");
+
+  const handleBackToForm = () => {
+    window.location.href = '/';
+  };
+
+  const handleExport = (format: "markdown" | "docx") => {
+    toast({
+      title: "导出中",
+      description: `正在导出为 ${format.toUpperCase()} 格式...`
+    });
+    
+    // TODO: 实际的导出逻辑
+    setTimeout(() => {
+      toast({
+        title: "导出完成",
+        description: `Essay已成功导出为 ${format.toUpperCase()} 格式`
+      });
+    }, 2000);
+  };
+
+  const handleAgentOperation = (tool: string, input: string, targetSectionId?: string) => {
+    const newOperation: AgentOperation = {
+      id: `op-${Date.now()}`,
+      tool,
+      input,
+      status: "queued",
+      timestamp: new Date()
+    };
+
+    setOperations(prev => [...prev, newOperation]);
+
+    // 模拟Agent处理过程
+    setTimeout(() => {
+      setOperations(prev => 
+        prev.map(op => 
+          op.id === newOperation.id 
+            ? { ...op, status: "generating" }
+            : op
+        )
+      );
+    }, 500);
+
+    setTimeout(() => {
+      setOperations(prev => 
+        prev.map(op => 
+          op.id === newOperation.id 
+            ? { 
+                ...op, 
+                status: "proposed_diff",
+                output: generateMockOutput(tool, input),
+                diff: generateMockDiff(tool),
+                duration: 3500,
+                tokens: Math.floor(Math.random() * 500) + 200
+              }
+            : op
+        )
+      );
+    }, 3500);
+  };
+
+  const generateMockOutput = (tool: string, input: string): string => {
+    switch (tool) {
+      case "rewrite":
+        return "已重写选中段落，提高了表达的清晰度和逻辑性。";
+      case "expand":
+        return "已扩展该段落，添加了更多支撑细节和例证。";
+      case "proofread":
+        return "已校对文本，修复了语法错误并优化了表达。";
+      case "outline":
+        return "已重新整理大纲结构，优化了逻辑层次。";
+      case "cite":
+        return "已格式化引用，符合指定的学术规范。";
+      default:
+        return "操作已完成。";
+    }
+  };
+
+  const generateMockDiff = (tool: string) => {
+    const mockDiffs = {
+      rewrite: {
+        added: ["人工智能技术的迅猛发展正在根本性地重塑教育领域的面貌。"],
+        removed: ["人工智能技术的快速发展正在深刻改变着教育领域。"]
+      },
+      expand: {
+        added: ["例如，Khan Academy的个性化学习平台已经帮助全球数百万学生提高了学习效率。", "据研究显示，使用AI辅助学习的学生在标准化测试中的表现提升了15-20%。"],
+        removed: []
+      },
+      proofread: {
+        added: ["这些应用已经在全球范围内得到了广泛的实践和验证。"],
+        removed: ["这些应用已经在全球范围内得到了广泛的实践。"]
+      }
+    };
+    
+    return mockDiffs[tool as keyof typeof mockDiffs] || { added: [], removed: [] };
+  };
+
+  const handleApplyOperation = (operationId: string) => {
+    const operation = operations.find(op => op.id === operationId);
+    if (!operation) return;
+
+    setOperations(prev => 
+      prev.map(op => 
+        op.id === operationId 
+          ? { ...op, status: "applied" }
+          : op
+      )
+    );
+
+    // TODO: 实际应用更改到essay内容
+    toast({
+      title: "更改已应用",
+      description: "操作结果已应用到文稿中"
+    });
+  };
+
+  const handleRevertOperation = (operationId: string) => {
+    setOperations(prev => 
+      prev.map(op => 
+        op.id === operationId 
+          ? { ...op, status: "reverted" }
+          : op
+      )
+    );
+
+    toast({
+      title: "更改已撤销",
+      description: "操作已撤销，文稿恢复到之前状态"
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* 顶部状态栏 */}
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" onClick={handleBackToForm}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                返回表单
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <div className="flex items-center gap-3">
+                <h1 className="text-lg font-semibold">{essay.title}</h1>
+                <Badge variant="secondary">
+                  {essay.status === "draft" ? "草稿" : essay.status}
+                </Badge>
+              </div>
+            </div>
+            
+            {/* 状态进度 */}
+            <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-muted rounded-lg">
+              {["idea", "outline", "draft", "review", "polished"].map((status, index) => (
+                <div key={status} className="flex items-center gap-2">
+                  <div 
+                    className={`w-2 h-2 rounded-full ${
+                      ["idea", "outline", "draft"].includes(status) 
+                        ? "bg-primary" 
+                        : "bg-muted-foreground/30"
+                    }`}
+                  />
+                  <span className="text-sm capitalize">
+                    {status === "idea" ? "构思" : 
+                     status === "outline" ? "大纲" :
+                     status === "draft" ? "草稿" :
+                     status === "review" ? "审阅" : "完善"}
+                  </span>
+                  {index < 4 && <div className="w-4 h-px bg-border" />}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => handleExport("markdown")}>
+                <Download className="mr-2 h-4 w-4" />
+                导出 MD
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleExport("docx")}>
+                <Download className="mr-2 h-4 w-4" />
+                导出 DOCX
+              </Button>
+              <Button variant="ghost" size="sm">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* 主要内容区域 */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-12 gap-6">
+          {/* 左侧导航 */}
+          <div className="col-span-2">
+            <EssayNavigation 
+              outline={essay.outline}
+              sections={essay.sections}
+              selectedSection={selectedSection}
+              onSectionSelect={setSelectedSection}
+            />
+          </div>
+
+          {/* 中间文稿区域 */}
+          <div className="col-span-6">
+            <EssayContent 
+              essay={essay}
+              operations={operations}
+              selectedSection={selectedSection}
+              onTextSelect={setSelectedText}
+              onSectionSelect={setSelectedSection}
+            />
+          </div>
+
+          {/* 右侧Agent面板 */}
+          <div className="col-span-4">
+            <div className="space-y-4">
+              <AgentPanel 
+                selectedText={selectedText}
+                selectedSection={selectedSection}
+                onOperation={handleAgentOperation}
+              />
+              <OperationFlow 
+                operations={operations}
+                onApply={handleApplyOperation}
+                onRevert={handleRevertOperation}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EssayEditor;

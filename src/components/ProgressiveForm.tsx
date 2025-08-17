@@ -125,10 +125,8 @@ const ProgressiveForm = () => {
       
       // Optional advanced settings
       { key: "language", label: "语言", required: false },
-      { key: "audience", label: "读者与语气", required: false },
-      { key: "thesis", label: "论点/Thesis", required: false },
       { key: "structure", label: "段落结构", required: false },
-      { key: "materials", label: "素材", required: false },
+      { key: "materials", label: "补充信息", required: false },
     ],
     []
   );
@@ -515,14 +513,14 @@ const ProgressiveForm = () => {
                         </Select>
                       )}
 
-                      {s.key === "materials" && (
-                        <Textarea
-                          value={form.materials || ""}
-                          onChange={(e) => setForm((f) => ({ ...f, materials: e.target.value }))}
-                          placeholder="粘贴相关素材、参考文献或上传文档内容..."
-                          className="min-h-32"
-                        />
-                      )}
+                       {s.key === "materials" && (
+                         <Textarea
+                           value={form.materials || ""}
+                           onChange={(e) => setForm((f) => ({ ...f, materials: e.target.value }))}
+                           placeholder="请输入补充信息，如参考文献、素材、特殊要求等..."
+                           className="min-h-32"
+                         />
+                       )}
 
                       {s.key === "factCheck" && (
                         <Select

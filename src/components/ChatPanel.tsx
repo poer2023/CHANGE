@@ -105,9 +105,9 @@ const ChatPanel = () => {
   };
 
   return (
-    <div className="w-[410px] h-full bg-white border-l border-gray-200 flex flex-col">
+    <div className="w-[410px] h-full bg-white border-l border-gray-200 flex flex-col relative">
       {/* 消息区域 */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden pb-32">
         <ScrollArea className="h-full">
           <div className="p-4 space-y-4">
             {messages.map((message) => (
@@ -131,14 +131,14 @@ const ChatPanel = () => {
         </ScrollArea>
       </div>
 
-      {/* 输入区域 */}
-      <div className="p-4 border-t border-gray-100">
+      {/* 输入区域 - 固定在底部 */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 bg-white">
         <div className="flex gap-2">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="请输入你的问题..."
-            className="flex-1 min-h-10 resize-none rounded-2xl border-gray-200 focus:border-primary"
+            className="flex-1 min-h-20 resize-none rounded-2xl border-gray-200 focus:border-primary"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -150,7 +150,7 @@ const ChatPanel = () => {
             onClick={handleSendMessage}
             disabled={!input.trim() || isLoading}
             size="sm"
-            className="h-10 px-3 rounded-2xl"
+            className="h-20 px-3 rounded-2xl"
           >
             <Send className="h-4 w-4" />
           </Button>

@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { ChevronDown, Edit2, Save, Trash2, X, FileText } from "lucide-react";
+import ChatPanel from "./ChatPanel";
 
 type FormState = {
   // Step 1: Essay Type
@@ -236,8 +237,8 @@ const ProgressiveForm = () => {
   };
 
   return (
-    <div className="w-full flex justify-center">
-      <div className="w-full max-w-3xl px-4 md:px-0">
+    <div className="w-full flex">
+      <div className="flex-1 max-w-3xl px-4 md:px-0">
         <header className="flex items-center justify-between mb-4 mt-8">
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-semibold">Essay 生成器</h2>
@@ -617,6 +618,9 @@ const ProgressiveForm = () => {
           </Card>
         )}
       </div>
+      
+      {/* 右侧聊天面板 */}
+      <ChatPanel />
     </div>
   );
 };

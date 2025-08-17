@@ -1,13 +1,18 @@
-import ProgressiveForm from "@/components/ProgressiveForm";
+import LandingNavigation from "@/components/LandingNavigation";
+import LandingHero from "@/components/LandingHero";
+import LandingFeatures from "@/components/LandingFeatures";
+import LandingWorkflow from "@/components/LandingWorkflow";
+import LandingCTA from "@/components/LandingCTA";
 
 const Index = () => {
   return (
-    <main className="min-h-screen bg-background">
-      <section className="container py-8">
-        <h1 className="sr-only">渐进式表单（中文）</h1>
-        <ProgressiveForm />
-      </section>
-    </main>
+    <div className="min-h-screen bg-background">
+      <LandingNavigation />
+      <LandingHero />
+      <LandingFeatures />
+      <LandingWorkflow />
+      <LandingCTA />
+    </div>
   );
 };
 

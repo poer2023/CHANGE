@@ -34,12 +34,26 @@ type FormState = {
 };
 
 const essayTypes = [
-  "Argumentative Essay",
-  "Analytical Essay", 
-  "Compare & Contrast",
-  "申请文书",
-  "学术评论",
-  "研究报告",
+  { value: "Standard Academic Essay", label: "Standard Academic Essay", description: "标准学术论文，常见于大多数课程中，结构规范、内容客观，重点展示对学术主题的理解、分析与研究。" },
+  { value: "Argumentative Essay", label: "Argumentative Essay", description: "论证型论文，提出明确立场，通过逻辑推理和证据支持观点，同时反驳反方观点。" },
+  { value: "Analytical Essay", label: "Analytical Essay", description: "分析型论文，深入分析某一主题、现象或文本，关注\"如何\"与\"为什么\"，而非仅仅描述事实。" },
+  { value: "Critical Essay", label: "Critical Essay", description: "批评性论文，评估他人观点、理论或文本，结合自身立场进行深入讨论与评价。" },
+  { value: "Compare & Contrast Essay", label: "Compare & Contrast Essay", description: "对比论文，对两个或多个对象的异同进行比较，常用于理论、事件或文学作品之间的比较分析。" },
+  { value: "Personal Statement / Admission Essay", label: "Personal Statement / Admission Essay", description: "个人陈述 / 入学申请文书，用于申请学校或职位，侧重个人经历、动机和未来目标，语言更主观。" },
+  { value: "Literary Analysis Essay", label: "Literary Analysis Essay", description: "文学分析论文，分析文学作品中的主题、结构、角色或语言风格，展示文学理解与批评能力。" },
+  { value: "Research Paper", label: "Research Paper", description: "研究论文，基于文献资料和数据展开自主研究，提出问题、方法、发现和结论，体现科研能力。" },
+  { value: "Research Review (Literature Review)", label: "Research Review (Literature Review)", description: "文献综述，总结、评估某一领域已有研究成果，识别研究空白，常作为研究论文的前置部分。" },
+  { value: "Discussion Post", label: "Discussion Post", description: "课堂讨论帖，在线学习中常见，需就特定主题撰写简短、逻辑清晰的观点发表，鼓励互动。" },
+  { value: "PPT Presentation with Speaker Notes", label: "PPT Presentation with Speaker Notes", description: "演示型作业，提交带有讲解文字的PPT，展示调研结果、论文结构或课程内容，注重视觉与语言结合。" },
+  { value: "Homework (Any Type)", label: "Homework (Any Type)", description: "家庭作业，课程中的常规作业任务，类型多样，可为短文、分析题、反思日志等。" },
+  { value: "Case Study", label: "Case Study", description: "案例分析，针对具体案例（如企业、事件、政策等）进行深入分析，提出问题与解决方案。" },
+  { value: "Assignment", label: "Assignment", description: "课程作业总称，泛指老师布置的所有书面任务，可涵盖论文、报告、问题集等多种形式。" },
+  { value: "Annotated Bibliography", label: "Annotated Bibliography", description: "文献注释，对一组文献进行简要总结与评价，说明其与研究主题的关联及其价值。" },
+  { value: "Article Review", label: "Article Review", description: "文章评论，对学术文章进行总结与评析，评估其研究价值、方法合理性和结果可靠性。" },
+  { value: "Article Writing", label: "Article Writing", description: "文章撰写，撰写新闻、评论、博客等非学术类文本，考察表达、组织与受众意识能力。" },
+  { value: "Book / Movie Review", label: "Book / Movie Review", description: "书籍/电影评论，分析和评价特定书籍或电影的内容、主题与表现形式，常结合批评观点。" },
+  { value: "Business Plan", label: "Business Plan", description: "商业计划书，详细阐述创业项目的商业模式、市场策略、财务预测等，面向投资人或导师。" },
+  { value: "Business Proposal", label: "Business Proposal", description: "商业提案，针对某一商业需求提出解决方案，重点在说服客户或上级采纳计划。" },
 ];
 
 const audiences = [
@@ -256,25 +270,30 @@ const ProgressiveForm = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {essayTypes.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {form.essayType && (
+                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                      {essayTypes.find(t => t.value === form.essayType)?.description}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">常用类型</p>
                   <div className="flex flex-wrap gap-2">
-                    {essayTypes.map((t) => (
+                    {essayTypes.slice(0, 6).map((t) => (
                       <Button
-                        key={t}
-                        variant={form.essayType === t ? "default" : "secondary"}
+                        key={t.value}
+                        variant={form.essayType === t.value ? "default" : "secondary"}
                         size="sm"
-                        onClick={() => setForm((f) => ({ ...f, essayType: t }))}
+                        onClick={() => setForm((f) => ({ ...f, essayType: t.value }))}
                       >
-                        {t}
+                        {t.label}
                       </Button>
                     ))}
                   </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, Library, History, User, Settings, CreditCard, Activity, Shield, Search, LogOut, ChevronRight, Bot } from "lucide-react";
+import { Plus, Library, History, User, Settings, CreditCard, Activity, Shield, Search, LogOut, ChevronRight, Bot, TrendingUp, PenTool, FileCheck } from "lucide-react";
 import Logo from "@/components/ui/logo";
 import {
   Sidebar,
@@ -103,6 +103,21 @@ const AppSidebar = () => {
                   <span>历史记录</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="订单跟踪" onClick={() => navigate('/order-tracking')}>
+                  <TrendingUp className="h-4 w-4" />
+                  <span>订单跟踪</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="交付报告" onClick={() => navigate('/delivery-report')}>
+                  <FileCheck className="h-4 w-4" />
+                  <span>交付报告</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -138,19 +153,13 @@ const AppSidebar = () => {
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:h-14">
                   <Avatar className="h-8 w-8 rounded-lg group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
-                    <AvatarImage src={user?.avatar} alt={user?.name || '用户头像'} />
+                    <AvatarImage src="https://api.dicebear.com/7.x/pixel-art/png?seed=user&size=128&backgroundColor=ff6b6b&scale=80" alt={user?.name || '用户头像'} />
                     <AvatarFallback className="rounded-lg group-data-[collapsible=icon]:text-base">
                       {user?.name?.slice(0, 2) || '用户'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate font-semibold">{user?.name || '用户名'}</span>
-                      <Badge className={`text-xs ${getVipLevel().color}`}>
-                        {getVipLevel().name}
-                      </Badge>
-                    </div>
-                    <span className="truncate text-xs">{user?.email || 'user@example.com'}</span>
+                    <span className="truncate font-semibold">{user?.name || '用户名'}</span>
                   </div>
                   <ChevronRight className="ml-auto h-4 w-4 group-data-[collapsible=icon]:hidden" />
                 </SidebarMenuButton>
@@ -159,14 +168,17 @@ const AppSidebar = () => {
                 <DropdownMenuLabel className="pb-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={user?.avatar} alt={user?.name || '用户头像'} />
+                      <AvatarImage src="https://api.dicebear.com/7.x/pixel-art/png?seed=user&size=128&backgroundColor=ff6b6b&scale=80" alt={user?.name || '用户头像'} />
                       <AvatarFallback className="text-sm font-medium">
                         {user?.name?.slice(0, 2) || '用户'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left">
                       <span className="font-medium text-sm">{user?.name || '用户名'}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground mt-0.5">
+                        {user?.email || 'user@example.com'}
+                      </span>
+                      <span className="text-xs text-blue-600 font-medium mt-1">
                         余额: {balance.wordBalance.toLocaleString()} 字
                       </span>
                     </div>

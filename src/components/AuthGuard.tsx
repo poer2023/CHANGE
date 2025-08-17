@@ -25,9 +25,10 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, requireAuth = true }) =
     return <Navigate to="/" replace />;
   }
 
-  if (!requireAuth && isAuthenticated) {
-    return <Navigate to="/form" replace />;
-  }
+  // 移除自动重定向逻辑，允许已登录用户访问演示页面
+  // if (!requireAuth && isAuthenticated) {
+  //   return <Navigate to="/form" replace />;
+  // }
 
   return <>{children}</>;
 };

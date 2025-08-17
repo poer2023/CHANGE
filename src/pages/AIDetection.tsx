@@ -29,8 +29,7 @@ import {
   Type,
   Edit3
 } from 'lucide-react';
-import AppSidebar from '@/components/AppSidebar';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import AppShell from '@/components/AppShell';
 import { useToast } from '@/hooks/use-toast';
 import DetectionInputV2, { DetectionFile, HistoryItem } from '@/components/DetectionInputV2';
 
@@ -198,11 +197,8 @@ const AIDetection: React.FC = () => {
   };
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="min-h-screen bg-gray-50">
-          <div className="container mx-auto p-6" style={{ maxWidth: '960px' }}>
+    <AppShell>
+      <div className="space-y-6">
             {/* 顶部栏 */}
             <div className="mb-6">
               <div className="flex items-center justify-between">
@@ -212,46 +208,39 @@ const AIDetection: React.FC = () => {
                     基于先进算法分析文本的AI生成特征 • Model: v1.3
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  {/* 输入内容下拉菜单 - 仅在有结果时显示 */}
-                  {state === 'done' && result && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Edit3 className="h-4 w-4 mr-2" />
-                          输入内容
-                          <ChevronDown className="h-4 w-4 ml-2" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-80">
-                        <div className="p-3">
-                          <div className="text-sm font-medium mb-2">当前检测内容:</div>
-                          <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded max-h-32 overflow-auto">
-                            {selectedInput || '无输入内容'}
-                          </div>
+                {state === 'done' && result && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        输入内容
+                        <ChevronDown className="h-4 w-4 ml-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-80">
+                      <div className="p-3">
+                        <div className="text-sm font-medium mb-2">当前检测内容:</div>
+                        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded max-h-32 overflow-auto">
+                          {selectedInput || '无输入内容'}
                         </div>
-                        <DropdownMenuItem onClick={() => {
-                          setState('idle');
-                          setResult(null);
-                        }}>
-                          <Type className="h-4 w-4 mr-2" />
-                          重新输入文本
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {
-                          setState('idle');
-                          setResult(null);
-                        }}>
-                          <Upload className="h-4 w-4 mr-2" />
-                          上传新文件
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                  <Button variant="outline" onClick={() => window.history.back()}>
-                    <History className="h-4 w-4 mr-2" />
-                    历史记录
-                  </Button>
-                </div>
+                      </div>
+                      <DropdownMenuItem onClick={() => {
+                        setState('idle');
+                        setResult(null);
+                      }}>
+                        <Type className="h-4 w-4 mr-2" />
+                        重新输入文本
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        setState('idle');
+                        setResult(null);
+                      }}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        上传新文件
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </div>
 
@@ -488,10 +477,8 @@ const AIDetection: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </AppShell>
   );
 };
 

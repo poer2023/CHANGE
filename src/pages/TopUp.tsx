@@ -1,119 +1,313 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useId } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
-  CreditCard, 
-  Wallet, 
-  Gift, 
-  Star, 
-  CheckCircle, 
+  Shield, 
+  Infinity, 
+  Headphones,
+  CheckCircle,
   Loader2,
-  Crown,
-  TrendingUp,
-  Clock,
-  Smartphone,
-  Building,
-  History as HistoryIcon,
-  Search,
-  Filter,
-  ArrowUpCircle,
-  Zap
+  CreditCard,
+  Star
 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import AppSidebar from '@/components/AppSidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { useCredit } from '@/contexts/CreditContext';
-import { CREDIT_PACKAGES, formatPrice, formatWordCount, getTotalWords, getPricePerWord } from '@/lib/pricing';
-import type { CreditPackage } from '@/lib/pricing';
 
-type PaymentMethod = 'alipay' | 'wechat' | 'bank';
+// 套餐配置
+const PACKAGES = [
+  {
+    id: 'starter',
+    title: 'Starter',
+    words: '5万',
+    price: '$29',
+    per: '$5.80 / 1k words',
+    description: '入门体验，轻量使用',
+    features: [
+      '一次性购买字数不过期',
+      '不限文档数量',
+      '基础队列优先级',
+      '邮件客服支持'
+    ],
+    variant: 'base',
+    ctaColor: 'primary'
+  },
+  {
+    id: 'popular',
+    title: 'Popular',
+    words: '12万',
+    price: '$49',
+    per: '$4.08 / 1k words',
+    description: '最受欢迎，性价比最佳',
+    features: [
+      '字数不过期',
+      '不限文档数量',
+      '高峰时段优先队列',
+      '专属问题反馈通道'
+    ],
+    badge: 'HOT',
+    variant: 'hot',
+    ctaColor: 'hot'
+  },
+  {
+    id: 'premium',
+    title: 'Premium',
+    words: '30万',
+    price: '$99',
+    per: '$3.30 / 1k words',
+    description: '高频用户，批量创作更省',
+    features: [
+      '字数不过期',
+      '不限文档数量',
+      '最高优先级队列',
+      '新功能优先体验'
+    ],
+    variant: 'premium',
+    ctaColor: 'green'
+  }
+];
 
-const TopUp: React.FC = () => {
-  const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('alipay');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dateFilter, setDateFilter] = useState<'all' | '7d' | '30d' | '90d'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'pending' | 'failed'>('all');
+// 优势说明配置
+const BENEFITS = [
+  {
+    icon: Shield,
+    title: '安全支付',
+    note: 'SSL & SCA'
+  },
+  {
+    icon: Infinity,
+    title: '永不过期',
+    note: '字数随用随扣'
+  },
+  {
+    icon: Headphones,
+    title: '优先客服',
+    note: '7x24 邮件支持'
+  }
+];
 
-  const { toast } = useToast();
-  const { balance, rechargeHistory, recharge, isLoading } = useCredit();
+interface PlanCardProps {
+  title: string;
+  words: string;
+  price: string;
+  per: string;
+  features: string[];
+  badge?: string;
+  variant?: 'base' | 'hot' | 'premium';
+  ctaColor?: 'primary' | 'hot' | 'green';
+  description: string;
+  onSelect: () => void;
+  isSelected: boolean;
+  isProcessing: boolean;
+}
 
-  // 支付方式配置
-  const paymentMethods = [
-    { id: 'alipay', name: '支付宝', icon: Smartphone, description: '快速安全，即时到账' },
-    { id: 'wechat', name: '微信支付', icon: Smartphone, description: '微信扫码，便捷支付' },
-    { id: 'bank', name: '银行卡', icon: Building, description: '银行卡直接支付' },
-  ];
-
-  // 过滤充值历史
-  const filteredHistory = useMemo(() => {
-    let filtered = rechargeHistory;
-
-    // 搜索过滤
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(record =>
-        record.packageName.toLowerCase().includes(query) ||
-        record.paymentMethod.toLowerCase().includes(query) ||
-        record.id.toLowerCase().includes(query)
-      );
-    }
-
-    // 状态过滤
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(record => record.status === statusFilter);
-    }
-
-    // 时间过滤
-    if (dateFilter !== 'all') {
-      const now = new Date();
-      const days = { '7d': 7, '30d': 30, '90d': 90 }[dateFilter] || 0;
-      const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-      filtered = filtered.filter(record => record.createdAt >= cutoffDate);
-    }
-
-    return filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  }, [rechargeHistory, searchQuery, statusFilter, dateFilter]);
-
-  // 获取状态显示信息
-  const getStatusInfo = (status: 'pending' | 'success' | 'failed') => {
-    const statusMap = {
-      pending: { text: '处理中', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      success: { text: '成功', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      failed: { text: '失败', color: 'bg-red-100 text-red-800', icon: ArrowUpCircle },
-    };
-    return statusMap[status];
+function PlanCard({ 
+  title, 
+  words, 
+  price, 
+  per, 
+  features, 
+  badge, 
+  variant = 'base', 
+  ctaColor = 'primary',
+  description,
+  onSelect,
+  isSelected,
+  isProcessing
+}: PlanCardProps) {
+  const gid = useId(); // 每张卡唯一的 gradient id
+  const baseClasses = "relative rounded-2xl bg-white p-6 flex flex-col justify-between border border-slate-200 shadow-[0_6px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(15,23,42,0.12)] min-h-[500px]";
+  
+  const variantClasses = {
+    base: baseClasses,
+    hot: `${baseClasses.replace('border border-slate-200', '')} plan-card hot`,
+    premium: `${baseClasses} ring-1 ring-green-200`
   };
 
-  // 处理充值
-  const handleRecharge = async () => {
-    if (!selectedPackage) {
-      toast({
-        title: "请选择套餐",
-        description: "请先选择一个充值套餐",
-        variant: "destructive"
-      });
-      return;
-    }
+  const buttonClasses = {
+    primary: "bg-blue-600 hover:bg-blue-700 text-white",
+    hot: "bg-gradient-to-r from-[#FF8A4C] to-[#FF4D8D] text-white",
+    green: "bg-emerald-600 hover:bg-emerald-700 text-white"
+  };
 
+  return (
+    <div className={variantClasses[variant]}>
+      {badge === "HOT" && <div className="badge-hot">HOT</div>}
+      
+      {/* 流动细光边 */}
+      {variant === 'hot' && (
+        <svg
+          className="hot-border"
+          viewBox="0 0 100 100" 
+          preserveAspectRatio="none" 
+          aria-hidden="true"
+        >
+          {/* 1) 静态底轮廓：超细，低饱和 */}
+          <rect 
+            x="1" 
+            y="1" 
+            width="98" 
+            height="98" 
+            rx="8"
+            fill="none" 
+            stroke="rgba(99,102,241,.25)" 
+            strokeWidth="1"
+          />
+
+          <defs>
+            {/* 彩色渐变，提亮饱和度 */}
+            <linearGradient 
+              id={`hot-grad-${gid}`} 
+              x1="0" 
+              y1="0" 
+              x2="100" 
+              y2="0" 
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop offset="0%" stopColor="#FFC9A3"/>
+              <stop offset="35%" stopColor="#FF77B4"/>
+              <stop offset="65%" stopColor="#8B5CF6"/>
+              <stop offset="100%" stopColor="#45E0FF"/>
+            </linearGradient>
+
+            {/* 柔光：让彩色段"发光" */}
+            <filter id={`soft-glow-${gid}`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="b"/>
+              <feMerge>
+                <feMergeNode in="b"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+
+            {/* 高光针：白色小光点，增强"闪"的感觉 */}
+            <filter id={`glint-${gid}`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="1"/>
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="1.2"/>
+              </feComponentTransfer>
+            </filter>
+          </defs>
+
+          {/* 2) 主彩色细光带：1.6px，沿边流动 */}
+          <rect
+            className="hot-dash"
+            x="1" 
+            y="1" 
+            width="98" 
+            height="98" 
+            rx="8"
+            fill="none" 
+            stroke={`url(#hot-grad-${gid})`} 
+            strokeWidth="1.6" 
+            pathLength={1000}
+            filter={`url(#soft-glow-${gid})`}
+          />
+
+          {/* 3) 白色高光针：0.8px，更快一层，叠加更亮 */}
+          <rect
+            className="hot-glint"
+            x="1" 
+            y="1" 
+            width="98" 
+            height="98" 
+            rx="8"
+            fill="none" 
+            stroke="#fff" 
+            strokeWidth="0.8" 
+            strokeOpacity="0.95"
+            pathLength={1000}
+            filter={`url(#glint-${gid})`}
+          />
+        </svg>
+      )}
+
+      <div className="flex-1">
+        <header className="text-center space-y-1 mb-6">
+          <h3 className="text-xl font-semibold text-slate-900">{title}</h3>
+          <p className="text-sm text-slate-500 mb-4">{description}</p>
+          <div className="text-5xl font-extrabold tracking-tight text-slate-900">{words}</div>
+          <div className="text-sm uppercase tracking-wide text-slate-500">字数</div>
+          <div className="mt-3 text-3xl font-bold">{price}</div>
+          <div className="text-xs text-slate-500">{per}</div>
+        </header>
+
+        <hr className="my-5 border-slate-200" />
+
+        <ul className="space-y-3 text-sm text-slate-700">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-start gap-2">
+              <CheckCircle className="h-5 w-5 mt-0.5 text-emerald-500 flex-shrink-0" />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-6">
+        <Button 
+          className={`w-full h-11 rounded-xl ${buttonClasses[ctaColor]} font-medium transition-all duration-200`}
+          onClick={onSelect}
+          disabled={isProcessing}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              处理中...
+            </>
+          ) : (
+            'Pay with Stripe'
+          )}
+        </Button>
+        <p className="mt-2 text-center text-[11px] text-slate-400">
+          Secure payment powered by Stripe
+        </p>
+      </div>
+    </div>
+  );
+}
+
+interface BenefitProps {
+  icon: React.ElementType;
+  title: string;
+  note: string;
+}
+
+function Benefit({ icon: Icon, title, note }: BenefitProps) {
+  return (
+    <div className="flex items-center gap-3">
+      <Icon className="h-5 w-5 text-slate-500" />
+      <div>
+        <div className="font-medium text-sm">{title}</div>
+        <div className="text-xs text-slate-500">{note}</div>
+      </div>
+    </div>
+  );
+}
+
+const TopUp: React.FC = () => {
+  const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+  const { recharge } = useCredit();
+
+  const handlePackageSelect = async (packageId: string) => {
+    setSelectedPackage(packageId);
     setIsProcessing(true);
 
     try {
-      const success = await recharge(selectedPackage.id, paymentMethods.find(m => m.id === paymentMethod)?.name || '支付宝');
+      const pkg = PACKAGES.find(p => p.id === packageId);
+      if (!pkg) return;
+
+      // 模拟支付处理
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const success = await recharge(packageId, 'Stripe');
       
       if (success) {
         toast({
           title: "充值成功",
-          description: `已成功充值${formatWordCount(getTotalWords(selectedPackage))}`,
+          description: `已成功充值${pkg.words}字数`,
         });
-        setSelectedPackage(null);
       } else {
         toast({
           title: "充值失败",
@@ -129,402 +323,54 @@ const TopUp: React.FC = () => {
       });
     } finally {
       setIsProcessing(false);
+      setSelectedPackage(null);
     }
   };
-
-  // 格式化时间
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  // 计算统计数据
-  const stats = useMemo(() => {
-    const successfulRecharges = rechargeHistory.filter(r => r.status === 'success');
-    return {
-      totalAmount: successfulRecharges.reduce((sum, r) => sum + r.amount, 0),
-      totalWords: successfulRecharges.reduce((sum, r) => sum + r.wordCount + r.bonusWords, 0),
-      totalTransactions: successfulRecharges.length,
-      thisMonthAmount: successfulRecharges
-        .filter(r => {
-          const thisMonth = new Date();
-          thisMonth.setDate(1);
-          thisMonth.setHours(0, 0, 0, 0);
-          return r.createdAt >= thisMonth;
-        })
-        .reduce((sum, r) => sum + r.amount, 0)
-    };
-  }, [rechargeHistory]);
 
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="min-h-screen bg-background">
-          <div className="container mx-auto p-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+          <div className="mx-auto max-w-[1120px] px-4 py-10">
             {/* 页面标题 */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <CreditCard className="h-8 w-8 text-blue-600" />
-                <div>
-                  <h1 className="text-3xl font-bold">字数充值</h1>
-                  <p className="text-gray-600">选择合适的套餐，畅享AI写作服务</p>
-                </div>
-              </div>
-              {/* 用户余额信息 */}
-              <Card className="p-4">
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-blue-600">{formatWordCount(balance.wordBalance)}</p>
-                    <p className="text-sm text-gray-600">当前余额</p>
-                  </div>
-                  <Separator orientation="vertical" className="h-12" />
-                  <div className="text-center">
-                    <div className="flex items-center gap-1">
-                      <Crown className="h-4 w-4 text-yellow-600" />
-                      <p className="text-sm font-medium">{balance.vipLevel.name}</p>
-                    </div>
-                    <p className="text-xs text-gray-600">{balance.vipLevel.discount}%折扣</p>
-                  </div>
-                </div>
-              </Card>
+            <header className="text-center mb-12">
+              <h1 className="text-4xl font-bold text-slate-900 mb-3">Word Credits</h1>
+              <p className="text-slate-500 text-lg">Choose the plan that fits your workload</p>
+            </header>
+
+            {/* 三卡布局 */}
+            <div className="grid gap-6 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 mb-12">
+              {PACKAGES.map((pkg) => (
+                <PlanCard
+                  key={pkg.id}
+                  title={pkg.title}
+                  words={pkg.words}
+                  price={pkg.price}
+                  per={pkg.per}
+                  features={pkg.features}
+                  badge={pkg.badge}
+                  variant={pkg.variant as any}
+                  ctaColor={pkg.ctaColor as any}
+                  description={pkg.description}
+                  onSelect={() => handlePackageSelect(pkg.id)}
+                  isSelected={selectedPackage === pkg.id}
+                  isProcessing={isProcessing && selectedPackage === pkg.id}
+                />
+              ))}
             </div>
 
-            {/* 统计卡片 */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <Card className="p-4">
-                <div className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-2xl font-bold">{formatPrice(stats.totalAmount)}</p>
-                    <p className="text-sm text-gray-600">累计充值</p>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="text-2xl font-bold">{formatWordCount(stats.totalWords)}</p>
-                    <p className="text-sm text-gray-600">累计字数</p>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-purple-600" />
-                  <div>
-                    <p className="text-2xl font-bold">{stats.totalTransactions}</p>
-                    <p className="text-sm text-gray-600">充值次数</p>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-orange-600" />
-                  <div>
-                    <p className="text-2xl font-bold">{formatPrice(stats.thisMonthAmount)}</p>
-                    <p className="text-sm text-gray-600">本月充值</p>
-                  </div>
-                </div>
-              </Card>
+            {/* 优势说明条 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-xl bg-slate-50 p-6 border border-slate-200">
+              {BENEFITS.map((benefit, index) => (
+                <Benefit
+                  key={index}
+                  icon={benefit.icon}
+                  title={benefit.title}
+                  note={benefit.note}
+                />
+              ))}
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* 套餐选择 */}
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Gift className="h-5 w-5" />
-                      选择充值套餐
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {CREDIT_PACKAGES.map((pkg) => (
-                        <Card 
-                          key={pkg.id}
-                          className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                            selectedPackage?.id === pkg.id 
-                              ? 'ring-2 ring-blue-500 bg-blue-50' 
-                              : ''
-                          } ${pkg.isPopular ? 'border-blue-500' : ''}`}
-                          onClick={() => setSelectedPackage(pkg)}
-                        >
-                          <CardHeader className="pb-3">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                  {pkg.name}
-                                  {pkg.isPopular && (
-                                    <Badge className="bg-red-500 text-white">
-                                      <Star className="h-3 w-3 mr-1" />
-                                      热门
-                                    </Badge>
-                                  )}
-                                </CardTitle>
-                                <p className="text-sm text-gray-600 mt-1">{pkg.description}</p>
-                              </div>
-                              {selectedPackage?.id === pkg.id && (
-                                <CheckCircle className="h-5 w-5 text-blue-500" />
-                              )}
-                            </div>
-                          </CardHeader>
-                          <CardContent className="pt-0">
-                            <div className="space-y-3">
-                              {/* 价格信息 */}
-                              <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-bold text-blue-600">
-                                  {formatPrice(pkg.salePrice)}
-                                </span>
-                                {pkg.discount > 0 && (
-                                  <>
-                                    <span className="text-sm text-gray-500 line-through">
-                                      {formatPrice(pkg.originalPrice)}
-                                    </span>
-                                    <Badge variant="destructive" className="text-xs">
-                                      {pkg.discount}%折扣
-                                    </Badge>
-                                  </>
-                                )}
-                              </div>
-
-                              {/* 字数信息 */}
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-gray-600">基础字数</span>
-                                  <span className="font-medium">{formatWordCount(pkg.words)}</span>
-                                </div>
-                                {pkg.bonusWords && pkg.bonusWords > 0 && (
-                                  <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">赠送字数</span>
-                                    <span className="font-medium text-green-600">+{formatWordCount(pkg.bonusWords)}</span>
-                                  </div>
-                                )}
-                                <Separator />
-                                <div className="flex items-center justify-between font-medium">
-                                  <span>总字数</span>
-                                  <span className="text-blue-600">{formatWordCount(getTotalWords(pkg))}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm text-gray-600">
-                                  <span>单字价格</span>
-                                  <span>{(getPricePerWord(pkg) * 1000).toFixed(2)}元/千字</span>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* 支付方式和确认 */}
-              <div className="space-y-6">
-                {/* 支付方式选择 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Wallet className="h-5 w-5" />
-                      支付方式
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {paymentMethods.map((method) => (
-                      <Card
-                        key={method.id}
-                        className={`cursor-pointer transition-all duration-200 ${
-                          paymentMethod === method.id 
-                            ? 'ring-2 ring-blue-500 bg-blue-50' 
-                            : 'hover:bg-gray-50'
-                        }`}
-                        onClick={() => setPaymentMethod(method.id as PaymentMethod)}
-                      >
-                        <CardContent className="p-3">
-                          <div className="flex items-center gap-3">
-                            <method.icon className="h-5 w-5 text-gray-600" />
-                            <div className="flex-1">
-                              <p className="font-medium">{method.name}</p>
-                              <p className="text-sm text-gray-600">{method.description}</p>
-                            </div>
-                            {paymentMethod === method.id && (
-                              <CheckCircle className="h-5 w-5 text-blue-500" />
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                {/* 订单确认 */}
-                {selectedPackage && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5" />
-                        订单确认
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600">套餐</span>
-                          <span className="font-medium">{selectedPackage.name}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600">字数</span>
-                          <span className="font-medium">{formatWordCount(getTotalWords(selectedPackage))}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600">支付方式</span>
-                          <span className="font-medium">
-                            {paymentMethods.find(m => m.id === paymentMethod)?.name}
-                          </span>
-                        </div>
-                        <Separator />
-                        <div className="flex items-center justify-between text-lg font-semibold">
-                          <span>支付金额</span>
-                          <span className="text-blue-600">{formatPrice(selectedPackage.salePrice)}</span>
-                        </div>
-                      </div>
-
-                      <Button 
-                        className="w-full" 
-                        size="lg"
-                        onClick={handleRecharge}
-                        disabled={isProcessing || isLoading}
-                      >
-                        {isProcessing ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            处理中...
-                          </>
-                        ) : (
-                          <>
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            立即支付
-                          </>
-                        )}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-
-            {/* 充值历史 */}
-            <Card className="mt-6">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <HistoryIcon className="h-5 w-5" />
-                    充值历史
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        placeholder="搜索记录..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 w-48"
-                      />
-                    </div>
-                    <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
-                      <SelectTrigger className="w-24">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">全部</SelectItem>
-                        <SelectItem value="success">成功</SelectItem>
-                        <SelectItem value="pending">处理中</SelectItem>
-                        <SelectItem value="failed">失败</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select value={dateFilter} onValueChange={(value) => setDateFilter(value as typeof dateFilter)}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">全部时间</SelectItem>
-                        <SelectItem value="7d">最近7天</SelectItem>
-                        <SelectItem value="30d">最近30天</SelectItem>
-                        <SelectItem value="90d">最近90天</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {filteredHistory.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>订单号</TableHead>
-                        <TableHead>套餐</TableHead>
-                        <TableHead>字数</TableHead>
-                        <TableHead>金额</TableHead>
-                        <TableHead>支付方式</TableHead>
-                        <TableHead>状态</TableHead>
-                        <TableHead>时间</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredHistory.map((record) => {
-                        const statusInfo = getStatusInfo(record.status);
-                        return (
-                          <TableRow key={record.id}>
-                            <TableCell className="font-mono text-sm">{record.id}</TableCell>
-                            <TableCell className="font-medium">{record.packageName}</TableCell>
-                            <TableCell>
-                              <div>
-                                <div>{formatWordCount(record.wordCount)}</div>
-                                {record.bonusWords > 0 && (
-                                  <div className="text-xs text-green-600">+{formatWordCount(record.bonusWords)}</div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium">{formatPrice(record.amount)}</TableCell>
-                            <TableCell>{record.paymentMethod}</TableCell>
-                            <TableCell>
-                              <Badge className={statusInfo.color}>
-                                <statusInfo.icon className="h-3 w-3 mr-1" />
-                                {statusInfo.text}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{formatDate(record.createdAt)}</TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8">
-                    <HistoryIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">
-                      {searchQuery || statusFilter !== 'all' || dateFilter !== 'all'
-                        ? '没有找到匹配的记录'
-                        : '暂无充值记录'
-                      }
-                    </h3>
-                    <p className="text-gray-600">
-                      {searchQuery || statusFilter !== 'all' || dateFilter !== 'all'
-                        ? '尝试调整搜索条件或筛选器'
-                        : '选择合适的套餐开始充值吧'
-                      }
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </div>
       </SidebarInset>

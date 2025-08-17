@@ -1,233 +1,426 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Zap, FileText, ArrowLeft } from "lucide-react";
-import ProgressiveForm from "@/components/ProgressiveForm";
-import SmartInputForm, { SmartInputData, AnalysisProgress } from "@/components/SmartInputForm";
-import AnalysisResults from "@/components/AnalysisResults";
-import SmartProgressiveForm from "@/components/SmartProgressiveForm";
-import FormAnalyzer, { AnalysisResult, ExtractedFormData } from "@/components/FormAnalyzer";
-import AppSidebar from "@/components/AppSidebar";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import React, { useState, useCallback, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Upload, 
+  Image, 
+  FileText, 
+  X,
+  Loader2,
+  File,
+  Check
+} from 'lucide-react';
+import AppShell from '@/components/AppShell';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
 
-type FormMode = 'input' | 'analyzing' | 'results' | 'form';
+interface AttachedFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  file: File;
+}
 
-const EssayForm = () => {
-  const [mode, setMode] = useState<FormMode>('input');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [extractedData, setExtractedData] = useState<ExtractedFormData>({});
-  const [activeTab, setActiveTab] = useState<"smart" | "traditional">("smart");
+interface FormOptions {
+  references: boolean;
+  appendix: boolean;
+  explainOriginal: boolean;
+  aiCheck: boolean;
+  plagiarismCheck: boolean;
+}
 
-  // 检查首页传来的输入数据
-  useEffect(() => {
-    const smartInputData = sessionStorage.getItem('smartInputData');
-    if (smartInputData) {
-      try {
-        const data = JSON.parse(smartInputData);
-        if (data.text || data.files?.length > 0) {
-          // 自动开始智能分析
-          setActiveTab("smart");
-          // 延迟执行以确保handleAnalysisStart已定义
-          setTimeout(() => {
-            handleAnalysisStart({
-              text: data.text,
-              images: [] // 文件处理逻辑可以后续扩展
-            });
-          }, 100);
-          // 清除sessionStorage中的数据
-          sessionStorage.removeItem('smartInputData');
-        }
-      } catch (error) {
-        console.error('Failed to parse smart input data:', error);
-        sessionStorage.removeItem('smartInputData');
-      }
+const optionsList = [
+  { key: 'references' as keyof FormOptions, label: '参考文献' },
+  { key: 'appendix' as keyof FormOptions, label: '附录素材' },
+  { key: 'explainOriginal' as keyof FormOptions, label: '原文讲解' },
+  { key: 'aiCheck' as keyof FormOptions, label: 'AI检测' },
+  { key: 'plagiarismCheck' as keyof FormOptions, label: '抄袭检测' }
+];
+
+const EssayForm: React.FC = () => {
+  const [prompt, setPrompt] = useState('');
+  const [options, setOptions] = useState<FormOptions>({
+    references: false,
+    appendix: false,
+    explainOriginal: false,
+    aiCheck: false,
+    plagiarismCheck: false
+  });
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showUploadMenu, setShowUploadMenu] = useState(false);
+  const [isDragActive, setIsDragActive] = useState(false);
+  
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleFileValidation = (file: File): boolean => {
+    const allowedTypes = ['.pdf', '.docx', '.txt', '.md', '.png', '.jpg', '.jpeg'];
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const maxSize = 20 * 1024 * 1024; // 20MB
+
+    if (!allowedTypes.includes(fileExtension)) {
+      toast({
+        title: "文件格式不支持",
+        description: `支持的格式: ${allowedTypes.join(', ')}`,
+        variant: "destructive"
+      });
+      return false;
     }
+
+    if (file.size > maxSize) {
+      toast({
+        title: "文件过大",
+        description: "单个文件不能超过 20MB",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (attachedFiles.length >= 5) {
+      toast({
+        title: "文件数量限制",
+        description: "最多只能上传 5 个文件",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleFileAdd = (files: File[]) => {
+    const validFiles = files.filter(handleFileValidation);
+    const newFiles: AttachedFile[] = validFiles.map(file => ({
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      file
+    }));
+
+    setAttachedFiles(prev => [...prev, ...newFiles]);
+    setShowUploadMenu(false);
+  };
+
+  const handleFileRemove = (fileId: string) => {
+    setAttachedFiles(prev => prev.filter(file => file.id !== fileId));
+  };
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    setIsDragActive(false);
+    handleFileAdd(acceptedFiles);
+  }, [attachedFiles.length]);
+
+  const onDragEnter = useCallback(() => {
+    setIsDragActive(true);
   }, []);
 
-  const handleAnalysisStart = async (data: SmartInputData) => {
-    setIsAnalyzing(true);
-    setMode('analyzing');
-    
-    try {
-      const analyzer = FormAnalyzer.getInstance();
-      const result = await analyzer.analyzeContent(data, (progress) => {
-        setAnalysisProgress(progress);
+  const onDragLeave = useCallback(() => {
+    setIsDragActive(false);
+  }, []);
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    onDragEnter,
+    onDragLeave,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg'],
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'text/plain': ['.txt'],
+      'text/markdown': ['.md']
+    },
+    noClick: true,
+    noKeyboard: true
+  });
+
+  const handleImageUpload = () => {
+    imageInputRef.current?.click();
+    setShowUploadMenu(false);
+  };
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click();
+    setShowUploadMenu(false);
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    handleFileAdd(files);
+    e.target.value = '';
+  };
+
+  const handleOptionToggle = (key: keyof FormOptions) => {
+    setOptions(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (!prompt.trim()) {
+      toast({
+        title: "请输入写作要求",
+        description: "请在输入框中描述您的写作需求",
+        variant: "destructive"
       });
-      
-      setAnalysisResult(result);
-      setExtractedData(result.extractedData);
-      setMode('form'); // 直接跳转到表单页面，跳过分析结果页面
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // 模拟文件上传
+      const uploadedFiles = await Promise.all(
+        attachedFiles.map(async (file) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          url: `https://example.com/uploads/${file.id}`
+        }))
+      );
+
+      // 模拟 API 请求
+      const response = {
+        orderId: 'ORD-' + Date.now().toString(),
+        success: true
+      };
+
+      toast({
+        title: "提交成功",
+        description: "正在生成您的文档，请稍候...",
+      });
+
+      // 跳转到订单跟踪页面
+      if (response.orderId) {
+        navigate(`/order-tracking/${response.orderId}`);
+      } else {
+        navigate('/writing-status/temp-' + Date.now());
+      }
+
     } catch (error) {
-      console.error('Analysis failed:', error);
-      // Handle error - maybe show error message and go back to input
-      setMode('input');
+      toast({
+        title: "提交失败",
+        description: "请检查网络连接后重试",
+        variant: "destructive"
+      });
     } finally {
-      setIsAnalyzing(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleDataEdit = (updatedData: ExtractedFormData) => {
-    setExtractedData(updatedData);
-  };
-
-  const handleProceedToForm = (finalData: ExtractedFormData) => {
-    setExtractedData(finalData);
-    setMode('form');
-  };
-
-  const handleReanalyze = () => {
-    setMode('input');
-    setAnalysisResult(null);
-    setExtractedData({});
-    setAnalysisProgress(null);
-  };
-
-  const handleBackToInput = () => {
-    setMode('input');
-  };
-
-  const renderSmartFormFlow = () => {
-    switch (mode) {
-      case 'input':
-        return (
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold">智能Essay生成器</h1>
-              <p className="text-muted-foreground">
-                粘贴您的作业要求或上传相关图片，AI将自动为您分析并填写表单
-              </p>
-            </div>
-            
-            <SmartInputForm
-              onAnalysisStart={handleAnalysisStart}
-              onAnalysisProgress={setAnalysisProgress}
-              isAnalyzing={isAnalyzing}
-            />
-          </div>
-        );
-        
-      case 'analyzing':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h1 className="text-3xl font-bold">AI正在分析您的内容</h1>
-              <p className="text-muted-foreground">
-                请稍等，AI正在从您的内容中提取表单信息...
-              </p>
-            </div>
-            
-            <SmartInputForm
-              onAnalysisStart={handleAnalysisStart}
-              onAnalysisProgress={setAnalysisProgress}
-              isAnalyzing={isAnalyzing}
-              disabled={true}
-            />
-          </div>
-        );
-        
-      case 'results':
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold">分析结果</h1>
-                <p className="text-muted-foreground">
-                  查看AI提取的信息，确认无误后继续填写表单
-                </p>
-              </div>
-              <Button variant="outline" onClick={handleBackToInput}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                返回输入
-              </Button>
-            </div>
-            
-            {analysisResult && (
-              <AnalysisResults
-                analysisResult={analysisResult}
-                onDataEdit={handleDataEdit}
-                onProceed={handleProceedToForm}
-                onReanalyze={handleReanalyze}
-              />
-            )}
-          </div>
-        );
-        
-      case 'form':
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold">完善表单信息</h1>
-                <p className="text-muted-foreground">
-                  基于AI分析结果，完善剩余的表单信息
-                </p>
-              </div>
-              <Button variant="outline" onClick={handleBackToInput}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                返回输入
-              </Button>
-            </div>
-            
-            <SmartProgressiveForm
-              extractedData={extractedData}
-            />
-          </div>
-        );
-        
-      default:
-        return null;
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    }
+    if (e.key === 'Escape') {
+      setShowUploadMenu(false);
     }
   };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const canSubmit = prompt.trim().length > 0;
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <main className="min-h-screen bg-background">
-          <div className="container max-w-5xl px-4 py-8">
-            {/* 模式切换 */}
-            <div className="mb-8">
-              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "smart" | "traditional")}>
-                <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
-                  <TabsTrigger value="smart" className="flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    智能模式
-                    <Badge variant="secondary" className="ml-1">推荐</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="traditional" className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    传统模式
-                  </TabsTrigger>
-                </TabsList>
+    <AppShell>
+      <div className="mx-auto max-w-[1100px] px-4 py-8">
+        {/* Header */}
+        <header className="mb-6">
+          <h1 className="text-2xl font-semibold text-slate-900">开始写作</h1>
+          <p className="text-slate-500 mt-1">粘贴你的需求，或添加图片/文件</p>
+        </header>
 
-                <TabsContent value="smart" className="mt-8">
-                  {renderSmartFormFlow()}
-                </TabsContent>
+        {/* Main Card */}
+        <div 
+          {...getRootProps()}
+          className={`rounded-2xl border bg-white p-6 shadow-sm transition-all duration-200 ${
+            isDragActive 
+              ? 'border-dashed border-blue-500 bg-blue-50' 
+              : 'border-slate-200'
+          }`}
+        >
+          <input {...getInputProps()} />
+          
+          {/* Text Input Area */}
+          <div className="relative">
+            {/* Top Bar */}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-medium text-slate-900">写作需求</h3>
+              <Button variant="outline" size="sm" className="text-sm">
+                填写表单
+              </Button>
+            </div>
+            
+            <Textarea
+              ref={textareaRef}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="在此粘贴论文/作业要求、要点或素材…"
+              className="w-full min-h-[220px] resize-y rounded-xl border border-slate-200 p-4 pr-20 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500"
+              style={{ minHeight: '200px' }}
+              aria-describedby="upload-help"
+              disabled={isSubmitting}
+            />
+            
+            {/* Upload Buttons - Two separate buttons */}
+            <div className="absolute bottom-2 right-2 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-xs rounded-lg border border-slate-200 bg-white shadow hover:bg-slate-50"
+                onClick={handleImageUpload}
+                aria-label="上传图片"
+                disabled={isSubmitting}
+              >
+                <Image className="h-3 w-3 mr-1" />
+                图片
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-xs rounded-lg border border-slate-200 bg-white shadow hover:bg-slate-50"
+                onClick={handleFileUpload}
+                aria-label="上传文件"
+                disabled={isSubmitting}
+              >
+                <FileText className="h-3 w-3 mr-1" />
+                文件
+              </Button>
+            </div>
 
-                <TabsContent value="traditional" className="mt-8">
-                  <div className="space-y-6">
-                    <div className="text-center space-y-2">
-                      <h1 className="text-3xl font-bold">Essay生成器</h1>
-                      <p className="text-muted-foreground">
-                        逐步填写表单信息来生成您的Essay
-                      </p>
-                    </div>
-                    
-                    <div className="flex justify-center">
-                      <ProgressiveForm />
-                    </div>
+            {/* Character Count */}
+            <span className="absolute bottom-2 left-4 text-xs text-slate-400">
+              {prompt.length} 字
+            </span>
+          </div>
+
+          {/* Options Chips - Checkbox Style */}
+          <div className="mt-4">
+            <div className="flex flex-wrap gap-2">
+              {optionsList.map((option) => (
+                <button
+                  key={option.key}
+                  onClick={() => handleOptionToggle(option.key)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
+                    options[option.key]
+                      ? 'bg-blue-100 text-blue-800 border-blue-200 shadow-sm'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+                  disabled={isSubmitting}
+                >
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                    options[option.key]
+                      ? 'bg-blue-600 border-blue-600'
+                      : 'border-slate-300 bg-white'
+                  }`}>
+                    {options[option.key] && (
+                      <Check className="h-3 w-3 text-white" />
+                    )}
                   </div>
-                </TabsContent>
-              </Tabs>
+                  {option.label}
+                </button>
+              ))}
             </div>
           </div>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+
+          {/* Attachment List */}
+          {attachedFiles.length > 0 && (
+            <div className="mt-3">
+              <div className="flex flex-wrap gap-2">
+                {attachedFiles.map((file) => (
+                  <Badge
+                    key={file.id}
+                    variant="outline"
+                    className="flex items-center gap-2 py-1 px-3 bg-slate-50"
+                  >
+                    <File className="h-3 w-3" />
+                    <span className="text-xs">
+                      {file.name} · {formatFileSize(file.size)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 hover:bg-red-100"
+                      onClick={() => handleFileRemove(file.id)}
+                      disabled={isSubmitting}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="mt-6 flex justify-end">
+            <Button
+              onClick={handleSubmit}
+              disabled={!canSubmit || isSubmitting}
+              className="h-11 rounded-xl bg-blue-600 px-5 text-white font-medium hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  正在生成...
+                </>
+              ) : (
+                '开始智能生成'
+              )}
+            </Button>
+          </div>
+
+          {/* Drag Active Overlay */}
+          {isDragActive && (
+            <div className="absolute inset-0 flex items-center justify-center bg-blue-50 bg-opacity-90 rounded-2xl border-2 border-dashed border-blue-500">
+              <div className="text-center">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                <p className="text-blue-600 font-medium">释放文件到此处上传</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Hidden File Inputs */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.docx,.txt,.md"
+          onChange={handleFileInputChange}
+          className="hidden"
+        />
+        <input
+          ref={imageInputRef}
+          type="file"
+          multiple
+          accept=".png,.jpg,.jpeg"
+          onChange={handleFileInputChange}
+          className="hidden"
+        />
+
+        {/* Accessibility Helper */}
+        <div id="upload-help" className="sr-only">
+          支持拖拽上传文件到输入框，或使用右下角上传按钮
+        </div>
+      </div>
+    </AppShell>
   );
 };
 

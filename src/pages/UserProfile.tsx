@@ -1,522 +1,433 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { 
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger
+} from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
 import { 
-  User, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  MapPin, 
-  Edit2, 
-  Save, 
-  X, 
-  Camera,
+  Plus,
+  Upload,
+  History,
   Shield,
-  CreditCard,
-  Activity,
-  Award,
-  TrendingUp,
-  Coins,
-  Clock,
-  Download,
-  RefreshCw
+  User,
+  Smartphone,
+  ChevronDown,
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCredit } from '@/contexts/CreditContext';
 import AppSidebarEnhanced from '@/components/AppSidebarEnhanced';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 
-// 扩展用户信息接口
-interface ExtendedUserInfo {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  phone?: string;
-  birthday?: string;
-  location?: string;
-  bio?: string;
-  joinDate: string;
-  lastLoginDate: string;
-  preferences: {
-    language: 'zh' | 'en';
-    theme: 'light' | 'dark' | 'auto';
-    notifications: boolean;
-    emailUpdates: boolean;
-  };
+interface ActivityItem {
+  time: string;
+  type: string;
+  delta: string;
+  balance: number;
 }
 
-const UserProfile: React.FC = () => {
-  const { user, logout } = useAuth();
-  const { balance, usageStats, refreshBalance, isLoading } = useCredit();
-  const { toast } = useToast();
+interface DeviceItem {
+  id: string;
+  name: string;
+  lastSeenAt: string;
+}
+
+// 统计数据组件
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="text-center">
+      <div className="text-xs text-slate-500 mb-1">{label}</div>
+      <div className="font-medium text-slate-700">{value}</div>
+    </div>
+  );
+}
+
+// 概览卡片组件
+function OverviewCard() {
+  const { balance } = useCredit();
+  const navigate = useNavigate();
   
-  // 扩展的用户信息（模拟数据）
-  const [userInfo, setUserInfo] = useState<ExtendedUserInfo>({
-    id: user?.id || '1',
-    name: user?.name || '用户名',
-    email: user?.email || 'user@example.com',
-    avatar: user?.avatar,
-    phone: '+86 138****8888',
-    birthday: '1995-05-15',
-    location: '北京市朝阳区',
-    bio: '热爱学习，专注于AI和教育领域的研究',
-    joinDate: '2024-01-01',
-    lastLoginDate: new Date().toISOString(),
-    preferences: {
-      language: 'zh',
-      theme: 'light',
-      notifications: true,
-      emailUpdates: true,
-    }
+  // 模拟数据，实际应从API获取
+  const overview = {
+    balanceChars: balance.wordBalance,
+    last30Chars: 2200,
+    totalTopupCNY: 249,
+    totalSpendCNY: 18.5
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-slate-500 text-sm mb-2">可用字数</div>
+          <div className="text-5xl font-extrabold tracking-tight text-slate-900 mb-1">
+            {overview.balanceChars.toLocaleString()}
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-6 text-sm">
+          <Stat label="近30天使用" value={`${overview.last30Chars.toLocaleString()}字`} />
+          <Stat label="累计充值" value={`¥${overview.totalTopupCNY}`} />
+          <Stat label="累计消费" value={`¥${overview.totalSpendCNY}`} />
+        </div>
+      </div>
+      <div className="mt-6 flex gap-3">
+        <Button 
+          className="h-11 rounded-xl bg-blue-600 px-5 text-white font-medium hover:bg-blue-700"
+          onClick={() => navigate('/topup')}
+        >
+          立即充值
+        </Button>
+        <Button 
+          variant="outline"
+          className="h-11 rounded-xl border px-5 text-slate-700 hover:bg-slate-50"
+          onClick={() => navigate('/usage-history')}
+        >
+          查看账单
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// 快捷操作组件
+function QuickActions() {
+  const navigate = useNavigate();
+  
+  const items = [
+    { icon: Plus, text: '新建文档', onClick: () => navigate('/form') },
+    { icon: Upload, text: '上传文件', onClick: () => navigate('/knowledge') },
+    { icon: History, text: '历史记录', onClick: () => navigate('/history') },
+  ];
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+      <div className="grid grid-cols-3 gap-3">
+        {items.map((item, index) => (
+          <button
+            key={index}
+            onClick={item.onClick}
+            className="rounded-xl border border-slate-200 py-3 px-4 text-center hover:bg-slate-50 transition-colors"
+          >
+            <item.icon className="h-5 w-5 mx-auto mb-2 text-slate-600" />
+            <div className="text-slate-700 text-sm">{item.text}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 安全概览组件
+function SecurityMini({ onOpenDevices }: { onOpenDevices: () => void }) {
+  const [twoFA, setTwoFA] = useState(false);
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+      <h3 className="text-base font-medium mb-4 text-slate-900">账号安全</h3>
+      <ul className="space-y-3 text-sm">
+        <li className="flex items-center justify-between">
+          <span className="text-slate-600">二步验证</span>
+          <Switch checked={twoFA} onCheckedChange={setTwoFA} />
+        </li>
+        <li className="flex items-center justify-between">
+          <span className="text-slate-600">密码</span>
+          <button className="text-blue-600 hover:underline text-sm">30天前已修改</button>
+        </li>
+        <li className="flex items-center justify-between">
+          <span className="text-slate-600">登录设备</span>
+          <button 
+            className="text-slate-700 rounded-lg border px-3 py-1.5 hover:bg-slate-50 text-sm"
+            onClick={onOpenDevices}
+          >
+            管理
+          </button>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+// 个人信息组件
+function ProfileMini({ onOpenEdit }: { onOpenEdit: () => void }) {
+  const { user } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(true);
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-medium text-slate-900">个人信息</h3>
+        <div className="flex items-center gap-2">
+          <button 
+            className="text-slate-700 rounded-lg border px-3 py-1.5 hover:bg-slate-50 text-sm"
+            onClick={onOpenEdit}
+          >
+            编辑
+          </button>
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1 hover:bg-slate-100 rounded"
+          >
+            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+      {!isCollapsed && (
+        <div className="mt-4 flex items-center gap-3">
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={user?.avatar} />
+            <AvatarFallback>{user?.name?.slice(0, 2) || '用户'}</AvatarFallback>
+          </Avatar>
+          <div className="text-sm text-slate-600 space-y-1">
+            <div className="font-medium text-slate-900">{user?.name || '用户名'}</div>
+            <div>{user?.email || 'user@example.com'}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 最近活动组件
+function RecentActivity() {
+  // 模拟数据，实际应从API获取
+  const activities: ActivityItem[] = [
+    { time: '08/18 02:46', type: '充值', delta: '+5,000字', balance: 31300 },
+    { time: '08/17 21:12', type: '论文生成', delta: '-1,200字', balance: 26300 },
+    { time: '08/17 15:30', type: 'AI对话', delta: '-800字', balance: 27500 },
+    { time: '08/16 09:15', type: '文档分析', delta: '-500字', balance: 28300 },
+    { time: '08/15 14:20', type: '充值', delta: '+3,000字', balance: 28800 },
+  ];
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-medium text-slate-900">最近活动</h3>
+        <a 
+          href="/usage-history?tab=usage" 
+          className="text-slate-600 text-sm hover:underline"
+        >
+          查看全部
+        </a>
+      </div>
+      {activities.length > 0 ? (
+        <ul className="space-y-3 text-sm">
+          {activities.map((activity, index) => (
+            <li key={index} className="flex justify-between items-center">
+              <span className="text-slate-700">{activity.time} {activity.type}</span>
+              <span className={`font-medium ${
+                activity.delta.startsWith('+') ? 'text-emerald-600' : 'text-rose-600'
+              }`}>
+                {activity.delta}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="text-sm text-slate-500 text-center py-4">暂无记录</div>
+      )}
+    </div>
+  );
+}
+
+// 编辑资料抽屉组件
+function EditProfileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    location: ''
   });
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState(userInfo);
-
   const handleSave = () => {
-    setUserInfo(editForm);
-    setIsEditing(false);
+    // 这里应该调用API保存数据
     toast({
       title: "保存成功",
       description: "个人信息已更新"
     });
+    onClose();
   };
 
-  const handleCancel = () => {
-    setEditForm(userInfo);
-    setIsEditing(false);
+  return (
+    <Drawer open={isOpen} onOpenChange={onClose}>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>编辑个人信息</DrawerTitle>
+          <DrawerDescription>
+            更新你的基本信息
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="px-4 pb-4 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">昵称</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="请输入昵称"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">邮箱</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              placeholder="请输入邮箱"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="location">所在地（可选）</Label>
+            <Input
+              id="location"
+              value={formData.location}
+              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+              placeholder="请输入所在地"
+            />
+          </div>
+        </div>
+        <DrawerFooter>
+          <Button onClick={handleSave}>保存</Button>
+          <DrawerClose asChild>
+            <Button variant="outline">取消</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+// 设备管理抽屉组件
+function DevicesDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { toast } = useToast();
+  const [devices] = useState<DeviceItem[]>([
+    { id: '1', name: 'MacBook Pro', lastSeenAt: '2小时前' },
+    { id: '2', name: 'iPhone 15', lastSeenAt: '1天前' },
+    { id: '3', name: 'Chrome on Windows', lastSeenAt: '3天前' },
+  ]);
+
+  const handleRevoke = (deviceId: string, deviceName: string) => {
+    if (confirm(`确定要移除设备"${deviceName}"吗？`)) {
+      // 这里应该调用API移除设备
+      toast({
+        title: "设备已移除",
+        description: `已成功移除设备"${deviceName}"`
+      });
+    }
   };
 
-  const handleLogout = () => {
-    logout();
-    toast({
-      title: "已登出",
-      description: "您已成功登出系统"
-    });
-  };
+  return (
+    <Drawer open={isOpen} onOpenChange={onClose}>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>设备管理</DrawerTitle>
+          <DrawerDescription>
+            管理登录到你账户的设备
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="px-4 pb-4">
+          <ul className="space-y-3">
+            {devices.map((device) => (
+              <li key={device.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Smartphone className="h-5 w-5 text-slate-500" />
+                  <div>
+                    <div className="font-medium text-slate-900">{device.name}</div>
+                    <div className="text-sm text-slate-500">最近活跃: {device.lastSeenAt}</div>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleRevoke(device.id, device.name)}
+                >
+                  移除
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <DrawerFooter>
+          <DrawerClose asChild>
+            <Button variant="outline">关闭</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
 
-  const getVipBadge = () => {
-    const level = balance.vipLevel;
-    const colors = {
-      0: 'bg-gray-100 text-gray-700',
-      1: 'bg-amber-100 text-amber-700',
-      2: 'bg-blue-100 text-blue-700',
-      3: 'bg-purple-100 text-purple-700',
-      4: 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
-    };
-    
-    const names = {
-      0: '普通用户',
-      1: '青铜会员',
-      2: '白银会员', 
-      3: '黄金会员',
-      4: '钻石会员'
-    };
-    
-    return (
-      <Badge className={colors[level] || colors[0]}>
-        <Award className="h-3 w-3 mr-1" />
-        {names[level] || names[0]}
-      </Badge>
-    );
-  };
+// 主组件
+export default function UserProfile() {
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [devicesOpen, setDevicesOpen] = useState(false);
 
   return (
     <SidebarProvider>
       <AppSidebarEnhanced />
       <SidebarInset>
-        <div className="min-h-screen bg-background">
-          <div className="container max-w-6xl mx-auto px-4 py-8">
-            {/* 页面标题 */}
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h1 className="text-3xl font-bold">个人中心</h1>
-                <p className="text-muted-foreground">管理您的账户信息和使用数据</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button variant="outline" onClick={refreshBalance} disabled={isLoading}>
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                  刷新数据
-                </Button>
-                <Button variant="destructive" onClick={handleLogout}>
-                  登出
-                </Button>
-              </div>
+        <div className="min-h-screen bg-slate-50">
+          <div className="mx-auto max-w-[1100px] px-4 py-8">
+            <header className="mb-6">
+              <h1 className="text-2xl font-semibold text-slate-900">个人中心</h1>
+              <p className="text-slate-500 mt-1">管理你的额度与最近活动</p>
+            </header>
+
+            <div className="grid grid-cols-12 gap-6">
+              {/* 主列 */}
+              <section className="col-span-12 lg:col-span-8 space-y-6">
+                {/* 1) 概览 */}
+                <OverviewCard />
+
+                {/* 2) 快捷操作 */}
+                <QuickActions />
+
+                {/* 3) 最近活动 */}
+                <RecentActivity />
+              </section>
+
+              {/* 侧列 */}
+              <aside className="col-span-12 lg:col-span-4 space-y-6">
+                <SecurityMini onOpenDevices={() => setDevicesOpen(true)} />
+                <ProfileMini onOpenEdit={() => setEditProfileOpen(true)} />
+              </aside>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* 左侧：个人信息 */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* 基本信息卡片 */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        <User className="h-5 w-5" />
-                        基本信息
-                      </CardTitle>
-                      {!isEditing ? (
-                        <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                          <Edit2 className="h-4 w-4 mr-2" />
-                          编辑
-                        </Button>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={handleSave}>
-                            <Save className="h-4 w-4 mr-2" />
-                            保存
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={handleCancel}>
-                            <X className="h-4 w-4 mr-2" />
-                            取消
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* 头像区域 */}
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <Avatar className="h-20 w-20">
-                          <AvatarImage src={userInfo.avatar} alt={userInfo.name} />
-                          <AvatarFallback className="text-lg">
-                            {userInfo.name.slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        {isEditing && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="absolute -bottom-2 -right-2 h-8 w-8 p-0 rounded-full"
-                          >
-                            <Camera className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-xl font-semibold">{userInfo.name}</h3>
-                          {getVipBadge()}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{userInfo.email}</p>
-                        <p className="text-sm text-muted-foreground">
-                          加入时间: {format(new Date(userInfo.joinDate), 'yyyy年MM月dd日', { locale: zhCN })}
-                        </p>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* 表单字段 */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">姓名</Label>
-                        {isEditing ? (
-                          <Input
-                            id="name"
-                            value={editForm.name}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                          />
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            {userInfo.name}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="email">邮箱</Label>
-                        {isEditing ? (
-                          <Input
-                            id="email"
-                            type="email"
-                            value={editForm.email}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                          />
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
-                            {userInfo.email}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">手机号</Label>
-                        {isEditing ? (
-                          <Input
-                            id="phone"
-                            value={editForm.phone || ''}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                          />
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            {userInfo.phone || '未设置'}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="birthday">生日</Label>
-                        {isEditing ? (
-                          <Input
-                            id="birthday"
-                            type="date"
-                            value={editForm.birthday || ''}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, birthday: e.target.value }))}
-                          />
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {userInfo.birthday ? format(new Date(userInfo.birthday), 'yyyy年MM月dd日', { locale: zhCN }) : '未设置'}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="location">所在地</Label>
-                        {isEditing ? (
-                          <Input
-                            id="location"
-                            value={editForm.location || ''}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
-                          />
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            {userInfo.location || '未设置'}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="bio">个人简介</Label>
-                        {isEditing ? (
-                          <Input
-                            id="bio"
-                            value={editForm.bio || ''}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
-                            placeholder="简单介绍一下自己..."
-                          />
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            {userInfo.bio || '这个人很懒，什么都没有留下...'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* 账户安全 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Shield className="h-5 w-5" />
-                      账户安全
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">登录密码</h4>
-                        <p className="text-sm text-muted-foreground">最后修改: 30天前</p>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        修改密码
-                      </Button>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">两步验证</h4>
-                        <p className="text-sm text-muted-foreground">保护您的账户安全</p>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        开启
-                      </Button>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">登录设备</h4>
-                        <p className="text-sm text-muted-foreground">管理您的登录设备</p>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        查看详情
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* 右侧：统计信息 */}
-              <div className="space-y-6">
-                {/* 余额卡片 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Coins className="h-5 w-5 text-blue-600" />
-                      账户余额
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-blue-600">
-                        {balance.wordBalance.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-muted-foreground">可用字数</div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span>累计充值</span>
-                        <span className="font-medium">¥{balance.totalRecharged}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>累计消费</span>
-                        <span className="font-medium">¥{balance.totalSpent.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>会员等级</span>
-                        <span>{getVipBadge()}</span>
-                      </div>
-                    </div>
-                    
-                    <Button className="w-full" onClick={() => window.location.href = '/topup'}>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      立即充值
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* 使用统计 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-green-600" />
-                      使用统计
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
-                        {usageStats.totalWords.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-muted-foreground">累计使用字数</div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>Essay生成</span>
-                          <span>{usageStats.serviceCounts.essay_generation.count}次</span>
-                        </div>
-                        <Progress 
-                          value={(usageStats.serviceCounts.essay_generation.words / usageStats.totalWords) * 100} 
-                          className="h-2"
-                        />
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>AI对话</span>
-                          <span>{usageStats.serviceCounts.ai_chat.count}次</span>
-                        </div>
-                        <Progress 
-                          value={(usageStats.serviceCounts.ai_chat.words / usageStats.totalWords) * 100} 
-                          className="h-2"
-                        />
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>文档分析</span>
-                          <span>{usageStats.serviceCounts.document_analysis.count}次</span>
-                        </div>
-                        <Progress 
-                          value={(usageStats.serviceCounts.document_analysis.words / usageStats.totalWords) * 100} 
-                          className="h-2"
-                        />
-                      </div>
-                    </div>
-                    
-                    <Button variant="outline" className="w-full" onClick={() => window.location.href = '/usage-history'}>
-                      <Activity className="h-4 w-4 mr-2" />
-                      查看详细记录
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* 最近活动 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-orange-600" />
-                      最近活动
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="text-sm">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span className="font-medium">生成了Essay</span>
-                      </div>
-                      <p className="text-muted-foreground text-xs ml-4">
-                        AI与教育的未来发展 - 2小时前
-                      </p>
-                    </div>
-                    
-                    <div className="text-sm">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="font-medium">充值成功</span>
-                      </div>
-                      <p className="text-muted-foreground text-xs ml-4">
-                        标准套餐 ¥249 - 1天前
-                      </p>
-                    </div>
-                    
-                    <div className="text-sm">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                        <span className="font-medium">使用AI对话</span>
-                      </div>
-                      <p className="text-muted-foreground text-xs ml-4">
-                        文献查找咨询 - 2天前
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+            {/* 抽屉们 */}
+            <EditProfileDrawer 
+              isOpen={editProfileOpen} 
+              onClose={() => setEditProfileOpen(false)} 
+            />
+            <DevicesDrawer 
+              isOpen={devicesOpen} 
+              onClose={() => setDevicesOpen(false)} 
+            />
           </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
   );
-};
-
-export default UserProfile;
+}

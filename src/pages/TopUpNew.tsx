@@ -12,8 +12,7 @@ import {
   ExternalLink,
   Coins
 } from 'lucide-react';
-import AppSidebar from '@/components/AppSidebar';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import AppShell from '@/components/AppShell';
 import { useToast } from '@/hooks/use-toast';
 import { WORD_PACKAGES, type WordPackage, formatPrice, formatWordCount } from '@/data/wordPackages';
 
@@ -59,11 +58,8 @@ const TopUpNew: React.FC = () => {
   };
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="min-h-screen bg-gray-50">
-          <div className="container mx-auto p-6 max-w-6xl">
+    <AppShell>
+      <div className="space-y-6">
             {/* 页面标题 */}
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold mb-4">Word Credits</h1>
@@ -194,10 +190,8 @@ const TopUpNew: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </AppShell>
   );
 };
 

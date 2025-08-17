@@ -103,3 +103,79 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Hot 卡外层容器 */
+.plan-card.hot { 
+  position: relative; 
+  border-radius: 16px; 
+  background: #fff; 
+}
+
+/* 外层 SVG 占位，保持细边且不挡交互 */
+.hot-border{
+  position: absolute; 
+  inset: -2px;
+  width: calc(100% + 4px); 
+  height: calc(100% + 4px);
+  pointer-events: none;
+}
+
+/* 主彩色段：细、亮、匀速 */
+.hot-dash{
+  /* 亮段长度 / 其余，总和≈1000；可按口味改 90~140 */
+  stroke-dasharray: 120 880;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  animation: rb-move 6.2s linear infinite;
+  /* 轻柔外晕，别爆光 */
+}
+
+/* 白色高光针：更快更短，显"闪亮" */
+.hot-glint{
+  stroke-dasharray: 26 974;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  mix-blend-mode: screen;      /* 叠加更亮，仍不挡点击 */
+  animation: rb-move 3.1s linear infinite;
+}
+
+/* 沿周长平移，非旋转 */
+@keyframes rb-move { 
+  to { stroke-dashoffset: -1000; } 
+}
+
+/* 角标微闪 */
+.badge-hot{
+  position:absolute; 
+  left:50%; 
+  transform:translateX(-50%);
+  top:-14px; 
+  padding:6px 12px; 
+  border-radius:999px;
+  background: linear-gradient(120deg,#FF8A4C,#FF4D8D);
+  color:#fff; 
+  font-weight:600; 
+  font-size:12px;
+  box-shadow: 0 6px 16px rgba(255,77,141,.25);
+  overflow:hidden;
+  z-index: 10;
+}
+
+.badge-hot::after{
+  content:""; 
+  position:absolute; 
+  inset:0;
+  background: linear-gradient(120deg,transparent,rgba(255,255,255,.5),transparent);
+  transform: skewX(-20deg) translateX(-120%);
+  animation: shimmer 2.2s ease-in-out infinite;
+}
+
+@keyframes shimmer { 
+  to { transform: skewX(-20deg) translateX(120%); } 
+}
+
+/* 无动效偏好时静止 */
+@media (prefers-reduced-motion: reduce){
+  .hot-dash,.hot-glint { animation: none !important; }
+  .badge-hot::after { animation: none !important; }
+}

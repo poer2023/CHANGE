@@ -24,8 +24,8 @@ import {
 } from 'lucide-react';
 import AIChat from '@/components/AIChat';
 import DocumentUpload from '@/components/DocumentUpload';
-import AppSidebar from '@/components/AppSidebar';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import AppShell from '@/components/AppShell';
+import ResearchAssistantPanel from '@/components/ResearchAssistantPanel';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -190,12 +190,10 @@ const KnowledgeBase: React.FC = () => {
   };
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="h-screen bg-background flex">
-          {/* 主内容区域 */}
-          <div className="flex-1 flex flex-col min-w-0">
+    <AppShell rightRail={<ResearchAssistantPanel />}>
+      <div className="h-[calc(100vh-120px)] bg-background flex rounded-xl border overflow-hidden">
+        {/* 主内容区域 */}
+        <div className="flex-1 flex flex-col min-w-0">
             {/* 顶部标题栏 */}
             <div className="border-b bg-background px-6 py-4">
               <div className="flex items-center justify-between">
@@ -364,26 +362,8 @@ const KnowledgeBase: React.FC = () => {
             </div>
           </div>
 
-          {/* 右侧AI助手面板 */}
-          <div className="w-96 flex-shrink-0 border-l">
-            <Card className="h-full rounded-none border-0">
-              <div className="h-full flex flex-col">
-                <div className="p-4 border-b">
-                  <div className="flex items-center gap-2">
-                    <MessageCircle className="h-5 w-5 text-blue-600" />
-                    <h3 className="font-medium">AI研究助手</h3>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-hidden p-4">
-                  <AIChat className="h-full" />
-                </div>
-              </div>
-            </Card>
-          </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+    </AppShell>
   );
 };
 

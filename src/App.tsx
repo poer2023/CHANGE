@@ -18,6 +18,17 @@ import UserProfile from "./pages/UserProfile";
 import AIDetection from "./pages/AIDetection";
 import PlagiarismDetection from "./pages/PlagiarismDetection";
 import DetectionHistory from "./pages/DetectionHistory";
+import EssayHomePage from "./pages/EssayHomePage";
+import EssayAnalysisPage from "./pages/EssayAnalysisPage";
+import OrderConfirmation from "./pages/OrderConfirmation";
+import ServiceConfirmation from "./pages/ServiceConfirmation";
+import PaymentDemo from "./pages/PaymentDemo";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import OrderTracking from "./pages/OrderTracking";
+import DeliveryComplete from "./pages/DeliveryComplete";
+import QualityReport from "./pages/QualityReport";
+import CustomerService from "./pages/CustomerService";
+import DeliveryReport from "./pages/DeliveryReport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,7 +40,10 @@ const App = () => (
         <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter future={{ 
+          v7_startTransition: true,
+          v7_relativeSplatPath: true 
+        }}>
           <Routes>
             <Route path="/" element={
               <AuthGuard requireAuth={false}>
@@ -63,7 +77,7 @@ const App = () => (
             } />
             <Route path="/topup" element={
               <AuthGuard requireAuth={true}>
-                <TopUpNew />
+                <TopUp />
               </AuthGuard>
             } />
             <Route path="/usage-history" element={
@@ -89,6 +103,81 @@ const App = () => (
             <Route path="/detect/history" element={
               <AuthGuard requireAuth={true}>
                 <DetectionHistory />
+              </AuthGuard>
+            } />
+            <Route path="/essay-home" element={
+              <AuthGuard requireAuth={false}>
+                <EssayHomePage />
+              </AuthGuard>
+            } />
+            <Route path="/essay-analysis" element={
+              <AuthGuard requireAuth={false}>
+                <EssayAnalysisPage />
+              </AuthGuard>
+            } />
+            <Route path="/order-confirmation" element={
+              <AuthGuard requireAuth={false}>
+                <OrderConfirmation />
+              </AuthGuard>
+            } />
+            <Route path="/service-confirmation" element={
+              <AuthGuard requireAuth={false}>
+                <ServiceConfirmation />
+              </AuthGuard>
+            } />
+            <Route path="/payment-demo" element={
+              <AuthGuard requireAuth={false}>
+                <PaymentDemo />
+              </AuthGuard>
+            } />
+            <Route path="/payment-success" element={
+              <AuthGuard requireAuth={false}>
+                <PaymentSuccess />
+              </AuthGuard>
+            } />
+            <Route path="/order-tracking" element={
+              <AuthGuard requireAuth={true}>
+                <OrderTracking />
+              </AuthGuard>
+            } />
+            <Route path="/order-tracking/:orderId" element={
+              <AuthGuard requireAuth={true}>
+                <OrderTracking />
+              </AuthGuard>
+            } />
+            <Route path="/delivery-complete" element={
+              <AuthGuard requireAuth={false}>
+                <DeliveryComplete />
+              </AuthGuard>
+            } />
+            <Route path="/delivery-complete/:orderId" element={
+              <AuthGuard requireAuth={false}>
+                <DeliveryComplete />
+              </AuthGuard>
+            } />
+            <Route path="/quality-report" element={
+              <AuthGuard requireAuth={false}>
+                <QualityReport />
+              </AuthGuard>
+            } />
+            <Route path="/quality-report/:orderId" element={
+              <AuthGuard requireAuth={false}>
+                <QualityReport />
+              </AuthGuard>
+            } />
+            <Route path="/customer-service" element={
+              <AuthGuard requireAuth={false}>
+                <CustomerService />
+              </AuthGuard>
+            } />
+            <Route path="/delivery-report" element={
+              <AuthGuard requireAuth={true}>
+                <DeliveryReport />
+              </AuthGuard>
+            } />
+            <Route path="/delivery-report/:orderId" element={
+              <AuthGuard requireAuth={true}>
+                <DeliveryReport />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

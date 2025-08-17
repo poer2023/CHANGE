@@ -19,8 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import AppSidebar from '@/components/AppSidebar';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import AppShell from '@/components/AppShell';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { historyData } from '@/data/historyData';
@@ -98,10 +97,8 @@ const History: React.FC = () => {
   };
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="h-screen bg-background flex flex-col">
+    <AppShell>
+      <div className="min-h-[calc(100vh-120px)] bg-background flex flex-col rounded-xl border overflow-hidden">
           {/* 顶部标题栏 */}
           <div className="border-b bg-background px-6 py-4">
             <div className="flex items-center justify-between">
@@ -253,9 +250,8 @@ const History: React.FC = () => {
               )}
             </div>
           </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </AppShell>
   );
 };
 

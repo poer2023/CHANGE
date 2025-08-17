@@ -176,7 +176,7 @@ const EssayEditor = () => {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* 顶部状态栏 */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-3">
@@ -235,32 +235,30 @@ const EssayEditor = () => {
       </header>
 
       {/* 主要内容区域 */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-6">
-          {/* 左侧导航 */}
-          <div className="w-64 flex-shrink-0">
-            <EssayNavigation 
-              outline={essay.outline}
-              sections={essay.sections}
-              selectedSection={selectedSection}
-              onSectionSelect={setSelectedSection}
-            />
-          </div>
-
-          {/* 中间文稿区域 */}
-          <div className="flex-1">
-            <EssayContent 
-              essay={essay}
-              operations={[]}
-              selectedSection={selectedSection}
-              onTextSelect={setSelectedText}
-              onSectionSelect={setSelectedSection}
-            />
-          </div>
-
-          {/* 右侧聊天面板 */}
-          <ChatPanel />
+      <div className="flex-1 flex gap-6 px-4 py-6 overflow-hidden">
+        {/* 左侧导航 */}
+        <div className="w-64 flex-shrink-0">
+          <EssayNavigation 
+            outline={essay.outline}
+            sections={essay.sections}
+            selectedSection={selectedSection}
+            onSectionSelect={setSelectedSection}
+          />
         </div>
+
+        {/* 中间文稿区域 */}
+        <div className="flex-1 overflow-hidden">
+          <EssayContent 
+            essay={essay}
+            operations={[]}
+            selectedSection={selectedSection}
+            onTextSelect={setSelectedText}
+            onSectionSelect={setSelectedSection}
+          />
+        </div>
+
+        {/* 右侧聊天面板 */}
+        <ChatPanel />
       </div>
     </div>
   );

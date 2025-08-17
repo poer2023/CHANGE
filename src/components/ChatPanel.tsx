@@ -105,7 +105,7 @@ const ChatPanel = () => {
   };
 
   return (
-    <div className="w-[410px] h-full bg-white border-l border-gray-200 flex flex-col relative">
+    <div className="w-[410px] h-full bg-white border-l border-gray-200 flex flex-col relative overflow-hidden">
       {/* 消息区域 */}
       <div className="flex-1 overflow-hidden pb-32">
         <ScrollArea className="h-full">

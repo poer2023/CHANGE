@@ -156,8 +156,9 @@ const EssayContent = ({
   };
 
   return (
-    <Card>
-      <CardContent className="p-6" ref={contentRef}>
+    <div className="h-full overflow-hidden">
+      <Card className="h-full">
+        <CardContent className="p-6 h-full overflow-y-auto" ref={contentRef}>
         {selectedSection ? renderSingleSection() : renderFullEssay()}
         
         {/* 选中文本提示 */}
@@ -170,8 +171,9 @@ const EssayContent = ({
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

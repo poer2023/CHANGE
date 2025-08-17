@@ -8,6 +8,7 @@ import AuthGuard from "@/components/AuthGuard";
 import Index from "./pages/Index";
 import EssayForm from "./pages/EssayForm";
 import EssayEditor from "./pages/EssayEditor";
+import KnowledgeBase from "./pages/KnowledgeBase";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,11 @@ const App = () => (
             <Route path="/essay-editor" element={
               <AuthGuard requireAuth={true}>
                 <EssayEditor />
+              </AuthGuard>
+            } />
+            <Route path="/knowledge" element={
+              <AuthGuard requireAuth={true}>
+                <KnowledgeBase />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

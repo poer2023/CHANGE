@@ -14,6 +14,7 @@ import {
   List,
   Wand2
 } from "lucide-react";
+import KnowledgePanel from "@/components/KnowledgePanel";
 
 interface AgentPanelProps {
   selectedText: string;
@@ -144,14 +145,17 @@ const AgentPanel = ({ selectedText, selectedSection, onOperation }: AgentPanelPr
               }
             }}
           />
-          <Button 
-            onClick={handleSendMessage}
-            disabled={!input.trim() || isLoading}
-            className="w-full"
-          >
-            <Send className="mr-2 h-4 w-4" />
-            发送 (⌘/Ctrl+Enter)
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleSendMessage}
+              disabled={!input.trim() || isLoading}
+              className="flex-1"
+            >
+              <Send className="mr-2 h-4 w-4" />
+              发送 (⌘/Ctrl+Enter)
+            </Button>
+            <KnowledgePanel onInsert={(content) => setInput(prev => prev + content)} />
+          </div>
         </div>
 
         <Separator />

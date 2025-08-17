@@ -14,20 +14,28 @@ import { toast } from "@/hooks/use-toast";
 import { ChevronDown, Edit2, Save, Trash2, X, FileText } from "lucide-react";
 
 type FormState = {
-  // Step A: 任务定义
+  // Step 1: Essay Type
   essayType?: string;
-  topic?: string;
-  language?: string;
-  wordRange?: string;
-  audience?: string;
   
-  // Step B: 约束与素材
+  // Step 2: Topic
+  topic?: string;
+  
+  // Step 3: Essay Length
+  essayLength?: string;
+  lengthType?: string;
+  
+  // Step 4: Essay Level
+  essayLevel?: string;
+  
+  // Step 5: Citation Style
+  citationStyle?: string;
+  
+  // Optional fields (moved to later)
+  language?: string;
+  audience?: string;
   thesis?: string;
   structure?: string;
-  citationStyle?: string;
   materials?: string;
-  
-  // Step C: 质量选项
   factCheck?: string;
   useTemplate?: boolean;
   modelSource?: string;
@@ -56,6 +64,29 @@ const essayTypes = [
   { value: "Business Proposal", label: "Business Proposal", description: "商业提案，针对某一商业需求提出解决方案，重点在说服客户或上级采纳计划。" },
 ];
 
+const essayLevels = [
+  "高中",
+  "本科", 
+  "学士",
+  "硕士",
+  "博士"
+];
+
+const lengthTypes = [
+  "字",
+  "词",
+  "页"
+];
+
+const citationStyles = [
+  { value: "APA", label: "APA", description: "常用于心理学、教育学和社会科学领域，强调作者与出版日期" },
+  { value: "MLA", label: "MLA", description: "常用于文学、语言学和人文学科，突出作者与页面信息" },
+  { value: "Chicago", label: "Chicago", description: "广泛用于历史和一些社会科学，提供两种注释方式（脚注/尾注或作者-日期）" },
+  { value: "Harvard", label: "Harvard", description: "作者-日期制的常见引用格式，广泛用于自然科学与社会科学" },
+  { value: "ASA", label: "ASA", description: "社会学专用格式，强调作者和年份，适用于 analytical essay、research review 中的社会议题分析" },
+  { value: "AMA", label: "AMA", description: "医学与健康科学常用，采用顺序编码，适合临床和科研引用" },
+];
+
 const audiences = [
   "学术读者",
   "招生官",
@@ -63,42 +94,21 @@ const audiences = [
   "专业同行",
 ];
 
-const citationStyles = [
-  "APA",
-  "MLA", 
-  "Chicago",
-  "GB/T 7714",
-];
-
-const modelSources = [
-  "本地 (Ollama)",
-  "云端 (OpenAI)",
-  "云端 (Anthropic)",
-];
-
-const structureOptions = [
-  "5段式",
-  "自由结构",
-  "对比式",
-  "论证式",
-];
-
-const factCheckOptions = [
-  "轻",
-  "中",
-  "严格",
-];
+const factCheckOptions = ["轻", "中", "严格"];
+const modelSources = ["本地 (Ollama)", "云端 (OpenAI)", "云端 (Anthropic)"];
 
 const ProgressiveForm = () => {
   const [form, setForm] = useState<FormState>({
     essayType: undefined,
     topic: "",
+    essayLength: "",
+    lengthType: "字",
+    essayLevel: undefined,
+    citationStyle: undefined,
     language: "中文",
-    wordRange: "",
     audience: undefined,
     thesis: "",
     structure: "5段式",
-    citationStyle: undefined,
     materials: "",
     factCheck: "轻",
     useTemplate: false,
@@ -107,22 +117,18 @@ const ProgressiveForm = () => {
 
   const steps = useMemo(
     () => [
-      // Step A: 任务定义
-      { key: "topic", label: "主题/Prompt", required: true },
-      { key: "language", label: "语言", required: true },
-      { key: "wordRange", label: "字数范围", required: true },
-      { key: "audience", label: "读者与语气", required: true },
+      // Required core steps
+      { key: "topic", label: "Essay题目", required: true },
+      { key: "essayLength", label: "Essay Length", required: true },
+      { key: "essayLevel", label: "Essay Level", required: true },
+      { key: "citationStyle", label: "Citation Style", required: true },
       
-      // Step B: 约束与素材 (可选)
+      // Optional advanced settings
+      { key: "language", label: "语言", required: false },
+      { key: "audience", label: "读者与语气", required: false },
       { key: "thesis", label: "论点/Thesis", required: false },
       { key: "structure", label: "段落结构", required: false },
-      { key: "citationStyle", label: "引用风格", required: false },
       { key: "materials", label: "素材", required: false },
-      
-      // Step C: 质量选项
-      { key: "factCheck", label: "事实性检查", required: false },
-      { key: "useTemplate", label: "可复用模板", required: false },
-      { key: "modelSource", label: "模型来源", required: false },
     ],
     []
   );
@@ -208,12 +214,14 @@ const ProgressiveForm = () => {
     const essayData = {
       title: form.topic || "新Essay",
       type: form.essayType,
+      length: form.essayLength,
+      lengthType: form.lengthType,
+      level: form.essayLevel,
+      citationStyle: form.citationStyle,
       language: form.language,
-      wordRange: form.wordRange,
       audience: form.audience,
       thesis: form.thesis,
       structure: form.structure,
-      citationStyle: form.citationStyle,
       materials: form.materials,
       factCheck: form.factCheck,
       useTemplate: form.useTemplate,
@@ -367,11 +375,11 @@ const ProgressiveForm = () => {
                   <AccordionContent>
                     <div className="px-4 pb-4">
                       {s.key === "topic" && (
-                        <Textarea
+                        <Input
                           value={form.topic || ""}
                           onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))}
-                          placeholder="请输入Essay主题或Prompt..."
-                          className="min-h-24"
+                          placeholder="请输入Essay题目..."
+                          className="w-full"
                         />
                       )}
 
@@ -391,13 +399,77 @@ const ProgressiveForm = () => {
                         </Select>
                       )}
 
-                      {s.key === "wordRange" && (
-                        <Input
-                          value={form.wordRange || ""}
-                          onChange={(e) => setForm((f) => ({ ...f, wordRange: e.target.value }))}
-                          placeholder="例：800-1200字 或 1000-1500词"
-                        />
+                      {s.key === "essayLength" && (
+                        <div className="space-y-3">
+                          <div className="flex gap-2">
+                            <Input
+                              value={form.essayLength || ""}
+                              onChange={(e) => setForm((f) => ({ ...f, essayLength: e.target.value }))}
+                              placeholder="例：800-1200 或 1000"
+                              className="flex-1"
+                            />
+                            <Select
+                              value={form.lengthType}
+                              onValueChange={(v) => setForm((f) => ({ ...f, lengthType: v }))}
+                            >
+                              <SelectTrigger className="w-20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {lengthTypes.map((type) => (
+                                  <SelectItem key={type} value={type}>
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
                       )}
+
+                      {s.key === "essayLevel" && (
+                        <Select
+                          value={form.essayLevel}
+                          onValueChange={(v) => setForm((f) => ({ ...f, essayLevel: v }))}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="选择学术水平" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {essayLevels.map((level) => (
+                              <SelectItem key={level} value={level}>
+                                {level}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      {s.key === "citationStyle" && (
+                        <div className="space-y-3">
+                          <Select
+                            value={form.citationStyle}
+                            onValueChange={(v) => setForm((f) => ({ ...f, citationStyle: v }))}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="选择引用格式" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {citationStyles.map((style) => (
+                                <SelectItem key={style.value} value={style.value}>
+                                  {style.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {form.citationStyle && (
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {citationStyles.find(s => s.value === form.citationStyle)?.description}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
 
                       {s.key === "audience" && (
                         <Select
@@ -435,29 +507,10 @@ const ProgressiveForm = () => {
                             <SelectValue placeholder="选择段落结构" />
                           </SelectTrigger>
                           <SelectContent>
-                            {structureOptions.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-
-                      {s.key === "citationStyle" && (
-                        <Select
-                          value={form.citationStyle}
-                          onValueChange={(v) => setForm((f) => ({ ...f, citationStyle: v }))}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="选择引用格式" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {citationStyles.map((style) => (
-                              <SelectItem key={style} value={style}>
-                                {style}
-                              </SelectItem>
-                            ))}
+                            <SelectItem value="5段式">5段式</SelectItem>
+                            <SelectItem value="自由结构">自由结构</SelectItem>
+                            <SelectItem value="对比式">对比式</SelectItem>
+                            <SelectItem value="论证式">论证式</SelectItem>
                           </SelectContent>
                         </Select>
                       )}

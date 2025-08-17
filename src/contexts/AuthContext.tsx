@@ -5,6 +5,9 @@ interface User {
   name: string;
   email: string;
   avatar?: string;
+  phone?: string;
+  joinDate?: string;
+  lastLoginDate?: string;
 }
 
 interface AuthContextType {
@@ -30,10 +33,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 模拟从 localStorage 恢复登录状态
+    // 从 localStorage 恢复登录状态
     const savedUser = localStorage.getItem('auth_user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error('Failed to parse saved user data:', error);
+        localStorage.removeItem('auth_user');
+        setUser(null);
+      }
     }
     setIsLoading(false);
   }, []);
@@ -49,7 +58,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: '1',
       name: email.split('@')[0],
       email: email,
-      avatar: `https://ui-avatars.com/api/?name=${email.split('@')[0]}&background=random`
+      avatar: `https://ui-avatars.com/api/?name=${email.split('@')[0]}&background=random`,
+      phone: '+86 138****8888',
+      joinDate: '2024-01-01',
+      lastLoginDate: new Date().toISOString()
     };
     
     setUser(mockUser);

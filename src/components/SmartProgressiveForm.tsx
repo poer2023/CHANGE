@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ChevronDown, Edit2, Save, Trash2, X, FileText, Coins } from "lucide-react";
+import { ChevronDown, Edit2, Save, Trash2, X, FileText, Coins, CheckCircle, Zap } from "lucide-react";
 import { useCredit } from "@/contexts/CreditContext";
 import RechargeDialog from "@/components/RechargeDialog";
-
+import { ExtractedFormData } from "./FormAnalyzer";
 
 type FormState = {
   // Step 1: Essay Type
@@ -55,16 +55,8 @@ const essayTypes = [
   { value: "Research Paper", label: "Research Paper", description: "研究论文，基于文献资料和数据展开自主研究，提出问题、方法、发现和结论，体现科研能力。" },
   { value: "Research Review (Literature Review)", label: "Research Review (Literature Review)", description: "文献综述，总结、评估某一领域已有研究成果，识别研究空白，常作为研究论文的前置部分。" },
   { value: "Discussion Post", label: "Discussion Post", description: "课堂讨论帖，在线学习中常见，需就特定主题撰写简短、逻辑清晰的观点发表，鼓励互动。" },
-  { value: "PPT Presentation with Speaker Notes", label: "PPT Presentation with Speaker Notes", description: "演示型作业，提交带有讲解文字的PPT，展示调研结果、论文结构或课程内容，注重视觉与语言结合。" },
-  { value: "Homework (Any Type)", label: "Homework (Any Type)", description: "家庭作业，课程中的常规作业任务，类型多样，可为短文、分析题、反思日志等。" },
-  { value: "Case Study", label: "Case Study", description: "案例分析，针对具体案例（如企业、事件、政策等）进行深入分析，提出问题与解决方案。" },
   { value: "Assignment", label: "Assignment", description: "课程作业总称，泛指老师布置的所有书面任务，可涵盖论文、报告、问题集等多种形式。" },
-  { value: "Annotated Bibliography", label: "Annotated Bibliography", description: "文献注释，对一组文献进行简要总结与评价，说明其与研究主题的关联及其价值。" },
-  { value: "Article Review", label: "Article Review", description: "文章评论，对学术文章进行总结与评析，评估其研究价值、方法合理性和结果可靠性。" },
-  { value: "Article Writing", label: "Article Writing", description: "文章撰写，撰写新闻、评论、博客等非学术类文本，考察表达、组织与受众意识能力。" },
-  { value: "Book / Movie Review", label: "Book / Movie Review", description: "书籍/电影评论，分析和评价特定书籍或电影的内容、主题与表现形式，常结合批评观点。" },
-  { value: "Business Plan", label: "Business Plan", description: "商业计划书，详细阐述创业项目的商业模式、市场策略、财务预测等，面向投资人或导师。" },
-  { value: "Business Proposal", label: "Business Proposal", description: "商业提案，针对某一商业需求提出解决方案，重点在说服客户或上级采纳计划。" },
+  { value: "Case Study", label: "Case Study", description: "案例分析，针对具体案例（如企业、事件、政策等）进行深入分析，提出问题与解决方案。" },
 ];
 
 const essayLevels = [
@@ -100,53 +92,118 @@ const audiences = [
 const factCheckOptions = ["轻", "中", "严格"];
 const modelSources = ["本地 (Ollama)", "云端 (OpenAI)", "云端 (Anthropic)"];
 
-const ProgressiveForm = () => {
+type SmartProgressiveFormProps = {
+  extractedData?: ExtractedFormData;
+  onSubmit?: (formData: FormState) => void;
+};
+
+const SmartProgressiveForm: React.FC<SmartProgressiveFormProps> = ({
+  extractedData = {},
+  onSubmit
+}) => {
   const { getBalance, canAfford, consumeCredits, getCost } = useCredit();
   const [rechargeDialogOpen, setRechargeDialogOpen] = useState(false);
-  const [pendingGeneration, setPendingGeneration] = useState(false);
   
-  const [form, setForm] = useState<FormState>({
-    essayType: undefined,
-    topic: "",
-    essayLength: "",
-    lengthType: "字",
-    essayLevel: undefined,
-    citationStyle: undefined,
-    language: "中文",
-    audience: undefined,
-    thesis: "",
-    structure: "5段式",
-    materials: "",
+  // 初始化表单，使用提取的数据
+  const [form, setForm] = useState<FormState>(() => ({
+    essayType: extractedData.essayType || undefined,
+    topic: extractedData.topic || "",
+    essayLength: extractedData.essayLength || "",
+    lengthType: extractedData.lengthType || "字",
+    essayLevel: extractedData.essayLevel || undefined,
+    citationStyle: extractedData.citationStyle || undefined,
+    language: extractedData.language || "中文",
+    audience: extractedData.audience || undefined,
+    thesis: extractedData.thesis || "",
+    structure: extractedData.structure || "5段式",
+    materials: extractedData.materials || "",
     factCheck: "轻",
     useTemplate: false,
     modelSource: "本地 (Ollama)",
+  }));
+
+  const steps = useMemo(() => [
+    // Required core steps
+    { key: "topic", label: "Essay题目", required: true },
+    { key: "essayLength", label: "Essay Length", required: true },
+    { key: "essayLevel", label: "Essay Level", required: true },
+    { key: "citationStyle", label: "Citation Style", required: true },
+    
+    // Optional advanced settings
+    { key: "language", label: "语言", required: false },
+    { key: "structure", label: "段落结构", required: false },
+    { key: "materials", label: "补充信息", required: false },
+  ], []);
+
+  // 计算已填写的步骤
+  const preFilledSteps = useMemo(() => {
+    const filled = [];
+    if (form.essayType) filled.push("essayType");
+    
+    for (const step of steps) {
+      const value = form[step.key as keyof FormState];
+      const isValid = Array.isArray(value) ? value.length > 0 : typeof value === "string" ? value.trim().length > 0 : !!value;
+      if (isValid) {
+        filled.push(step.key);
+      }
+    }
+    return filled;
+  }, [form, steps]);
+
+  // 智能确定初始步骤 - 跳到第一个未填写的必填字段
+  const [currentStep, setCurrentStep] = useState(() => {
+    if (!form.essayType) return 0;
+    
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      const value = form[step.key as keyof FormState];
+      const isValid = Array.isArray(value) ? value.length > 0 : typeof value === "string" ? value.trim().length > 0 : !!value;
+      
+      // 如果是必填字段且未填写，跳到这个步骤
+      if (step.required && !isValid) {
+        return i + 1;
+      }
+    }
+    
+    // 所有必填字段都已填写，跳到最后一步
+    return steps.length;
   });
 
-  const steps = useMemo(
-    () => [
-      // Required core steps
-      { key: "topic", label: "Essay题目", required: true },
-      { key: "essayLength", label: "Essay Length", required: true },
-      { key: "essayLevel", label: "Essay Level", required: true },
-      { key: "citationStyle", label: "Citation Style", required: true },
+  // 当extractedData变化时，重新计算currentStep
+  useEffect(() => {
+    if (!form.essayType) {
+      setCurrentStep(0);
+      return;
+    }
+    
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      const value = form[step.key as keyof FormState];
+      const isValid = Array.isArray(value) ? value.length > 0 : typeof value === "string" ? value.trim().length > 0 : !!value;
       
-      // Optional advanced settings
-      { key: "language", label: "语言", required: false },
-      { key: "structure", label: "段落结构", required: false },
-      { key: "materials", label: "补充信息", required: false },
-    ],
-    []
-  );
-  
-  const [currentStep, setCurrentStep] = useState(0); // 0 表示"Essay类型"卡片
-  const totalSteps = 1 + steps.length; // 首步 + 其余步骤
+      // 如果是必填字段且未填写，跳到这个步骤
+      if (step.required && !isValid) {
+        setCurrentStep(i + 1);
+        return;
+      }
+    }
+    
+    // 所有必填字段都已填写，跳到最后一步
+    setCurrentStep(steps.length);
+  }, [form, steps]);
+
+  const totalSteps = 1 + steps.length;
   const progress = Math.round(((currentStep + 1) / totalSteps) * 100);
+
+  // 获取字段是否是从AI提取的
+  const isExtractedField = (fieldKey: string) => {
+    return extractedData[fieldKey as keyof ExtractedFormData] !== undefined;
+  };
 
   const handleSave = (targetKey?: keyof FormState) => {
     const getLabelByKey = (key: keyof FormState) =>
       key === "essayType" ? "Essay类型" : steps.find((s) => s.key === key)?.label || "当前步骤";
 
-    // 目标校验的字段
     const key: keyof FormState = targetKey
       ? targetKey
       : currentStep === 0
@@ -159,7 +216,6 @@ const ProgressiveForm = () => {
     const v = form[key];
     const isValid = Array.isArray(v) ? v.length > 0 : typeof v === "string" ? v.trim().length > 0 : !!v;
 
-    // 跳过可选字段的校验
     if (!isValid && (key === "essayType" || stepInfo?.required)) {
       toast({ title: "未完成", description: `请先填写${currentLabel}` });
       return;
@@ -167,10 +223,8 @@ const ProgressiveForm = () => {
 
     toast({ title: "已保存", description: `${currentLabel} 已保存` });
 
-    // 计算应前进到的步骤编号（0: Essay类型, 1+: steps中的项目）
     const stepNumber = key === "essayType" ? 0 : 1 + steps.findIndex((s) => s.key === key);
 
-    // 仅当保存的是当前步骤时前进；否则保持当前步骤
     if (currentStep === stepNumber) {
       const nextStep = Math.min(currentStep + 1, totalSteps - 1);
       setCurrentStep(nextStep);
@@ -191,28 +245,23 @@ const ProgressiveForm = () => {
     return v || "未填写";
   };
 
-  // 估算Essay生成所需积分
   const estimateWordCount = () => {
     if (!form.essayLength) return 0;
     
-    // 解析字数范围
     const lengthStr = form.essayLength.toString();
     let wordCount = 0;
     
     if (lengthStr.includes('-')) {
-      // 范围格式 "800-1200"
       const [min, max] = lengthStr.split('-').map(s => parseInt(s.trim()) || 0);
-      wordCount = Math.max(min, max); // 按最大值计算
+      wordCount = Math.max(min, max);
     } else {
-      // 单一数值
       wordCount = parseInt(lengthStr) || 0;
     }
     
-    // 根据长度类型转换为字数
     if (form.lengthType === '词') {
-      wordCount = Math.floor(wordCount * 1.5); // 英文词转中文字
+      wordCount = Math.floor(wordCount * 1.5);
     } else if (form.lengthType === '页') {
-      wordCount = wordCount * 300; // 每页约300字
+      wordCount = wordCount * 300;
     }
     
     return wordCount;
@@ -224,7 +273,6 @@ const ProgressiveForm = () => {
   };
 
   const handleGenerate = () => {
-    // 检查必填字段
     const requiredFields = [
       { key: "essayType", label: "Essay类型" },
       ...steps.filter(s => s.required)
@@ -242,21 +290,17 @@ const ProgressiveForm = () => {
       }
     }
     
-    // 估算字数消耗
     const requiredWords = estimateWordCount();
     
-    // 检查余额
     if (!canAfford('essay_generation', requiredWords)) {
       setRechargeDialogOpen(true);
       return;
     }
     
-    // 执行生成
     proceedWithGeneration(requiredWords);
   };
   
   const proceedWithGeneration = async (requiredWords: number) => {
-    // 扣除字数
     const success = await consumeCredits(
       'essay_generation',
       requiredWords, 
@@ -273,10 +317,9 @@ const ProgressiveForm = () => {
     
     toast({ 
       title: "开始生成", 
-      description: `消费${requiredCredits}积分，正在生成您的Essay...` 
+      description: `消费${estimateEssayCredits()}积分，正在生成您的Essay...` 
     });
     
-    // 生成Essay数据并传递给编辑器
     const essayData = {
       title: form.topic || "新Essay",
       type: form.essayType,
@@ -295,17 +338,11 @@ const ProgressiveForm = () => {
       timestamp: new Date().toISOString()
     };
     
-    // 将数据存储到sessionStorage传递给编辑器
     sessionStorage.setItem('essayFormData', JSON.stringify(essayData));
     
     setTimeout(() => {
       window.location.href = '/essay-editor';
     }, 2000);
-  };
-  
-  const handlePaymentSuccess = () => {
-    const requiredWords = estimateWordCount();
-    proceedWithGeneration(requiredWords);
   };
 
   return (
@@ -313,13 +350,19 @@ const ProgressiveForm = () => {
       <div className="flex-1 max-w-3xl px-4 md:px-0">
         <header className="flex items-center justify-between mb-4 mt-8">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-semibold">Essay 生成器</h2>
-            <Badge variant="secondary">配置中</Badge>
+            <h2 className="text-2xl font-semibold">智能 Essay 生成器</h2>
+            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+              <Zap className="h-3 w-3 mr-1" />
+              智能模式
+            </Badge>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-40 hidden sm:block">
               <Progress value={progress} />
             </div>
+            <span className="text-sm text-muted-foreground hidden sm:inline">
+              {preFilledSteps.length}/{totalSteps} 已完成
+            </span>
             <Button variant="secondary" size="sm" className="hidden sm:inline-flex">
               <Trash2 className="mr-2 h-4 w-4" /> 重置
             </Button>
@@ -329,11 +372,20 @@ const ProgressiveForm = () => {
           </div>
         </header>
 
+
         {/* Step A: Essay 类型选择 */}
         {currentStep === 0 && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Essay 类型</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Essay 类型
+                {isExtractedField('essayType') && (
+                  <Badge variant="outline" className="text-green-600">
+                    <Zap className="h-3 w-3 mr-1" />
+                    AI提取
+                  </Badge>
+                )}
+              </CardTitle>
               <CardDescription>选择您要写作的Essay类型</CardDescription>
             </CardHeader>
             <CardContent>
@@ -362,28 +414,9 @@ const ProgressiveForm = () => {
                   )}
                 </div>
 
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">常用类型</p>
-                  <div className="flex flex-wrap gap-2">
-                    {essayTypes.slice(0, 6).map((t) => (
-                      <Button
-                        key={t.value}
-                        variant={form.essayType === t.value ? "default" : "secondary"}
-                        size="sm"
-                        onClick={() => setForm((f) => ({ ...f, essayType: t.value }))}
-                      >
-                        {t.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
                 <div className="flex items-center gap-2">
                   <Button onClick={() => handleSave("essayType")} className="px-6">
                     <Save className="mr-2 h-4 w-4" /> 保存
-                  </Button>
-                  <Button variant="secondary" size="icon" aria-label="更多">
-                    <ChevronDown className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -391,14 +424,23 @@ const ProgressiveForm = () => {
           </Card>
         )}
 
+
         {/* 已完成的Essay类型展示 */}
         {currentStep > 0 && (
           <Card className="mb-6">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Essay类型</h3>
-                  <p className="text-sm text-muted-foreground">{summaryValue("essayType")}</p>
+                <div className="flex items-center gap-2">
+                  <div>
+                    <h3 className="font-medium">Essay类型</h3>
+                    <p className="text-sm text-muted-foreground">{summaryValue("essayType")}</p>
+                  </div>
+                  {isExtractedField('essayType') && (
+                    <Badge variant="outline" className="text-green-600">
+                      <Zap className="h-3 w-3 mr-1" />
+                      AI提取
+                    </Badge>
+                  )}
                 </div>
                 <Button
                   variant="secondary"
@@ -412,7 +454,59 @@ const ProgressiveForm = () => {
           </Card>
         )}
 
-        {/* 渐进式步骤 */}
+        {/* 当前正在编辑的步骤 */}
+        {currentStep === 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Essay 类型
+                {isExtractedField('essayType') && (
+                  <Badge variant="outline" className="text-green-600">
+                    <Zap className="h-3 w-3 mr-1" />
+                    AI提取
+                  </Badge>
+                )}
+              </CardTitle>
+              <CardDescription>选择您要写作的Essay类型</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">选择类型</p>
+                  <Select
+                    value={form.essayType}
+                    onValueChange={(v) => setForm((f) => ({ ...f, essayType: v }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="选择Essay类型" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {essayTypes.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.essayType && (
+                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                      {essayTypes.find(t => t.value === form.essayType)?.description}
+                    </p>
+                  )}
+                </div>
+
+                <Separator className="my-4" />
+                <div className="flex items-center gap-2">
+                  <Button onClick={() => handleSave("essayType")} className="px-6">
+                    <Save className="mr-2 h-4 w-4" /> 保存
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 渐进式步骤 - 与传统模式完全一致 */}
         <section aria-label="表单分节">
           {currentStep >= 1 && (
             <Accordion type="single" collapsible value={`item-${currentStep - 1}`}>
@@ -423,6 +517,12 @@ const ProgressiveForm = () => {
                       <div className="flex items-center gap-2">
                         <div className="font-medium">{s.label}</div>
                         {s.required && <span className="text-destructive">*</span>}
+                        {isExtractedField(s.key) && (
+                          <Badge variant="outline" className="text-green-600 text-xs">
+                            <Zap className="h-3 w-3 mr-1" />
+                            AI提取
+                          </Badge>
+                        )}
                       </div>
                       <div className="text-sm text-muted-foreground truncate">
                         {summaryValue(s.key as keyof FormState)}
@@ -445,6 +545,7 @@ const ProgressiveForm = () => {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="px-4 pb-4">
+                      {/* 各个字段的输入组件 */}
                       {s.key === "topic" && (
                         <Input
                           value={form.topic || ""}
@@ -541,7 +642,6 @@ const ProgressiveForm = () => {
                         </div>
                       )}
 
-
                       {s.key === "audience" && (
                         <Select
                           value={form.audience}
@@ -558,15 +658,6 @@ const ProgressiveForm = () => {
                             ))}
                           </SelectContent>
                         </Select>
-                      )}
-
-                      {s.key === "thesis" && (
-                        <Textarea
-                          value={form.thesis || ""}
-                          onChange={(e) => setForm((f) => ({ ...f, thesis: e.target.value }))}
-                          placeholder="输入您的论点，留空则由AI生成候选论点..."
-                          className="min-h-20"
-                        />
                       )}
 
                       {s.key === "structure" && (
@@ -586,62 +677,13 @@ const ProgressiveForm = () => {
                         </Select>
                       )}
 
-                       {s.key === "materials" && (
-                         <Textarea
-                           value={form.materials || ""}
-                           onChange={(e) => setForm((f) => ({ ...f, materials: e.target.value }))}
-                           placeholder="请输入补充信息，如参考文献、素材、特殊要求等..."
-                           className="min-h-32"
-                         />
-                       )}
-
-                      {s.key === "factCheck" && (
-                        <Select
-                          value={form.factCheck}
-                          onValueChange={(v) => setForm((f) => ({ ...f, factCheck: v }))}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="选择检查级别" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {factCheckOptions.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option} - {option === "轻" ? "基础检查" : option === "中" ? "逻辑自洽检查" : "严格事实验证"}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-
-                      {s.key === "useTemplate" && (
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="use-template"
-                            checked={form.useTemplate}
-                            onCheckedChange={(checked) => setForm((f) => ({ ...f, useTemplate: checked }))}
-                          />
-                          <Label htmlFor="use-template">
-                            启用可复用模板（保存结构供后续使用）
-                          </Label>
-                        </div>
-                      )}
-
-                      {s.key === "modelSource" && (
-                        <Select
-                          value={form.modelSource}
-                          onValueChange={(v) => setForm((f) => ({ ...f, modelSource: v }))}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="选择模型来源" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {modelSources.map((source) => (
-                              <SelectItem key={source} value={source}>
-                                {source}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      {s.key === "materials" && (
+                        <Textarea
+                          value={form.materials || ""}
+                          onChange={(e) => setForm((f) => ({ ...f, materials: e.target.value }))}
+                          placeholder="请输入补充信息，如参考文献、素材、特殊要求等..."
+                          className="min-h-32"
+                        />
                       )}
 
                       <Separator className="my-4" />
@@ -681,7 +723,6 @@ const ProgressiveForm = () => {
                     所有信息已收集完毕，点击生成开始创建您的Essay初稿
                   </p>
                   
-                  {/* 积分信息显示 */}
                   <div className="bg-blue-50 rounded-lg p-4 mt-4">
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
@@ -708,7 +749,6 @@ const ProgressiveForm = () => {
           </Card>
         )}
         
-        {/* 充值弹窗 */}
         <RechargeDialog>
           <Button style={{ display: 'none' }} ref={(ref) => {
             if (rechargeDialogOpen && ref) {
@@ -720,9 +760,8 @@ const ProgressiveForm = () => {
           </Button>
         </RechargeDialog>
       </div>
-      
     </div>
   );
 };
 
-export default ProgressiveForm;
+export default SmartProgressiveForm;

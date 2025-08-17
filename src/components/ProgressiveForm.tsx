@@ -190,7 +190,26 @@ const ProgressiveForm = () => {
       description: "正在生成您的Essay，请稍候..." 
     });
     
-    // TODO: 实际的生成逻辑
+    // 生成Essay数据并传递给编辑器
+    const essayData = {
+      title: form.topic || "新Essay",
+      type: form.essayType,
+      language: form.language,
+      wordRange: form.wordRange,
+      audience: form.audience,
+      thesis: form.thesis,
+      structure: form.structure,
+      citationStyle: form.citationStyle,
+      materials: form.materials,
+      factCheck: form.factCheck,
+      useTemplate: form.useTemplate,
+      modelSource: form.modelSource,
+      timestamp: new Date().toISOString()
+    };
+    
+    // 将数据存储到sessionStorage传递给编辑器
+    sessionStorage.setItem('essayFormData', JSON.stringify(essayData));
+    
     setTimeout(() => {
       window.location.href = '/essay-editor';
     }, 2000);

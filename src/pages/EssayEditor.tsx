@@ -49,50 +49,123 @@ export type EssayData = {
 
 const EssayEditor = () => {
   const { toast } = useToast();
-  const [essay, setEssay] = useState<EssayData>({
-    id: "essay-001",
-    title: "AI与教育的未来发展",
-    status: "draft",
-    outline: ["引言", "AI在教育中的现状", "技术优势与挑战", "未来发展方向", "结论"],
-    sections: [
-      {
-        id: "intro",
-        heading: "引言",
-        content: "人工智能技术的快速发展正在深刻改变着教育领域。从个性化学习到智能辅导，AI技术为教育带来了前所未有的机遇。本文将探讨AI在教育中的应用现状、面临的挑战以及未来的发展方向。",
-        order: 0
-      },
-      {
-        id: "current",
-        heading: "AI在教育中的现状",
-        content: "当前，AI技术在教育领域的应用主要集中在几个方面：自适应学习平台能够根据学生的学习进度和能力调整教学内容；智能评测系统可以快速准确地评估学生的学习成果；虚拟助教为学生提供24小时的学习支持。这些应用已经在全球范围内得到了广泛的实践。",
-        order: 1
-      },
-      {
-        id: "challenges",
-        heading: "技术优势与挑战",
-        content: "AI技术的优势在于其能够处理大量数据，提供个性化的学习体验，并且不受时间和地点的限制。然而，这一技术也面临着诸多挑战：数据隐私和安全问题、算法偏见、教师角色的重新定义以及技术依赖性等。这些挑战需要教育工作者、技术开发者和政策制定者共同努力来解决。",
-        order: 2
-      },
-      {
-        id: "future",
-        heading: "未来发展方向",
-        content: "展望未来，AI在教育中的应用将更加深入和广泛。我们可以预期看到更加智能的学习环境、更精准的能力评估、更有效的教学方法。同时，人机协作将成为新的教学模式，教师的作用将从知识传授者转变为学习引导者和情感支持者。",
-        order: 3
-      },
-      {
-        id: "conclusion",
-        heading: "结论",
-        content: "AI技术为教育发展带来了巨大的潜力，但也需要我们谨慎应对其中的挑战。只有在确保技术服务于教育本质的前提下，我们才能真正实现AI与教育的良性发展，为学习者创造更好的教育体验。",
-        order: 4
-      }
-    ],
-    metadata: {
-      type: "学术评论",
-      language: "中文",
-      wordRange: "800-1200字",
-      audience: "学术读者"
+  
+  // 从sessionStorage获取表单数据并初始化essay
+  const [essay, setEssay] = useState<EssayData>(() => {
+    const formData = sessionStorage.getItem('essayFormData');
+    if (formData) {
+      const parsed = JSON.parse(formData);
+      return {
+        id: `essay-${Date.now()}`,
+        title: parsed.title || "新Essay",
+        status: "outline" as const,
+        outline: ["引言", "主体段落", "结论"],
+        sections: [{
+          id: "generating",
+          heading: "正在生成中...",
+          content: `正在基于您的要求生成Essay内容...\n\n生成参数：\n- 主题：${parsed.title}\n- 类型：${parsed.type}\n- 语言：${parsed.language}\n- 字数范围：${parsed.wordRange}`,
+          order: 0
+        }],
+        metadata: {
+          type: parsed.type || "学术论文",
+          language: parsed.language || "中文",
+          wordRange: parsed.wordRange || "800-1200字",
+          audience: parsed.audience || "学术读者"
+        }
+      };
     }
+    
+    // 默认示例数据
+    return {
+      id: "essay-001",
+      title: "AI与教育的未来发展",
+      status: "draft",
+      outline: ["引言", "AI在教育中的现状", "技术优势与挑战", "未来发展方向", "结论"],
+      sections: [
+        {
+          id: "intro",
+          heading: "引言",
+          content: "人工智能技术的快速发展正在深刻改变着教育领域。从个性化学习到智能辅导，AI技术为教育带来了前所未有的机遇。本文将探讨AI在教育中的应用现状、面临的挑战以及未来的发展方向。",
+          order: 0
+        },
+        {
+          id: "current",
+          heading: "AI在教育中的现状",
+          content: "当前，AI技术在教育领域的应用主要集中在几个方面：自适应学习平台能够根据学生的学习进度和能力调整教学内容；智能评测系统可以快速准确地评估学生的学习成果；虚拟助教为学生提供24小时的学习支持。这些应用已经在全球范围内得到了广泛的实践。",
+          order: 1
+        },
+        {
+          id: "challenges",
+          heading: "技术优势与挑战",
+          content: "AI技术的优势在于其能够处理大量数据，提供个性化的学习体验，并且不受时间和地点的限制。然而，这一技术也面临着诸多挑战：数据隐私和安全问题、算法偏见、教师角色的重新定义以及技术依赖性等。这些挑战需要教育工作者、技术开发者和政策制定者共同努力来解决。",
+          order: 2
+        },
+        {
+          id: "future",
+          heading: "未来发展方向",
+          content: "展望未来，AI在教育中的应用将更加深入和广泛。我们可以预期看到更加智能的学习环境、更精准的能力评估、更有效的教学方法。同时，人机协作将成为新的教学模式，教师的作用将从知识传授者转变为学习引导者和情感支持者。",
+          order: 3
+        },
+        {
+          id: "conclusion",
+          heading: "结论",
+          content: "AI技术为教育发展带来了巨大的潜力，但也需要我们谨慎应对其中的挑战。只有在确保技术服务于教育本质的前提下，我们才能真正实现AI与教育的良性发展，为学习者创造更好的教育体验。",
+          order: 4
+        }
+      ],
+      metadata: {
+        type: "学术评论",
+        language: "中文",
+        wordRange: "800-1200字",
+        audience: "学术读者"
+      }
+    };
   });
+  
+  // 模拟AI生成过程
+  useEffect(() => {
+    const formData = sessionStorage.getItem('essayFormData');
+    if (formData && essay.sections[0]?.id === "generating") {
+      const parsed = JSON.parse(formData);
+      
+      // 5秒后开始生成内容
+      setTimeout(() => {
+        setEssay(prev => ({
+          ...prev,
+          status: "draft",
+          outline: ["引言", "主体论述", "结论与展望"],
+          sections: [
+            {
+              id: "intro",
+              heading: "引言",
+              content: `${parsed.title}是当今学术界关注的重要议题。随着社会的快速发展和技术的不断进步，这一领域的研究显得尤为重要。本文将从多个角度深入探讨这一主题，分析其现状、挑战与未来发展方向。`,
+              order: 0
+            },
+            {
+              id: "body",
+              heading: "主体论述",
+              content: `在深入分析${parsed.title}的过程中，我们发现该领域存在着多层次的复杂性。首先，从理论层面来看，现有的研究框架为我们提供了坚实的基础。其次，实践层面的发展也为理论研究提供了丰富的案例和数据支持。通过综合分析，我们可以更好地理解这一领域的核心问题和发展趋势。`,
+              order: 1
+            },
+            {
+              id: "conclusion",
+              heading: "结论与展望",
+              content: `通过对${parsed.title}的深入研究，我们得出了一些重要结论。未来的研究应该继续关注理论与实践的结合，推动该领域的健康发展。同时，跨学科的合作也将为这一领域带来新的机遇和挑战。`,
+              order: 2
+            }
+          ]
+        }));
+        
+        // 清除表单数据
+        sessionStorage.removeItem('essayFormData');
+        
+        toast({
+          title: "生成完成",
+          description: "Essay已成功生成，您可以使用右侧AI助手进行进一步编辑"
+        });
+      }, 5000);
+    }
+  }, [toast, essay.sections]);
 
   const [operations, setOperations] = useState<AgentOperation[]>([]);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);

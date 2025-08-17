@@ -3,11 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Edit3 } from "lucide-react";
-import type { EssayData, EssaySection, AgentOperation } from "@/pages/EssayEditor";
+import type { EssayData, EssaySection } from "@/pages/EssayEditor";
 
 interface EssayContentProps {
   essay: EssayData;
-  operations: AgentOperation[];
+  operations: any[];
   selectedSection: string | null;
   onTextSelect: (text: string) => void;
   onSectionSelect: (sectionId: string) => void;

@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { ChevronDown, Edit2, Save, Trash2, X, FileText } from "lucide-react";
-import ChatPanel from "./ChatPanel";
+
 
 type FormState = {
   // Step 1: Essay Type
@@ -619,8 +619,6 @@ const ProgressiveForm = () => {
         )}
       </div>
       
-      {/* 右侧聊天面板 */}
-      <ChatPanel />
     </div>
   );
 };

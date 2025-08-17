@@ -7,8 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Download, Settings, FileText, Eye } from "lucide-react";
 import EssayNavigation from "@/components/essay/EssayNavigation";
 import EssayContent from "@/components/essay/EssayContent";
-import AgentPanel from "@/components/essay/AgentPanel";
-import OperationFlow from "@/components/essay/OperationFlow";
+import ChatPanel from "@/components/ChatPanel";
 import { useToast } from "@/hooks/use-toast";
 
 export type EssaySection = {
@@ -18,20 +17,6 @@ export type EssaySection = {
   order: number;
 };
 
-export type AgentOperation = {
-  id: string;
-  tool: string;
-  input: string;
-  output?: string;
-  status: "queued" | "generating" | "proposed_diff" | "waiting_user" | "applied" | "reverted";
-  diff?: {
-    added: string[];
-    removed: string[];
-  };
-  timestamp: Date;
-  duration?: number;
-  tokens?: number;
-};
 
 export type EssayData = {
   id: string;
@@ -167,7 +152,6 @@ const EssayEditor = () => {
     }
   }, [toast, essay.sections]);
 
-  const [operations, setOperations] = useState<AgentOperation[]>([]);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [selectedText, setSelectedText] = useState<string>("");
 
@@ -190,115 +174,6 @@ const EssayEditor = () => {
     }, 2000);
   };
 
-  const handleAgentOperation = (tool: string, input: string, targetSectionId?: string) => {
-    const newOperation: AgentOperation = {
-      id: `op-${Date.now()}`,
-      tool,
-      input,
-      status: "queued",
-      timestamp: new Date()
-    };
-
-    setOperations(prev => [...prev, newOperation]);
-
-    // 模拟Agent处理过程
-    setTimeout(() => {
-      setOperations(prev => 
-        prev.map(op => 
-          op.id === newOperation.id 
-            ? { ...op, status: "generating" }
-            : op
-        )
-      );
-    }, 500);
-
-    setTimeout(() => {
-      setOperations(prev => 
-        prev.map(op => 
-          op.id === newOperation.id 
-            ? { 
-                ...op, 
-                status: "proposed_diff",
-                output: generateMockOutput(tool, input),
-                diff: generateMockDiff(tool),
-                duration: 3500,
-                tokens: Math.floor(Math.random() * 500) + 200
-              }
-            : op
-        )
-      );
-    }, 3500);
-  };
-
-  const generateMockOutput = (tool: string, input: string): string => {
-    switch (tool) {
-      case "rewrite":
-        return "已重写选中段落，提高了表达的清晰度和逻辑性。";
-      case "expand":
-        return "已扩展该段落，添加了更多支撑细节和例证。";
-      case "proofread":
-        return "已校对文本，修复了语法错误并优化了表达。";
-      case "outline":
-        return "已重新整理大纲结构，优化了逻辑层次。";
-      case "cite":
-        return "已格式化引用，符合指定的学术规范。";
-      default:
-        return "操作已完成。";
-    }
-  };
-
-  const generateMockDiff = (tool: string) => {
-    const mockDiffs = {
-      rewrite: {
-        added: ["人工智能技术的迅猛发展正在根本性地重塑教育领域的面貌。"],
-        removed: ["人工智能技术的快速发展正在深刻改变着教育领域。"]
-      },
-      expand: {
-        added: ["例如，Khan Academy的个性化学习平台已经帮助全球数百万学生提高了学习效率。", "据研究显示，使用AI辅助学习的学生在标准化测试中的表现提升了15-20%。"],
-        removed: []
-      },
-      proofread: {
-        added: ["这些应用已经在全球范围内得到了广泛的实践和验证。"],
-        removed: ["这些应用已经在全球范围内得到了广泛的实践。"]
-      }
-    };
-    
-    return mockDiffs[tool as keyof typeof mockDiffs] || { added: [], removed: [] };
-  };
-
-  const handleApplyOperation = (operationId: string) => {
-    const operation = operations.find(op => op.id === operationId);
-    if (!operation) return;
-
-    setOperations(prev => 
-      prev.map(op => 
-        op.id === operationId 
-          ? { ...op, status: "applied" }
-          : op
-      )
-    );
-
-    // TODO: 实际应用更改到essay内容
-    toast({
-      title: "更改已应用",
-      description: "操作结果已应用到文稿中"
-    });
-  };
-
-  const handleRevertOperation = (operationId: string) => {
-    setOperations(prev => 
-      prev.map(op => 
-        op.id === operationId 
-          ? { ...op, status: "reverted" }
-          : op
-      )
-    );
-
-    toast({
-      title: "更改已撤销",
-      description: "操作已撤销，文稿恢复到之前状态"
-    });
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -361,9 +236,9 @@ const EssayEditor = () => {
 
       {/* 主要内容区域 */}
       <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-12 gap-6">
+        <div className="flex gap-6">
           {/* 左侧导航 */}
-          <div className="col-span-2">
+          <div className="w-64 flex-shrink-0">
             <EssayNavigation 
               outline={essay.outline}
               sections={essay.sections}
@@ -373,31 +248,18 @@ const EssayEditor = () => {
           </div>
 
           {/* 中间文稿区域 */}
-          <div className="col-span-6">
+          <div className="flex-1">
             <EssayContent 
               essay={essay}
-              operations={operations}
+              operations={[]}
               selectedSection={selectedSection}
               onTextSelect={setSelectedText}
               onSectionSelect={setSelectedSection}
             />
           </div>
 
-          {/* 右侧Agent面板 */}
-          <div className="col-span-4">
-            <div className="space-y-4">
-              <AgentPanel 
-                selectedText={selectedText}
-                selectedSection={selectedSection}
-                onOperation={handleAgentOperation}
-              />
-              <OperationFlow 
-                operations={operations}
-                onApply={handleApplyOperation}
-                onRevert={handleRevertOperation}
-              />
-            </div>
-          </div>
+          {/* 右侧聊天面板 */}
+          <ChatPanel />
         </div>
       </div>
     </div>

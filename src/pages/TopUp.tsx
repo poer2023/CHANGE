@@ -19,7 +19,7 @@ const PACKAGES = [
   {
     id: 'starter',
     title: 'Starter',
-    words: '5k words',
+    words: '5k',
     price: '$29',
     per: '$5.80 / 1k words',
     description: '入门体验，轻量使用',
@@ -35,7 +35,7 @@ const PACKAGES = [
   {
     id: 'popular',
     title: 'Popular',
-    words: '10k words',
+    words: '10k',
     price: '$49',
     per: '$4.08 / 1k words',
     description: '最受欢迎，性价比最佳',
@@ -52,7 +52,7 @@ const PACKAGES = [
   {
     id: 'premium',
     title: 'Premium',
-    words: '50k words',
+    words: '50k',
     price: '$99',
     per: '$3.30 / 1k words',
     description: '高频用户，批量创作更省',
@@ -226,7 +226,7 @@ function PlanCard({
           <h3 className="text-xl font-semibold text-slate-900">{title}</h3>
           <p className="text-sm text-slate-500 mb-4">{description}</p>
           <div className="text-5xl font-extrabold tracking-tight text-slate-900">{words}</div>
-          <div className="text-sm uppercase tracking-wide text-slate-500">字数</div>
+          <div className="text-sm uppercase tracking-wide text-slate-500">words</div>
           <div className="mt-3 text-3xl font-bold">{price}</div>
           <div className="text-xs text-slate-500">{per}</div>
         </header>

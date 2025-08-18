@@ -24,19 +24,21 @@ import { toast } from '@/hooks/use-toast';
 interface RechargeDialogProps {
   children: React.ReactNode;
   onRechargeSuccess?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function RechargeDialog({ children, onRechargeSuccess }: RechargeDialogProps) {
+export function RechargeDialog({ children, onRechargeSuccess, open, onOpenChange }: RechargeDialogProps) {
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(open || false);
   const { getBalance, balance, recharge } = useCredit();
 
   // 获取VIP等级信息
   const getVipLevel = () => {
-    const level = balance.vipLevel;
-    const names = { 0: '普通', 1: '青铜', 2: '白银', 3: '黄金', 4: '钻石' };
-    const colors = { 
+    const level = balance.vipLevel.level;
+    const names: Record<number, string> = { 0: '普通', 1: '青铜', 2: '白银', 3: '黄金', 4: '钻石' };
+    const colors: Record<number, string> = { 
       0: 'bg-gray-100 text-gray-700', 
       1: 'bg-amber-100 text-amber-700', 
       2: 'bg-blue-100 text-blue-700', 
@@ -46,7 +48,7 @@ export function RechargeDialog({ children, onRechargeSuccess }: RechargeDialogPr
     return { 
       name: names[level] || names[0], 
       color: colors[level] || colors[0],
-      discount: level * 5 // 简单的折扣计算
+      discount: balance.vipLevel.discount // 使用VipLevel对象的discount属性
     };
   };
 
@@ -87,7 +89,7 @@ export function RechargeDialog({ children, onRechargeSuccess }: RechargeDialogPr
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={open !== undefined ? open : isOpen} onOpenChange={onOpenChange || setIsOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>

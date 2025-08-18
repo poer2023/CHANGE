@@ -18,7 +18,7 @@ import {
   Mail,
   Copy,
   ExternalLink,
-  Confetti
+  PartyPopper
 } from 'lucide-react';
 import { formatPrice } from '@/lib/pricing';
 import { useToast } from '@/hooks/use-toast';

@@ -41,7 +41,9 @@ const CreditBalance: React.FC<CreditBalanceProps> = ({
         <RechargeDialog
           open={rechargeDialogOpen}
           onOpenChange={setRechargeDialogOpen}
-        />
+        >
+          <Button size="sm">充值</Button>
+        </RechargeDialog>
       </div>
     );
   }
@@ -66,7 +68,9 @@ const CreditBalance: React.FC<CreditBalanceProps> = ({
         <RechargeDialog
           open={rechargeDialogOpen}
           onOpenChange={setRechargeDialogOpen}
-        />
+        >
+          <Button size="sm">充值</Button>
+        </RechargeDialog>
       </div>
     );
   }
@@ -115,7 +119,9 @@ const CreditBalance: React.FC<CreditBalanceProps> = ({
       <RechargeDialog
         open={rechargeDialogOpen}
         onOpenChange={setRechargeDialogOpen}
-      />
+      >
+        <Button size="sm">充值</Button>
+      </RechargeDialog>
     </Card>
   );
 };

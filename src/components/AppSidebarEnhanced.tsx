@@ -46,9 +46,9 @@ const AppSidebarEnhanced = () => {
   };
 
   const getVipLevel = () => {
-    const level = balance.vipLevel;
-    const names = { 0: '普通', 1: '青铜', 2: '白银', 3: '黄金', 4: '钻石' };
-    const colors = { 
+    const level = balance.vipLevel.level;
+    const names: Record<number, string> = { 0: '普通', 1: '青铜', 2: '白银', 3: '黄金', 4: '钻石' };
+    const colors: Record<number, string> = { 
       0: 'bg-gray-100 text-gray-700', 
       1: 'bg-amber-100 text-amber-700', 
       2: 'bg-blue-100 text-blue-700', 

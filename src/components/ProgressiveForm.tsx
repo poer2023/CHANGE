@@ -273,7 +273,7 @@ const ProgressiveForm = () => {
     
     toast({ 
       title: "开始生成", 
-      description: `消费${requiredCredits}积分，正在生成您的Essay...` 
+      description: `消费${requiredWords}积分，正在生成您的Essay...` 
     });
     
     // 生成Essay数据并传递给编辑器

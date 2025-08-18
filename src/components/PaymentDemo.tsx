@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { PromoCodeInput } from './PromoCodeInput';
-import { PaymentMethodSelector } from './PaymentMethodSelector';
+import PromoCodeInput from './PromoCodeInput';
+import PaymentMethodSelector from './PaymentMethodSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';

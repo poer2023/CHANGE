@@ -17,7 +17,7 @@ import AIChat from "@/components/AIChat";
 import AppSidebar from "@/components/AppSidebar";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
-import { historyData, getArticleById } from "@/data/historyData";
+import { historyData, getArticleById, ArticleStatus } from "@/data/historyData";
 import type { Article } from "@/data/historyData";
 import { useCredit } from "@/contexts/CreditContext";
 import RechargeDialog from "@/components/RechargeDialog";
@@ -57,11 +57,11 @@ const convertArticleToEssay = (article: Article): EssayData => {
     id: article.id,
     title: article.title,
     status: article.status === 'completed' ? 'polished' : 
-            article.status === 'in-progress' ? 'draft' : 'idea',
+            article.status === ArticleStatus.IN_PROGRESS ? 'draft' : 'idea',
     outline: article.outline || [],
     sections,
     metadata: {
-      type: article.metadata.type,
+      type: article.type,
       language: article.metadata.language,
       wordRange: `${article.metadata.wordCount}字`,
       audience: article.metadata.targetAudience
@@ -414,7 +414,9 @@ const EssayEditor = () => {
           <RechargeDialog
             open={paymentModalOpen}
             onOpenChange={setPaymentModalOpen}
-          />
+          >
+            <Button>充值</Button>
+          </RechargeDialog>
         </div>
       </SidebarInset>
     </SidebarProvider>

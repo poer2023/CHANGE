@@ -76,6 +76,12 @@ interface CreditContextType {
   getCost: (serviceType: ServiceType, wordCount: number) => number;
   getBalance: () => number;
   refreshBalance: () => Promise<void>;
+  
+  // 新增的方法
+  getTotalSpending: () => number;
+  getVipLevel: () => VipLevel;
+  getConsumptionHistory: () => TransactionRecord[];
+  getRechargeHistory: () => RechargeRecord[];
 }
 
 const CreditContext = createContext<CreditContextType | undefined>(undefined);
@@ -398,6 +404,26 @@ export const CreditProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
+  // 获取总消费金额
+  const getTotalSpending = useCallback((): number => {
+    return balance.totalSpent;
+  }, [balance.totalSpent]);
+
+  // 获取VIP等级
+  const getVipLevelFn = useCallback((): VipLevel => {
+    return balance.vipLevel;
+  }, [balance.vipLevel]);
+
+  // 获取消费历史
+  const getConsumptionHistory = useCallback((): TransactionRecord[] => {
+    return transactions.filter(t => t.type === 'usage');
+  }, [transactions]);
+
+  // 获取充值历史
+  const getRechargeHistoryFn = useCallback((): RechargeRecord[] => {
+    return rechargeHistory;
+  }, [rechargeHistory]);
+
   const value = {
     balance,
     transactions,
@@ -413,6 +439,10 @@ export const CreditProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     getCost,
     getBalance,
     refreshBalance,
+    getTotalSpending,
+    getVipLevel: getVipLevelFn,
+    getConsumptionHistory,
+    getRechargeHistory: getRechargeHistoryFn,
   };
 
   return (

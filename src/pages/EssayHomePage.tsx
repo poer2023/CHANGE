@@ -361,7 +361,7 @@ const EssayHomePage: React.FC = () => {
               <div className="group">
                 <div className="text-center p-8 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200 hover:border-purple-200 hover:-translate-y-2">
                   <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-violet-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                    <Timer className="w-8 h-8 text-purple-600" />
+                    <Clock className="w-8 h-8 text-purple-600" />
                   </div>
                   <h4 className="text-xl font-bold text-slate-900 mb-3">快速交付</h4>
                   <p className="text-slate-600 leading-relaxed">最快24小时交付，严格按照约定时间完成，绝不延误您的学习进度</p>

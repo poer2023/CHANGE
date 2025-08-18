@@ -127,7 +127,7 @@ const LandingHero = () => {
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    onClick={() => document.querySelector('input[type="file"]')?.click()}
+                    onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
                   >
                     <Upload className="h-4 w-4 text-muted-foreground" />
                   </Button>
@@ -136,7 +136,7 @@ const LandingHero = () => {
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    onClick={() => document.querySelector('input[type="file"]')?.click()}
+                    onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
                   >
                     <FileText className="h-4 w-4 text-muted-foreground" />
                   </Button>

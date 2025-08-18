@@ -19,7 +19,7 @@ const PACKAGES = [
   {
     id: 'starter',
     title: 'Starter',
-    words: '50k words',
+    words: '5k words',
     price: '$29',
     per: '$5.80 / 1k words',
     description: '入门体验，轻量使用',
@@ -35,7 +35,7 @@ const PACKAGES = [
   {
     id: 'popular',
     title: 'Popular',
-    words: '120k words',
+    words: '10k words',
     price: '$49',
     per: '$4.08 / 1k words',
     description: '最受欢迎，性价比最佳',
@@ -52,7 +52,7 @@ const PACKAGES = [
   {
     id: 'premium',
     title: 'Premium',
-    words: '300k words',
+    words: '50k words',
     price: '$99',
     per: '$3.30 / 1k words',
     description: '高频用户，批量创作更省',

@@ -261,7 +261,12 @@ const EssayForm: React.FC = () => {
             {/* Top Bar */}
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-medium text-slate-900">写作需求</h3>
-              <Button variant="outline" size="sm" className="text-sm">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-sm"
+                onClick={() => navigate('/progressive-form')}
+              >
                 填写表单
               </Button>
             </div>

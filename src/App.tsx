@@ -9,6 +9,7 @@ import AuthGuard from "@/components/AuthGuard";
 import Index from "./pages/Index";
 import EssayForm from "./pages/EssayForm";
 import EssayEditor from "./pages/EssayEditor";
+import ProgressiveFormPage from "./pages/ProgressiveFormPage";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import History from "./pages/History";
 import TopUp from "./pages/TopUp";
@@ -53,6 +54,11 @@ const App = () => (
             <Route path="/form" element={
               <AuthGuard requireAuth={true}>
                 <EssayForm />
+              </AuthGuard>
+            } />
+            <Route path="/progressive-form" element={
+              <AuthGuard requireAuth={true}>
+                <ProgressiveFormPage />
               </AuthGuard>
             } />
             <Route path="/essay-editor" element={

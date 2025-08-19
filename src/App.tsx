@@ -30,6 +30,7 @@ import DeliveryComplete from "./pages/DeliveryComplete";
 import QualityReport from "./pages/QualityReport";
 import CustomerService from "./pages/CustomerService";
 import DeliveryReport from "./pages/DeliveryReport";
+import AcademicProofWriting from "./pages/AcademicProofWriting";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -184,6 +185,11 @@ const App = () => (
             <Route path="/delivery-report/:orderId" element={
               <AuthGuard requireAuth={true}>
                 <DeliveryReport />
+              </AuthGuard>
+            } />
+            <Route path="/academic-proofwriting" element={
+              <AuthGuard requireAuth={false}>
+                <AcademicProofWriting />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

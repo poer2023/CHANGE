@@ -674,7 +674,7 @@ const AcademicProofWriting = () => {
               <div className="text-center">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-white" 
                      style={{ backgroundColor: '#4F46E5' }}>3</div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">Agent 整理与导出</h3>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">Agent编辑与导出</h3>
                 <p className="text-gray-600">一条指令完成排版/图表/交叉引用，导出证据包并跑一遍口头核验</p>
               </div>
             </div>

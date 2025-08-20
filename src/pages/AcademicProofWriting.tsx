@@ -582,11 +582,6 @@ const AcademicProofWriting = () => {
                 <p className="text-gray-600">一条指令完成排版/图表/交叉引用，导出证据包并跑一遍口头核验</p>
               </div>
             </div>
-            <img 
-              src={threeStepProcess} 
-              alt="三步走流程：上传、对齐、导出"
-              className="w-full max-w-4xl mx-auto rounded-2xl shadow-lg"
-            />
           </div>
         </section>
 

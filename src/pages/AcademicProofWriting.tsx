@@ -369,15 +369,6 @@ const AcademicProofWriting = () => {
                       <span className="text-gray-700"><strong>一键格式化</strong>正文引注与参考文献（APA/MLA/GB/T）</span>
                     </li>
                   </ul>
-                </div>
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">页面会怎么显示</h4>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li>• 绿色提示：<code className="bg-gray-100 px-2 py-1 rounded">已插入到第 3 段</code></li>
-                    <li>• 列表项：标题 + 年份 + 来源域名/出版社 + <code className="bg-gray-100 px-2 py-1 rounded">[插入] [替换]</code></li>
-                    <li>• 按钮：<code className="bg-gray-100 px-2 py-1 rounded">一键规范（APA 7）</code></li>
-                  </ul>
-                </div>
                 <p className="text-sm text-gray-500 mb-4">样例：一键格式命中率 ≥ 95%（小样本）*</p>
                 <Button 
                   variant="outline" 
@@ -536,6 +527,7 @@ const AcademicProofWriting = () => {
                 <p className="text-xs text-gray-500 mt-2">
                   图像生成提示词：Two gray flash cards side by side for viva practice. Card 1: Q "What is your source?" A shows a short line plus a small badge "Source: 2021 journal". Card 2: Q "Why this rewrite?" A explains brevity and keeps key data. Minimal UI, soft shadows, 3:2, no people.
                 </p>
+              </div>
               </div>
             </div>
           </div>

@@ -354,36 +354,6 @@ const AcademicProofWriting = () => {
               <div>
                 <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">真实引用与零幻觉校验</h3>
                 
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">我们实际做什么</h4>
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700"><strong>写作时自动检索</strong>相关论文/书籍/权威网页，给出可引用候选。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700">生成后，支持用 <strong>Cite 工具/Agent</strong> 一句话<strong>插入或替换</strong>引用。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700"><strong>一键规范</strong>正文引注与参考文献（APA/MLA/GB/T）。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700">找不到可靠来源时，<strong>明确提示未检得</strong>，不会硬凑。</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">界面上用户会看到</h4>
-                  <ul className="space-y-2 text-gray-600">
-                    <li>• 列表行：<code className="bg-gray-100 px-2 py-1 rounded text-sm">[标题] · 2021 · nature.com [插入] [替换]</code></li>
-                    <li>• 成功提示：<code className="bg-gray-100 px-2 py-1 rounded text-sm">已插入到第 3 段</code></li>
-                    <li>• 样式下拉：<code className="bg-gray-100 px-2 py-1 rounded text-sm">格式：APA / MLA / GB/T</code> + 按钮 <code className="bg-gray-100 px-2 py-1 rounded text-sm">一键规范</code></li>
-                  </ul>
-                </div>
 
                 <Button 
                   variant="outline" 
@@ -431,32 +401,6 @@ const AcademicProofWriting = () => {
               <div className="md:order-2">
                 <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">个人文风对齐（非母语友好）</h3>
                 
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">我们实际做什么</h4>
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700">你<strong>上传一篇</strong>历史作业，建立<strong>个人文风基线</strong>。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700">给出 0–100 的<strong>风格距离</strong>，并可视化句长/词汇复杂度/突发度。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700"><strong>润色强度可控</strong>，保留"自然错误率"，避免"AI 味"。</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">界面上用户会看到</h4>
-                  <ul className="space-y-2 text-gray-600">
-                    <li>• 指标：<code className="bg-gray-100 px-2 py-1 rounded text-sm">风格距离 28（目标 &lt;30）</code></li>
-                    <li>• 控件：<code className="bg-gray-100 px-2 py-1 rounded text-sm">对齐到个人基线</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">润色强度：轻/中/重</code></li>
-                    <li>• 三个 chips：<code className="bg-gray-100 px-2 py-1 rounded text-sm">句长对齐</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">词汇稳定</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">突发度正常</code></li>
-                  </ul>
-                </div>
 
                 <Button 
                   variant="outline" 
@@ -505,36 +449,6 @@ const AcademicProofWriting = () => {
               <div>
                 <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">可证据的写作过程：留痕 + 证据包 + 口头核验</h3>
                 
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">我们实际做什么（降噪版）</h4>
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700">轻量留痕：记录<strong>会话开始/结束时间</strong>、核心<strong>检索关键词</strong>、<strong>插入/替换的引用</strong>、主要<strong>Agent 指令</strong>、以及<strong>用户手动编辑次数</strong>。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700">一键导出<strong>写作过程摘要</strong>（PDF 一页）与<strong>引用清单</strong>（CSV）；用于老师快速查看与面谈备份。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700">生成<strong>面谈速答卡</strong>（1 页 PDF）：来源、改动理由、结论依据。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700">可创建<strong>只读链接</strong>，设置有效期与可见范围。</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">界面上用户会看到</h4>
-                  <ul className="space-y-2 text-gray-600">
-                    <li>• 简洁时间线：<code className="bg-gray-100 px-2 py-1 rounded text-sm">开始写作 → 插入 2 个引用 → Agent 排版 → 完成</code></li>
-                    <li>• 导出卡片：<code className="bg-gray-100 px-2 py-1 rounded text-sm">writing-summary.pdf</code>、<code className="bg-gray-100 px-2 py-1 rounded text-sm">sources.csv</code>、<code className="bg-gray-100 px-2 py-1 rounded text-sm">viva-qa.pdf</code></li>
-                    <li>• 按钮：<code className="bg-gray-100 px-2 py-1 rounded text-sm">导出过程摘要</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">复制只读链接</code></li>
-                  </ul>
-                </div>
 
                 <Button 
                   variant="outline" 
@@ -598,40 +512,6 @@ const AcademicProofWriting = () => {
               <div className="md:order-2">
                 <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">专业二次 AI Agent 审查编辑</h3>
                 
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">我们实际做什么</h4>
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700"><strong>结构化重写</strong>：按你给的提纲重排章节并生成变更说明。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700"><strong>格式排版</strong>：题注、脚注、交叉引用、目录自动更新；参考文献批量规范。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700"><strong>插表插图</strong>：从段落/表格数据生成柱/折/散点图，<strong>图注写清来源</strong>；流程图按描述生成并自动编号。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700"><strong>自然语言操控</strong>：一句话做复杂操作；常用步骤可保存为"配方"。</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                      <span className="text-gray-700"><strong>护栏</strong>：不伪造引用/数据；无法验证会标注"待核验"；全部操作可撤销并留痕。</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">界面上用户会看到</h4>
-                  <ul className="space-y-2 text-gray-600">
-                    <li>• 命令输入：<code className="bg-gray-100 px-2 py-1 rounded text-sm">把第 2 节拆成 related work 和 method，并统一 APA 7，插入统计图。</code></li>
-                    <li>• 反馈：右侧文档标题层级与目录更新；下方出现图表和题注；底部出现"变更说明"小框。</li>
-                    <li>• 按钮：<code className="bg-gray-100 px-2 py-1 rounded text-sm">应用修改</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">撤销</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">保存为配方</code></li>
-                  </ul>
-                </div>
 
                 <Button 
                   variant="outline" 

@@ -1,313 +1,504 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Shield, CheckCircle, FileText, MessageSquare, Download, ExternalLink, Star, Users, Award } from 'lucide-react';
+import { 
+  Shield, CheckCircle, FileText, MessageSquare, Download, ExternalLink, 
+  Star, Users, Award, BookOpen, Target, Clock, TrendingUp, Eye, 
+  Zap, Lock, Database, GraduationCap, AlertTriangle, X
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Import images
-import heroImage from '@/assets/hero-proof-of-authorship-dashboard.webp';
+// Import images - using provided names or placeholders
+import heroImage from '@/assets/hero-evidence-thumbs.webp';
 import citationPanel from '@/assets/citation-verification-panel.webp';
 import painPointsSolutions from '@/assets/pain-points-solutions.webp';
 import evidencePackage from '@/assets/evidence-package-thumbnails.webp';
 import threeStepProcess from '@/assets/three-step-process.webp';
+
 const AcademicProofWriting = () => {
   const navigate = useNavigate();
-  const [showRiskScan, setShowRiskScan] = useState(false);
-  const handleFreeScan = () => {
-    setShowRiskScan(true);
+  const [visibleSections, setVisibleSections] = useState(new Set());
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setVisibleSections(prev => new Set([...prev, entry.target.id]));
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('[data-section]').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleFreeTrial = () => {
+    // Analytics tracking
+    document.dispatchEvent(new CustomEvent('analytics', {
+      detail: { event: 'cta_primary_click', section: 'hero' }
+    }));
+    navigate('/form');
   };
+
   const handleDownloadSample = () => {
-    // Simulate PDF download
+    // Analytics tracking
+    document.dispatchEvent(new CustomEvent('analytics', {
+      detail: { event: 'cta_secondary_click', section: 'hero' }
+    }));
+    // Download sample
     const link = document.createElement('a');
     link.href = '/sample-evidence-package.pdf';
     link.download = 'evidence-package-sample.pdf';
     link.click();
   };
-  const handleStartTrial = () => {
-    navigate('/form');
+
+  const handleEducationTrial = () => {
+    window.open('mailto:education@example.com?subject=申请教育试用', '_blank');
   };
-  return <>
+
+  return (
+    <>
       <Helmet>
-        <title>引用真、文风稳、过程可证｜提交前的最后一道保险</title>
-        <meta name="description" content="一键引用校验、个人文风锁定、全流程存证与口头核验演练。生成证据包，提交前做风险体检，避免 AI 误判与假引用翻车。支持 APA/MLA/GB/T。" />
-        <meta name="keywords" content="学术写作合规, AI 写作检测误判, 引用校验 DOI, 论文文风一致性, proof of authorship, citation checker, stylometry, academic integrity tools" />
-        <link rel="canonical" href="https://yoursite.com/academic-proofwriting" />
+        <title>真引用，像你写，留痕可证 - 可校验学术写作工具</title>
+        <meta name="description" content="DOI/ISBN实时校验，个人文风基线对齐，全流程留痕证据包。避免AI误判与假引用翻车，支持APA/MLA/GB/T格式，提交更稳。" />
+        <meta name="keywords" content="学术写作, AI检测, 引用校验, DOI验证, 文风分析, 学术诚信, 写作证明" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="canonical" href="https://yoursite.com/" />
         
         {/* Open Graph */}
-        <meta property="og:title" content="引用真、文风稳、过程可证｜提交前的最后一道保险" />
-        <meta property="og:description" content="一键引用校验、个人文风锁定、全流程存证与口头核验演练。生成证据包，提交前做风险体检，避免 AI 误判与假引用翻车。支持 APA/MLA/GB/T。" />
+        <meta property="og:title" content="真引用，像你写，留痕可证 - 可校验学术写作工具" />
+        <meta property="og:description" content="DOI/ISBN实时校验，个人文风基线对齐，全流程留痕证据包。避免AI误判与假引用翻车，支持APA/MLA/GB/T格式，提交更稳。" />
         <meta property="og:image" content={heroImage} />
-        <meta property="og:url" content="https://yoursite.com/academic-proofwriting" />
+        <meta property="og:url" content="https://yoursite.com/" />
         <meta property="og:type" content="website" />
 
-        {/* Structured Data */}
+        {/* FAQ Structured Data */}
         <script type="application/ld+json">
           {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": ["SoftwareApplication", "Product"],
-          "name": "Academic ProofWriting Tool",
-          "description": "一键引用校验、个人文风锁定、全流程存证与口头核验演练工具",
-          "applicationCategory": "EducationApplication",
-          "operatingSystem": "Web",
-          "offers": {
-            "@type": "Offer",
-            "priceRange": "$29-$99",
-            "priceCurrency": "USD"
-          },
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.8",
-            "reviewCount": "127"
-          }
-        })}
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "这是'AI过检神器'吗？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "不是。我们不承诺'过检'，而是提供可校验的证据与整改建议，帮你建立可信的写作记录。"
+                }
+              },
+              {
+                "@type": "Question", 
+                "name": "支持哪些引用格式？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "支持APA、MLA、GB/T 7714等主流格式，DOI/ISBN实时核验，一键格式化。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "非母语会被修过头吗？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "润色强度可调，并保留自然错误率，避免风格突变被质疑。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "数据会被训练吗？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "默认不用于训练，支持本地处理与自托管部署。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "老师要看写作过程怎么办？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "证据包包含完整时间线、段落diff与来源快照，可导出展示。"
+                }
+              }
+            ]
+          })}
         </script>
       </Helmet>
 
-      <div className="min-h-screen bg-background">
-        {/* Hero Section */}
-        <section className="relative py-24 px-4 text-center">
+      <div className="min-h-screen" style={{ backgroundColor: '#F7FAFC' }}>
+        {/* 1. 首屏 Hero Section */}
+        <section 
+          id="hero" 
+          data-section 
+          className={`relative py-24 px-4 text-center transition-all duration-700 ${
+            visibleSections.has('hero') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
-              真引用，像你写，留痕可证<br />
-              <span className="text-primary"></span>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6" style={{ color: '#4F46E5' }}>
+              真引用，像你写，留痕可证
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">引用核验、文风对齐、全流程留痕，提交无忧</p>
+            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+              引用核验、文风对齐、全流程留痕，提交更稳。
+            </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <Button size="lg" onClick={handleFreeScan} className="text-lg px-8 py-4">
+              <Button 
+                size="lg" 
+                onClick={handleFreeTrial} 
+                className="text-lg px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl"
+                data-event="cta_primary_click"
+              >
                 无风险体验
               </Button>
-              <Button variant="outline" size="lg" onClick={handleDownloadSample} className="text-lg px-8 py-4">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={handleDownloadSample} 
+                className="text-lg px-8 py-4 border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-2xl"
+                data-event="cta_secondary_click"
+              >
                 <Download className="mr-2 h-5 w-5" />
                 下载全套示例
               </Button>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
-              <Badge variant="secondary">校内邮箱 9 折</Badge>
-              <Badge variant="secondary">覆盖 APA/MLA/GB/T</Badge>
-              <Badge variant="secondary">支持本地与自托管</Badge>
+            {/* 卖点条目 */}
+            <div className="text-gray-600 mb-12">
+              DOI/ISBN 实时校验 · 个人文风基线 · 证据包可导出
             </div>
 
-            <div className="mt-12">
-              <img src={heroImage} alt="Proof-of-authorship dashboard with citation verification and risk meter" className="w-full max-w-4xl mx-auto rounded-lg shadow-2xl" />
+            <div className="relative">
+              <img 
+                src={heroImage} 
+                alt="可校验学术写作工具界面展示" 
+                className="w-full max-w-4xl mx-auto rounded-2xl shadow-lg"
+                style={{ aspectRatio: '16/9' }}
+                onError={(e) => {
+                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQ1MCIgdmlld0JveD0iMCAwIDgwMCA0NTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iNDUwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjQwMCIgeT0iMjI1IiBmaWxsPSIjOUIyQzJGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiI+aGVyby1ldmlkZW5jZS10aHVtYnMud2VicCAoMTY6OTxUZXh0IGNvbXBvbmVudCAvPjwvdGV4dD4KPC9zdmc+';
+                }}
+              />
+              <p className="text-sm text-gray-500 mt-4">
+                不承诺"过检"。我们提供可校验的证据与整改建议。
+              </p>
             </div>
           </div>
         </section>
 
-        {/* Pain Points Section */}
-        <section className="py-16 px-4 bg-muted/30">
+        {/* 2. 痛点区 Pain Points Section */}
+        <section 
+          id="pain-points" 
+          data-section 
+          className={`py-16 px-4 transition-all duration-700 ${
+            visibleSections.has('pain-points') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
+        >
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
               为什么"能写出来"不等于"敢提交"
             </h2>
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div>
-                <img src={painPointsSolutions} alt="Pain points and solutions comparison" className="w-full rounded-lg" />
-              </div>
+            <div className="grid md:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-destructive flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-destructive-foreground text-sm">✕</span>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-1" style={{ backgroundColor: '#EF4444' }}>
+                    <X className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">假引用/过时结论，一查就穿帮</h3>
-                    <p className="text-muted-foreground">DOI 失效、期刊信息错误，面谈时无法自圆其说</p>
+                    <h3 className="font-semibold mb-2 text-gray-900">假引用/过时结论，一查就穿帮</h3>
+                    <p className="text-gray-600">DOI 失效、期刊信息错误，面谈时无法自圆其说</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-destructive flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-destructive-foreground text-sm">✕</span>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-1" style={{ backgroundColor: '#EF4444' }}>
+                    <X className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">全文流畅却"机器腔"，与以往作业风格断层</h3>
-                    <p className="text-muted-foreground">句式突变、词汇跃升，容易被怀疑非本人作品</p>
+                    <h3 className="font-semibold mb-2 text-gray-900">文风突变像机器腔</h3>
+                    <p className="text-gray-600">句式突变、词汇跃升，容易被怀疑非本人作品</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-destructive flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-destructive-foreground text-sm">✕</span>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-1" style={{ backgroundColor: '#EF4444' }}>
+                    <X className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">AI 检测有误伤，非母语更容易中枪</h3>
-                    <p className="text-muted-foreground">检测工具无法区分"润色"与"生成"</p>
+                    <h3 className="font-semibold mb-2 text-gray-900">检测易误伤</h3>
+                    <p className="text-gray-600">AI检测工具无法区分"润色"与"生成"</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-destructive flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-destructive-foreground text-sm">✕</span>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-1" style={{ backgroundColor: '#EF4444' }}>
+                    <X className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">面谈问检索路径和改动理由，说不清就凉</h3>
-                    <p className="text-muted-foreground">无法提供写作过程证据，缺乏口头核验准备</p>
+                    <h3 className="font-semibold mb-2 text-gray-900">面谈要讲检索路径与改动理由</h3>
+                    <p className="text-gray-600">无法提供写作过程证据，缺乏口头核验准备</p>
                   </div>
                 </div>
+                <div className="pt-4">
+                  <a href="#faq" className="text-indigo-600 hover:text-indigo-700 font-medium">
+                    阅读更多 →
+                  </a>
+                </div>
+              </div>
+              <div>
+                <img 
+                  src={painPointsSolutions} 
+                  alt="痛点分析与解决方案对比图"
+                  className="w-full rounded-2xl shadow-lg"
+                  onError={(e) => {
+                    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDUwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjI1MCIgeT0iMjAwIiBmaWxsPSIjOUIyQzJGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCI+UGFpbiBQb2ludHMgJiBTb2x1dGlvbnM8L3RleHQ+Cjwvc3ZnPg==';
+                  }}
+                />
               </div>
             </div>
           </div>
         </section>
 
-        {/* Solutions Overview */}
-        <section className="py-16 px-4">
+        {/* 3. 闭环四卡 Solutions Overview */}
+        <section 
+          id="solutions" 
+          data-section 
+          className={`py-16 px-4 transition-all duration-700 ${
+            visibleSections.has('solutions') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
               一套闭环，从"生成"到"可证"
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="p-6 text-center">
-                <Shield className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-3">引用护盾</h3>
-                <p className="text-muted-foreground">DOI/ISBN 实时校验与格式一键规范</p>
+              <Card 
+                className="p-6 text-center bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+                data-event="feature_card_view"
+              >
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" 
+                     style={{ background: 'linear-gradient(135deg, #EBF4FF, #DBEAFE)' }}>
+                  <Shield className="w-8 h-8" style={{ color: '#4F46E5' }} />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">真实引用</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">DOI/PMID/ISBN 实时核验<br />格式一键规范化</p>
               </Card>
-              <Card className="p-6 text-center">
-                <FileText className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-3">文风锁</h3>
-                <p className="text-muted-foreground">对齐个人写作基线，避免风格漂移</p>
+              <Card 
+                className="p-6 text-center bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+                data-event="feature_card_view"
+              >
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" 
+                     style={{ background: 'linear-gradient(135deg, #F0FDF4, #DCFCE7)' }}>
+                  <Target className="w-8 h-8" style={{ color: '#10B981' }} />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">个人文风</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">基于历史作业建基线<br />避免风格漂移</p>
               </Card>
-              <Card className="p-6 text-center">
-                <Award className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-3">证据包</h3>
-                <p className="text-muted-foreground">时间线 + 段落 diff + 来源快照，一键导出</p>
+              <Card 
+                className="p-6 text-center bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+                data-event="feature_card_view"
+              >
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" 
+                     style={{ background: 'linear-gradient(135deg, #FFF7ED, #FED7AA)' }}>
+                  <FileText className="w-8 h-8" style={{ color: '#EA580C' }} />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">全程留痕</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">时间线 + 段落 diff + 来源快照<br />一键导出证据包</p>
               </Card>
-              <Card className="p-6 text-center">
-                <MessageSquare className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-3">口头核验演练</h3>
-                <p className="text-muted-foreground">速答卡片与当场小改</p>
+              <Card 
+                className="p-6 text-center bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+                data-event="feature_card_view"
+              >
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" 
+                     style={{ background: 'linear-gradient(135deg, #FDF2F8, #FCE7F3)' }}>
+                  <MessageSquare className="w-8 h-8" style={{ color: '#EC4899' }} />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">口头核验</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">速答卡片 + 当场小改<br />面谈演练</p>
               </Card>
             </div>
           </div>
         </section>
 
-        {/* Detailed Features */}
-        <section className="py-16 px-4 bg-muted/30">
+        {/* 4. 功能深描 Detailed Features */}
+        <section 
+          id="features" 
+          data-section 
+          className={`py-16 px-4 transition-all duration-700 ${
+            visibleSections.has('features') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
+        >
           <div className="max-w-6xl mx-auto space-y-16">
-            {/* Citation Shield */}
-            <div className="grid md:grid-cols-2 gap-8 items-center">
+            {/* 引用护盾 */}
+            <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
-                <h3 className="text-2xl md:text-3xl font-bold mb-4">引用护盾</h3>
-                <ul className="space-y-3 text-muted-foreground mb-6">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    DOI/PMID/ISBN 实时核验，卷期页码一致性检查
+                <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">引用护盾</h3>
+                <ul className="space-y-4 mb-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">DOI/PMID/ISBN 实时核验，卷期页码一致性检查</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    过时结论预警、可替换权威来源建议
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">过时结论预警、可替换权威来源建议</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    APA/MLA/GB/T 一键格式化，批量纠错
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">APA/MLA/GB/T 一键格式化，批量纠错</span>
                   </li>
                 </ul>
-                <Button variant="outline" onClick={handleStartTrial}>
+                <p className="text-sm text-gray-500 mb-4">平均提升 96% 引用合规度</p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleFreeTrial}
+                  className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-xl"
+                >
                   试跑 3 条引用
                 </Button>
               </div>
               <div>
-                <img src={citationPanel} alt="DOI verification and APA formatting panel" className="w-full rounded-lg shadow-lg" />
+                <img 
+                  src={citationPanel} 
+                  alt="DOI验证与APA格式化面板截图"
+                  className="w-full rounded-2xl shadow-lg"
+                  onError={(e) => {
+                    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDUwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjI1MCIgeT0iMTUwIiBmaWxsPSIjOUIyQzJGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCI+Q2l0YXRpb24gVmVyaWZpY2F0aW9uIFBhbmVsPC90ZXh0Pgo8L3N2Zz4=';
+                  }}
+                />
               </div>
             </div>
 
-            {/* Style Lock */}
-            <div className="grid md:grid-cols-2 gap-8 items-center">
+            {/* 文风锁 */}
+            <div className="grid md:grid-cols-2 gap-12 items-center">
               <div className="md:order-2">
-                <h3 className="text-2xl md:text-3xl font-bold mb-4">文风锁</h3>
-                <ul className="space-y-3 text-muted-foreground mb-6">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    基于你过往 3–5 篇作业建立个人基线
+                <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">文风锁</h3>
+                <ul className="space-y-4 mb-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">基于你过往 3–5 篇作业建立个人基线</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    句长/词汇复杂度/突发度偏移可视化
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">句长/词汇复杂度/突发度偏移可视化</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    非母语润色强度滑杆，保留"自然错误率"
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">非母语润色强度滑杆，保留"自然错误率"</span>
                   </li>
                 </ul>
-                <Button variant="outline" onClick={handleStartTrial}>
+                <p className="text-sm text-gray-500 mb-4">平均降低 68% 风格检测风险</p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleFreeTrial}
+                  className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-xl"
+                >
                   上传历史样本文本
                 </Button>
               </div>
               <div className="md:order-1">
-                <div className="bg-card p-8 rounded-lg border">
+                <div className="bg-white p-8 rounded-2xl shadow-lg border">
                   <div className="text-center mb-4">
-                    <h4 className="font-semibold mb-2">风格偏移指标</h4>
-                    <div className="w-32 h-32 mx-auto border-8 border-primary rounded-full flex items-center justify-center">
-                      <span className="text-2xl font-bold text-primary">28</span>
+                    <h4 className="font-semibold mb-4 text-gray-900">风格仪表 + 滑杆调节</h4>
+                    <div className="w-32 h-32 mx-auto border-8 rounded-full flex items-center justify-center mb-4" 
+                         style={{ borderColor: '#4F46E5' }}>
+                      <span className="text-3xl font-bold" style={{ color: '#4F46E5' }}>28</span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-2">偏移度（目标：≤30）</p>
+                    <p className="text-sm text-gray-500">偏移度（目标：≤30）</p>
+                    <div className="mt-4">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full" 
+                          style={{ backgroundColor: '#4F46E5', width: '30%' }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">润色强度：轻度</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Evidence Package */}
-            <div className="grid md:grid-cols-2 gap-8 items-center">
+            {/* 证据包 */}
+            <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
-                <h3 className="text-2xl md:text-3xl font-bold mb-4">证据包</h3>
-                <ul className="space-y-3 text-muted-foreground mb-6">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    记录"检索→生成→改写→人工编辑"的时间线
+                <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">证据包</h3>
+                <ul className="space-y-4 mb-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">记录"检索→生成→改写→人工编辑"的时间线</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    段落级 diff 与时间戳，来源快照随包带走
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">段落级 diff 与时间戳，来源快照随包带走</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    一键导出：timeline.json、diff.pdf、sources.csv
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">一键导出：timeline.json、diff.pdf、sources.csv</span>
                   </li>
                 </ul>
-                <Button variant="outline" onClick={handleDownloadSample}>
+                <p className="text-sm text-gray-500 mb-4">完整可验证的写作证据链</p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleDownloadSample}
+                  className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-xl"
+                  data-event="download_sample"
+                >
                   <Download className="mr-2 h-4 w-4" />
                   下载示例证据包
                 </Button>
               </div>
               <div>
-                <img src={evidencePackage} alt="Exportable evidence package with timeline, diff, sources" className="w-full rounded-lg shadow-lg" />
+                <img 
+                  src={evidencePackage} 
+                  alt="可导出证据包三页缩略图"
+                  className="w-full rounded-2xl shadow-lg"
+                  onError={(e) => {
+                    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDUwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjI1MCIgeT0iMTUwIiBmaWxsPSIjOUIyQzJGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCI+RXZpZGVuY2UgUGFja2FnZSBUaHVtYm5haWxzPC90ZXh0Pgo8L3N2Zz4=';
+                  }}
+                />
               </div>
             </div>
 
-            {/* Oral Verification */}
-            <div className="grid md:grid-cols-2 gap-8 items-center">
+            {/* 口头核验演练 */}
+            <div className="grid md:grid-cols-2 gap-12 items-center">
               <div className="md:order-2">
-                <h3 className="text-2xl md:text-3xl font-bold mb-4">口头核验演练</h3>
-                <ul className="space-y-3 text-muted-foreground mb-6">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    自动生成"检索路径讲稿 + 速答卡片"
+                <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">口头核验演练</h3>
+                <ul className="space-y-4 mb-6">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">自动生成"检索路径讲稿 + 速答卡片"</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    "当场小改"模式：对任意段落给出改动理由与证据指向
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">"当场小改"模式：对任意段落给出改动理由与证据指向</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    导出 1 页提纲，10 分钟速练
+                  <li className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                    <span className="text-gray-700">导出 1 页提纲，10 分钟速练</span>
                   </li>
                 </ul>
-                <Button variant="outline" onClick={handleStartTrial}>
+                <p className="text-sm text-gray-500 mb-4">提升 90% 面谈通过率</p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleFreeTrial}
+                  className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-xl"
+                >
                   开启 3 分钟快速演练
                 </Button>
               </div>
               <div className="md:order-1">
-                <Card className="p-6">
-                  <h4 className="font-semibold mb-4">模拟问答卡片</h4>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-muted rounded">
-                      <p className="font-medium">Q: 你的检索关键词是什么？</p>
-                      <p className="text-sm text-muted-foreground mt-1">A: 我使用了"climate change adaptation"和"urban planning"...</p>
+                <Card className="p-6 bg-white rounded-2xl shadow-lg">
+                  <h4 className="font-semibold mb-4 text-gray-900">Q&A 卡片演练</h4>
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl" style={{ backgroundColor: '#F8FAFC' }}>
+                      <p className="font-medium text-gray-900">Q: 你的检索关键词是什么？</p>
+                      <p className="text-sm text-gray-600 mt-2">A: 我使用了"climate change adaptation"和"urban planning"...</p>
                     </div>
-                    <div className="p-3 bg-muted rounded">
-                      <p className="font-medium">Q: 这个段落为什么这样改写？</p>
-                      <p className="text-sm text-muted-foreground mt-1">A: 原文过于复杂，我简化了句式但保留了核心观点...</p>
+                    <div className="p-4 rounded-xl" style={{ backgroundColor: '#F8FAFC' }}>
+                      <p className="font-medium text-gray-900">Q: 这个段落为什么这样改写？</p>
+                      <p className="text-sm text-gray-600 mt-2">A: 原文过于复杂，我简化了句式但保留了核心观点...</p>
                     </div>
                   </div>
                 </Card>
@@ -316,230 +507,262 @@ const AcademicProofWriting = () => {
           </div>
         </section>
 
-        {/* Process Steps */}
-        <section className="py-16 px-4">
+        {/* 5. 三步走 Process Steps */}
+        <section 
+          id="process" 
+          data-section 
+          className={`py-16 px-4 transition-all duration-700 ${
+            visibleSections.has('process') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
               三步走，提交更稳
             </h2>
-            <img src={threeStepProcess} alt="Three-step process: Upload, Align, Export" className="w-full max-w-4xl mx-auto mb-8" />
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-3 gap-8 mb-12">
               <div className="text-center">
-                <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
-                <h3 className="text-xl font-semibold mb-3">上传与体检</h3>
-                <p className="text-muted-foreground">一键扫描风险与引用</p>
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-white" 
+                     style={{ backgroundColor: '#4F46E5' }}>1</div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">上传与体检</h3>
+                <p className="text-gray-600">上传与体检</p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
-                <h3 className="text-xl font-semibold mb-3">对齐与修复</h3>
-                <p className="text-muted-foreground">风格回到个人基线，引用自动纠错</p>
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-white" 
+                     style={{ backgroundColor: '#4F46E5' }}>2</div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">对齐与修复</h3>
+                <p className="text-gray-600">对齐与修复</p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
-                <h3 className="text-xl font-semibold mb-3">导出与演练</h3>
-                <p className="text-muted-foreground">生成证据包，跑一遍口头问答</p>
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-white" 
+                     style={{ backgroundColor: '#4F46E5' }}>3</div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">导出与演练</h3>
+                <p className="text-gray-600">导出与演练</p>
               </div>
             </div>
+            <img 
+              src={threeStepProcess} 
+              alt="三步走流程：上传、对齐、导出"
+              className="w-full max-w-4xl mx-auto rounded-2xl shadow-lg"
+              onError={(e) => {
+                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDgwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjQwMCIgeT0iMTUwIiBmaWxsPSIjOUIyQzJGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiI+VGhyZWUtU3RlcCBQcm9jZXNzPC90ZXh0Pgo8L3N2Zz4=';
+              }}
+            />
           </div>
         </section>
 
-        {/* Testimonials */}
-        <section className="py-16 px-4 bg-muted/30">
+        {/* 6. 用户见证 + 指标 Testimonials */}
+        <section 
+          id="testimonials" 
+          data-section 
+          className={`py-16 px-4 transition-all duration-700 ${
+            visibleSections.has('testimonials') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
+        >
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
               用户见证
             </h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <Card className="p-6">
+            <div className="grid md:grid-cols-3 gap-8 mb-12">
+              <Card className="p-6 bg-white rounded-2xl shadow-lg">
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-primary rounded-full mr-3"></div>
+                  <div className="w-12 h-12 rounded-full mr-3" style={{ backgroundColor: '#4F46E5' }}></div>
                   <div>
-                    <p className="font-semibold">本科生 / 某985高校</p>
-                    <div className="flex text-yellow-500">
+                    <p className="font-semibold text-gray-900">本科生 / 某985高校</p>
+                    <div className="flex text-yellow-500 mt-1">
                       {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                     </div>
                   </div>
                 </div>
-                <p className="text-muted-foreground">"引用从 12 处报错纠正到全部通过，面谈时口头核验练习派上大用场，提交更安心了。"</p>
+                <p className="text-gray-600">"引用从 12 处报错纠正到全部通过，面谈时口头核验练习派上大用场，提交更安心了。"</p>
               </Card>
-              <Card className="p-6">
+              <Card className="p-6 bg-white rounded-2xl shadow-lg">
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-primary rounded-full mr-3"></div>
+                  <div className="w-12 h-12 rounded-full mr-3" style={{ backgroundColor: '#10B981' }}></div>
                   <div>
-                    <p className="font-semibold">硕士生 / 海外留学</p>
-                    <div className="flex text-yellow-500">
+                    <p className="font-semibold text-gray-900">硕士生 / 海外留学</p>
+                    <div className="flex text-yellow-500 mt-1">
                       {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                     </div>
                   </div>
                 </div>
-                <p className="text-muted-foreground">"文风偏移从85降到28，避免了风格断层的尴尬，证据包让导师看到我的写作过程。"</p>
+                <p className="text-gray-600">"文风偏移从85降到28，避免了风格断层的尴尬，证据包让导师看到我的写作过程。"</p>
               </Card>
-              <Card className="p-6">
+              <Card className="p-6 bg-white rounded-2xl shadow-lg">
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-primary rounded-full mr-3"></div>
+                  <div className="w-12 h-12 rounded-full mr-3" style={{ backgroundColor: '#EC4899' }}></div>
                   <div>
-                    <p className="font-semibold">博士生 / 理工科</p>
-                    <div className="flex text-yellow-500">
+                    <p className="font-semibold text-gray-900">博士生 / 理工科</p>
+                    <div className="flex text-yellow-500 mt-1">
                       {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                     </div>
                   </div>
                 </div>
-                <p className="text-muted-foreground">"DOI自动校验发现了3个失效链接，APA格式一键修复，节省大量时间。"</p>
+                <p className="text-gray-600">"DOI自动校验发现了3个失效链接，APA格式一键修复，节省大量时间。"</p>
               </Card>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-8 mt-12">
-              <Card className="p-6 text-center">
-                <h3 className="text-2xl font-bold text-primary mb-2">96%</h3>
-                <p className="text-muted-foreground">引用合规度提升</p>
+            <div className="grid md:grid-cols-2 gap-8">
+              <Card className="p-8 text-center bg-white rounded-2xl shadow-lg">
+                <h3 className="text-4xl font-bold mb-2" style={{ color: '#4F46E5' }}>96%</h3>
+                <p className="text-gray-600 font-medium">引用合规度提升</p>
               </Card>
-              <Card className="p-6 text-center">
-                <h3 className="text-2xl font-bold text-primary mb-2">-68%</h3>
-                <p className="text-muted-foreground">风险分下降幅度</p>
+              <Card className="p-8 text-center bg-white rounded-2xl shadow-lg">
+                <h3 className="text-4xl font-bold mb-2" style={{ color: '#4F46E5' }}>-68%</h3>
+                <p className="text-gray-600 font-medium">风险分下降幅度</p>
               </Card>
             </div>
+            <p className="text-center text-sm text-gray-500 mt-4">
+              指标为样例说明，实际效果随文本而异
+            </p>
           </div>
         </section>
 
-        {/* Pricing */}
-        <section className="py-16 px-4">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-              价格与方案
-            </h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <Card className="p-6">
-                <h3 className="text-xl font-semibold mb-4">学期包</h3>
-                <p className="text-3xl font-bold mb-4">$99<span className="text-sm font-normal text-muted-foreground">/学期</span></p>
-                <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                  <li>• 不限次体检</li>
-                  <li>• 证据包导出</li>
-                  <li>• 1 次人工引用复核</li>
-                </ul>
-                <Button className="w-full" onClick={handleStartTrial}>立即开通</Button>
-              </Card>
-              <Card className="p-6 border-primary relative">
-                <Badge className="absolute -top-2 left-1/2 -translate-x-1/2">推荐</Badge>
-                <h3 className="text-xl font-semibold mb-4">按量包</h3>
-                <p className="text-3xl font-bold mb-4">$0.05<span className="text-sm font-normal text-muted-foreground">/字</span></p>
-                <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                  <li>• 按字数/篇数计费</li>
-                  <li>• 超出自动阶梯价</li>
-                  <li>• 灵活使用</li>
-                </ul>
-                <Button className="w-full" onClick={handleStartTrial}>立即开通</Button>
-              </Card>
-              <Card className="p-6">
-                <h3 className="text-xl font-semibold mb-4">校园码</h3>
-                <p className="text-3xl font-bold mb-4">定制<span className="text-sm font-normal text-muted-foreground">/班级</span></p>
-                <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                  <li>• 班级/学院批量采购</li>
-                  <li>• 送口头核验模板库</li>
-                  <li>• 专属技术支持</li>
-                </ul>
-                <Button variant="outline" className="w-full">联系采购</Button>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section className="py-16 px-4 bg-muted/30">
+        {/* 7. FAQ Section */}
+        <section 
+          id="faq" 
+          data-section 
+          className={`py-16 px-4 transition-all duration-700 ${
+            visibleSections.has('faq') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
               常见问题
             </h2>
-            <Accordion type="single" collapsible>
-              <AccordionItem value="item-1">
-                <AccordionTrigger>这是不是"AI 过检神器"？</AccordionTrigger>
-                <AccordionContent>
-                  不是。我们提供"可校验写作"的工具与证据包，帮助你在被问责时自证作者身份，并把引用和风格问题提前修好。
+            <Accordion type="single" collapsible className="space-y-4">
+              <AccordionItem value="item-1" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
+                <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
+                  这是"AI 过检神器"吗？
+                </AccordionTrigger>
+                <AccordionContent className="text-gray-600 pt-2">
+                  不是。我们不承诺"过检"，而是提供可校验的证据与整改建议，帮你建立可信的写作记录。我们的目标是让你的学术写作经得起质疑。
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="item-2">
-                <AccordionTrigger>支持哪些引用格式？</AccordionTrigger>
-                <AccordionContent>
-                  APA、MLA、GB/T 7714，支持 DOI/ISBN/PMID 校验与批量纠错。
+              <AccordionItem value="item-2" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
+                <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
+                  支持哪些引用格式？
+                </AccordionTrigger>
+                <AccordionContent className="text-gray-600 pt-2">
+                  支持APA、MLA、GB/T 7714等主流格式，DOI/ISBN/PMID实时核验，一键格式化。还会持续增加其他国际期刊常用格式。
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="item-3">
-                <AccordionTrigger>非母语写作者会被"修得太像母语"吗？</AccordionTrigger>
-                <AccordionContent>
-                  可调节润色强度，并保留自然错误率，避免风格断层。
+              <AccordionItem value="item-3" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
+                <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
+                  非母语会被修过头吗？
+                </AccordionTrigger>
+                <AccordionContent className="text-gray-600 pt-2">
+                  润色强度可调，并保留自然错误率，避免风格突变被质疑。系统会基于你的历史作业建立个人基线，确保修改后的文风仍然像你本人的作品。
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="item-4">
-                <AccordionTrigger>如何保护隐私和合规？</AccordionTrigger>
-                <AccordionContent>
-                  支持本地优先与自托管；证据包可脱敏导出，外链可设有效期与可见范围。
+              <AccordionItem value="item-4" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
+                <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
+                  数据会被训练吗？
+                </AccordionTrigger>
+                <AccordionContent className="text-gray-600 pt-2">
+                  默认不用于训练，支持本地处理与自托管部署。你的学术文档完全属于你，我们严格遵守隐私保护原则。
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="item-5">
-                <AccordionTrigger>老师要求展示写作过程怎么办？</AccordionTrigger>
-                <AccordionContent>
-                  时间线、段落 diff、来源快照都在证据包里，另附口头核验速答卡与讲稿。
+              <AccordionItem value="item-5" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
+                <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
+                  老师要看写作过程怎么办？
+                </AccordionTrigger>
+                <AccordionContent className="text-gray-600 pt-2">
+                  证据包包含完整时间线、段落diff与来源快照，可导出展示。还附带口头核验速答卡，帮你准备可能的面谈问题。
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
           </div>
         </section>
 
-        {/* Trust & Compliance */}
-        <section className="py-16 px-4">
+        {/* 8. 可信与合规 Trust & Compliance */}
+        <section 
+          id="compliance" 
+          data-section 
+          className={`py-16 px-4 transition-all duration-700 ${
+            visibleSections.has('compliance') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
+        >
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
               可信与合规
             </h2>
             <div className="grid md:grid-cols-3 gap-8">
-              <Card className="p-6 text-center">
-                <Shield className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-3">数据与隐私</h3>
-                <p className="text-muted-foreground">默认最小化采集，上传即处理即弃模式可选</p>
+              <Card className="p-6 text-center bg-white rounded-2xl shadow-lg">
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" 
+                     style={{ background: 'linear-gradient(135deg, #EBF4FF, #DBEAFE)' }}>
+                  <Shield className="w-8 h-8" style={{ color: '#4F46E5' }} />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">数据与隐私</h3>
+                <p className="text-gray-600 mb-4">默认最小化采集，上传即处理即弃模式可选</p>
               </Card>
-              <Card className="p-6 text-center">
-                <Award className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-3">教育用途声明</h3>
-                <p className="text-muted-foreground">不提供代写与"过检承诺"；产品定位为合规辅助</p>
+              <Card className="p-6 text-center bg-white rounded-2xl shadow-lg">
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" 
+                     style={{ background: 'linear-gradient(135deg, #FFF7ED, #FED7AA)' }}>
+                  <Award className="w-8 h-8" style={{ color: '#EA580C' }} />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">教育用途声明</h3>
+                <p className="text-gray-600 mb-4">不提供代写与"过检承诺"；产品定位为合规辅助</p>
               </Card>
-              <Card className="p-6 text-center">
-                <Users className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-3">教师合作</h3>
-                <p className="text-muted-foreground">申请教育试用与 API</p>
+              <Card className="p-6 text-center bg-white rounded-2xl shadow-lg">
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" 
+                     style={{ background: 'linear-gradient(135deg, #F0FDF4, #DCFCE7)' }}>
+                  <Users className="w-8 h-8" style={{ color: '#10B981' }} />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">教师合作</h3>
+                <p className="text-gray-600 mb-4">申请教育试用与 API</p>
+                <Button 
+                  variant="outline" 
+                  onClick={handleEducationTrial}
+                  className="border-green-600 text-green-600 hover:bg-green-50 rounded-xl"
+                >
+                  申请教育试用
+                </Button>
               </Card>
             </div>
           </div>
         </section>
 
-        {/* Blog Resources */}
-        <section className="py-16 px-4 bg-muted/30">
+        {/* 9. 相关文章内链 Blog Resources */}
+        <section 
+          id="resources" 
+          data-section 
+          className={`py-16 px-4 transition-all duration-700 ${
+            visibleSections.has('resources') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-              相关资源
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
+              相关文章
             </h2>
             <div className="grid md:grid-cols-3 gap-8">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-3">DOI 是什么：5 分钟读懂学术标识</h3>
-                <p className="text-muted-foreground mb-4">了解 DOI 系统如何确保引用的准确性和可追溯性</p>
-                <Button variant="outline" size="sm" asChild>
-                  <a href="/blog/understanding-doi">
+              <Card className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+                <BookOpen className="w-8 h-8 mb-4" style={{ color: '#4F46E5' }} />
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">DOI 是什么</h3>
+                <p className="text-gray-600 mb-4 text-sm">5分钟读懂学术标识符，了解DOI系统如何确保引用的准确性和可追溯性</p>
+                <Button variant="outline" size="sm" asChild className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-xl">
+                  <a href="/blog/understanding-doi" target="_blank">
                     阅读文章 <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
               </Card>
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-3">非母语写作者如何避免 AI 误判</h3>
-                <p className="text-muted-foreground mb-4">保持个人写作风格的同时提升学术表达质量</p>
-                <Button variant="outline" size="sm" asChild>
-                  <a href="/blog/avoid-ai-detection">
+              <Card className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+                <Target className="w-8 h-8 mb-4" style={{ color: '#10B981' }} />
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">非母语避免 AI 误判</h3>
+                <p className="text-gray-600 mb-4 text-sm">保持个人写作风格的同时提升学术表达质量的实用技巧</p>
+                <Button variant="outline" size="sm" asChild className="border-green-600 text-green-600 hover:bg-green-50 rounded-xl">
+                  <a href="/blog/avoid-ai-detection" target="_blank">
                     阅读文章 <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
               </Card>
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-3">口头核验提问 20 例与回答框架</h3>
-                <p className="text-muted-foreground mb-4">准备常见的学术诚信面谈问题和应答策略</p>
-                <Button variant="outline" size="sm" asChild>
-                  <a href="/blog/oral-verification-guide">
+              <Card className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+                <MessageSquare className="w-8 h-8 mb-4" style={{ color: '#EC4899' }} />
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">口头核验 20 例</h3>
+                <p className="text-gray-600 mb-4 text-sm">准备常见的学术诚信面谈问题和应答策略，提升面谈通过率</p>
+                <Button variant="outline" size="sm" asChild className="border-pink-600 text-pink-600 hover:bg-pink-50 rounded-xl">
+                  <a href="/blog/oral-verification-guide" target="_blank">
                     阅读文章 <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
@@ -548,39 +771,8 @@ const AcademicProofWriting = () => {
           </div>
         </section>
 
-        {/* Risk Scan Modal */}
-        {showRiskScan && <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <Card className="w-full max-w-md p-6">
-              <h3 className="text-xl font-semibold mb-4">提交前做一次"风险体检"</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">粘贴文本或上传文档（≤2MB）</label>
-                  <textarea className="w-full h-32 p-3 border rounded-md resize-none" placeholder="粘贴 800-1200 字的文本..." />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-4">或</p>
-                  <Button variant="outline" className="w-full">
-                    <FileText className="mr-2 h-4 w-4" />
-                    上传文档
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button className="flex-1" onClick={() => {
-                setShowRiskScan(false);
-                handleStartTrial();
-              }}>
-                    开始体检
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowRiskScan(false)}>
-                    取消
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>}
-
         {/* Footer CTA */}
-        <section className="py-16 px-4 text-center bg-primary text-primary-foreground">
+        <section className="py-16 px-4 text-center text-white" style={{ backgroundColor: '#4F46E5' }}>
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               开始你的学术合规之旅
@@ -589,16 +781,27 @@ const AcademicProofWriting = () => {
               让每一篇论文都经得起质疑，每一次提交都充满信心
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" onClick={handleFreeScan}>
-                免费风险体检
-              </Button>
-              <Button size="lg" variant="outline" onClick={handleStartTrial}>
+              <Button 
+                size="lg" 
+                onClick={handleFreeTrial}
+                className="bg-white text-indigo-600 hover:bg-gray-100 rounded-2xl"
+              >
                 立即开始
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={handleDownloadSample}
+                className="border-white text-white hover:bg-white hover:text-indigo-600 rounded-2xl"
+              >
+                下载示例
               </Button>
             </div>
           </div>
         </section>
       </div>
-    </>;
+    </>
+  );
 };
+
 export default AcademicProofWriting;

@@ -72,7 +72,7 @@ const AcademicProofWriting = () => {
         <section className="relative py-24 px-4 text-center">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
-              真引用、像你写、可存证：<br />
+              真引用、像你写、可存证<br />
               <span className="text-primary"></span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">

@@ -18,6 +18,7 @@ import painPointsSolutions from '@/assets/pain-points-solutions.webp';
 import evidencePackage from '@/assets/evidence-package-thumbnails.webp';
 import threeStepProcess from '@/assets/three-step-process.webp';
 import HeroCarousel from '@/components/HeroCarousel';
+import NavBar from '@/components/NavBar';
 
 const AcademicProofWriting = () => {
   const navigate = useNavigate();
@@ -130,14 +131,16 @@ const AcademicProofWriting = () => {
         </script>
       </Helmet>
 
+      <NavBar />
       <div className="min-h-screen" style={{ backgroundColor: '#F7FAFC' }}>
         {/* 1. 首屏 Hero Section */}
         <section 
           id="hero" 
           data-section 
-          className={`relative py-24 px-4 text-center transition-all duration-700 ${
+          className={`relative pt-24 pb-16 px-4 text-center transition-all duration-700 ${
             visibleSections.has('hero') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
+          style={{ marginTop: '64px' }}
         >
           <div className="max-w-6xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-bold mb-6" style={{ color: '#4F46E5' }}>
@@ -184,10 +187,10 @@ const AcademicProofWriting = () => {
 
         {/* 2. 痛点区 Pain Points Section */}
         <section 
-          id="pain-points" 
-          data-section 
+          id="reasons" 
+          data-section
           className={`py-16 px-4 transition-all duration-700 ${
-            visibleSections.has('pain-points') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+            visibleSections.has('reasons') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
         >
@@ -252,10 +255,10 @@ const AcademicProofWriting = () => {
 
         {/* 3. 闭环四卡 Solutions Overview */}
         <section 
-          id="solutions" 
-          data-section 
+          id="loop" 
+          data-section
           className={`py-16 px-4 transition-all duration-700 ${
-            visibleSections.has('solutions') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+            visibleSections.has('loop') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
         >
           <div className="max-w-6xl mx-auto">
@@ -533,10 +536,10 @@ const AcademicProofWriting = () => {
 
         {/* 6. 用户见证 + 指标 Testimonials */}
         <section 
-          id="testimonials" 
-          data-section 
+          id="pricing" 
+          data-section
           className={`py-16 px-4 transition-all duration-700 ${
-            visibleSections.has('testimonials') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+            visibleSections.has('pricing') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
         >
@@ -701,7 +704,7 @@ const AcademicProofWriting = () => {
         {/* 9. 相关文章内链 Blog Resources */}
         <section 
           id="resources" 
-          data-section 
+          data-section
           className={`py-16 px-4 transition-all duration-700 ${
             visibleSections.has('resources') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
@@ -746,6 +749,7 @@ const AcademicProofWriting = () => {
         </section>
 
         {/* Footer CTA */}
+        <main id="main">
         <section className="py-16 px-4 text-center text-white" style={{ backgroundColor: '#4F46E5' }}>
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -773,6 +777,7 @@ const AcademicProofWriting = () => {
             </div>
           </div>
         </section>
+        </main>
       </div>
     </>
   );

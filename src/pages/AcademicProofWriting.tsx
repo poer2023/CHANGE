@@ -354,7 +354,6 @@ const AcademicProofWriting = () => {
               <div>
                 <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">真实引用与零幻觉校验</h3>
                 <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">我们实际做什么</h4>
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />

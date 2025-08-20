@@ -878,16 +878,6 @@ const AcademicProofWriting = () => {
             </h2>
             <div className="grid md:grid-cols-3 gap-8">
               <Card className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-                <BookOpen className="w-8 h-8 mb-4" style={{ color: '#4F46E5' }} />
-                <h3 className="text-lg font-semibold mb-3 text-gray-900">DOI 是什么</h3>
-                <p className="text-gray-600 mb-4 text-sm">5 分钟读懂学术标识</p>
-                <Button variant="outline" size="sm" asChild className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-xl">
-                  <a href="/resources/what-is-doi" target="_blank">
-                    阅读文章 <ExternalLink className="ml-2 h-4 w-4" />
-                  </a>
-                </Button>
-              </Card>
-              <Card className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
                 <Target className="w-8 h-8 mb-4" style={{ color: '#10B981' }} />
                 <h3 className="text-lg font-semibold mb-3 text-gray-900">非母语如何避免 AI 误判</h3>
                 <p className="text-gray-600 mb-4 text-sm">保持个人写作风格的同时提升学术表达质量的实用技巧</p>

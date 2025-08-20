@@ -14,15 +14,12 @@ import citationPanel from '@/assets/citation-verification-panel.webp';
 import painPointsSolutions from '@/assets/pain-points-solutions.webp';
 import evidencePackage from '@/assets/evidence-package-thumbnails.webp';
 import threeStepProcess from '@/assets/three-step-process.webp';
-
 const AcademicProofWriting = () => {
   const navigate = useNavigate();
   const [showRiskScan, setShowRiskScan] = useState(false);
-
   const handleFreeScan = () => {
     setShowRiskScan(true);
   };
-
   const handleDownloadSample = () => {
     // Simulate PDF download
     const link = document.createElement('a');
@@ -30,13 +27,10 @@ const AcademicProofWriting = () => {
     link.download = 'evidence-package-sample.pdf';
     link.click();
   };
-
   const handleStartTrial = () => {
     navigate('/form');
   };
-
-  return (
-    <>
+  return <>
       <Helmet>
         <title>引用真、文风稳、过程可证｜提交前的最后一道保险</title>
         <meta name="description" content="一键引用校验、个人文风锁定、全流程存证与口头核验演练。生成证据包，提交前做风险体检，避免 AI 误判与假引用翻车。支持 APA/MLA/GB/T。" />
@@ -53,23 +47,23 @@ const AcademicProofWriting = () => {
         {/* Structured Data */}
         <script type="application/ld+json">
           {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": ["SoftwareApplication", "Product"],
-            "name": "Academic ProofWriting Tool",
-            "description": "一键引用校验、个人文风锁定、全流程存证与口头核验演练工具",
-            "applicationCategory": "EducationApplication",
-            "operatingSystem": "Web",
-            "offers": {
-              "@type": "Offer",
-              "priceRange": "$29-$99",
-              "priceCurrency": "USD"
-            },
-            "aggregateRating": {
-              "@type": "AggregateRating",
-              "ratingValue": "4.8",
-              "reviewCount": "127"
-            }
-          })}
+          "@context": "https://schema.org",
+          "@type": ["SoftwareApplication", "Product"],
+          "name": "Academic ProofWriting Tool",
+          "description": "一键引用校验、个人文风锁定、全流程存证与口头核验演练工具",
+          "applicationCategory": "EducationApplication",
+          "operatingSystem": "Web",
+          "offers": {
+            "@type": "Offer",
+            "priceRange": "$29-$99",
+            "priceCurrency": "USD"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "reviewCount": "127"
+          }
+        })}
         </script>
       </Helmet>
 
@@ -79,7 +73,7 @@ const AcademicProofWriting = () => {
           <div className="max-w-6xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
               真引用、像你写、可存证：<br />
-              <span className="text-primary">提交前的最后一道保险</span>
+              <span className="text-primary"></span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
               引用核验、文风对齐、全流程留痕，提交更稳。
@@ -102,11 +96,7 @@ const AcademicProofWriting = () => {
             </div>
 
             <div className="mt-12">
-              <img 
-                src={heroImage} 
-                alt="Proof-of-authorship dashboard with citation verification and risk meter"
-                className="w-full max-w-4xl mx-auto rounded-lg shadow-2xl"
-              />
+              <img src={heroImage} alt="Proof-of-authorship dashboard with citation verification and risk meter" className="w-full max-w-4xl mx-auto rounded-lg shadow-2xl" />
             </div>
           </div>
         </section>
@@ -119,11 +109,7 @@ const AcademicProofWriting = () => {
             </h2>
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
-                <img 
-                  src={painPointsSolutions} 
-                  alt="Pain points and solutions comparison"
-                  className="w-full rounded-lg"
-                />
+                <img src={painPointsSolutions} alt="Pain points and solutions comparison" className="w-full rounded-lg" />
               </div>
               <div className="space-y-6">
                 <div className="flex items-start gap-3">
@@ -224,11 +210,7 @@ const AcademicProofWriting = () => {
                 </Button>
               </div>
               <div>
-                <img 
-                  src={citationPanel} 
-                  alt="DOI verification and APA formatting panel"
-                  className="w-full rounded-lg shadow-lg"
-                />
+                <img src={citationPanel} alt="DOI verification and APA formatting panel" className="w-full rounded-lg shadow-lg" />
               </div>
             </div>
 
@@ -291,11 +273,7 @@ const AcademicProofWriting = () => {
                 </Button>
               </div>
               <div>
-                <img 
-                  src={evidencePackage} 
-                  alt="Exportable evidence package with timeline, diff, sources"
-                  className="w-full rounded-lg shadow-lg"
-                />
+                <img src={evidencePackage} alt="Exportable evidence package with timeline, diff, sources" className="w-full rounded-lg shadow-lg" />
               </div>
             </div>
 
@@ -346,11 +324,7 @@ const AcademicProofWriting = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
               三步走，提交更稳
             </h2>
-            <img 
-              src={threeStepProcess} 
-              alt="Three-step process: Upload, Align, Export"
-              className="w-full max-w-4xl mx-auto mb-8"
-            />
+            <img src={threeStepProcess} alt="Three-step process: Upload, Align, Export" className="w-full max-w-4xl mx-auto mb-8" />
             <div className="grid md:grid-cols-3 gap-8">
               <div className="text-center">
                 <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
@@ -384,9 +358,7 @@ const AcademicProofWriting = () => {
                   <div>
                     <p className="font-semibold">本科生 / 某985高校</p>
                     <div className="flex text-yellow-500">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-current" />
-                      ))}
+                      {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                     </div>
                   </div>
                 </div>
@@ -398,9 +370,7 @@ const AcademicProofWriting = () => {
                   <div>
                     <p className="font-semibold">硕士生 / 海外留学</p>
                     <div className="flex text-yellow-500">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-current" />
-                      ))}
+                      {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                     </div>
                   </div>
                 </div>
@@ -412,9 +382,7 @@ const AcademicProofWriting = () => {
                   <div>
                     <p className="font-semibold">博士生 / 理工科</p>
                     <div className="flex text-yellow-500">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-current" />
-                      ))}
+                      {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                     </div>
                   </div>
                 </div>
@@ -583,17 +551,13 @@ const AcademicProofWriting = () => {
         </section>
 
         {/* Risk Scan Modal */}
-        {showRiskScan && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        {showRiskScan && <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <Card className="w-full max-w-md p-6">
               <h3 className="text-xl font-semibold mb-4">提交前做一次"风险体检"</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">粘贴文本或上传文档（≤2MB）</label>
-                  <textarea 
-                    className="w-full h-32 p-3 border rounded-md resize-none"
-                    placeholder="粘贴 800-1200 字的文本..."
-                  />
+                  <textarea className="w-full h-32 p-3 border rounded-md resize-none" placeholder="粘贴 800-1200 字的文本..." />
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-4">或</p>
@@ -603,26 +567,19 @@ const AcademicProofWriting = () => {
                   </Button>
                 </div>
                 <div className="flex gap-2">
-                  <Button 
-                    className="flex-1" 
-                    onClick={() => {
-                      setShowRiskScan(false);
-                      handleStartTrial();
-                    }}
-                  >
+                  <Button className="flex-1" onClick={() => {
+                setShowRiskScan(false);
+                handleStartTrial();
+              }}>
                     开始体检
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowRiskScan(false)}
-                  >
+                  <Button variant="outline" onClick={() => setShowRiskScan(false)}>
                     取消
                   </Button>
                 </div>
               </div>
             </Card>
-          </div>
-        )}
+          </div>}
 
         {/* Footer CTA */}
         <section className="py-16 px-4 text-center bg-primary text-primary-foreground">
@@ -644,8 +601,6 @@ const AcademicProofWriting = () => {
           </div>
         </section>
       </div>
-    </>
-  );
+    </>;
 };
-
 export default AcademicProofWriting;

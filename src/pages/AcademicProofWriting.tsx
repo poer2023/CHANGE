@@ -668,7 +668,7 @@ const AcademicProofWriting = () => {
               <div className="text-center">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-white" 
                      style={{ backgroundColor: '#4F46E5' }}>2</div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">对齐与修复</h3>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">自动规划与首稿生成</h3>
                 <p className="text-gray-600">对齐个人文风，批量纠正引文与格式</p>
               </div>
               <div className="text-center">

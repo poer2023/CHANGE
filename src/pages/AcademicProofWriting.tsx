@@ -79,7 +79,7 @@ const AcademicProofWriting = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button size="lg" onClick={handleFreeScan} className="text-lg px-8 py-4">
-                免费风险体检
+                无风险体验
               </Button>
               <Button variant="outline" size="lg" onClick={handleDownloadSample} className="text-lg px-8 py-4">
                 <Download className="mr-2 h-5 w-5" />

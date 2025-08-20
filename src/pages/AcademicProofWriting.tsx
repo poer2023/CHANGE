@@ -91,7 +91,7 @@ const AcademicProofWriting = () => {
               </Button>
               <Button variant="outline" size="lg" onClick={handleDownloadSample} className="text-lg px-8 py-4">
                 <Download className="mr-2 h-5 w-5" />
-                下载示例证据包
+                下载全套示例
               </Button>
             </div>
 

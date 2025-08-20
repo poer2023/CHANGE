@@ -75,9 +75,7 @@ const AcademicProofWriting = () => {
               真引用、像你写、可存证<br />
               <span className="text-primary"></span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              引用核验、文风对齐、全流程留痕，提交更稳。
-            </p>
+            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">引用核验、文风对齐、全流程留痕，提交更稳</p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button size="lg" onClick={handleFreeScan} className="text-lg px-8 py-4">

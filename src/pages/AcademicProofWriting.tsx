@@ -82,7 +82,7 @@ const AcademicProofWriting = () => {
               <span className="text-primary">提交前的最后一道保险</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              把论文从"看起来像"升级到"经得起问"。引用自动校验、个人文风锁定、全流程存证与口头核验演练，一套闭环解决。
+              引用核验、文风对齐、全流程留痕，提交更稳。
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">

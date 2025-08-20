@@ -696,7 +696,7 @@ const AcademicProofWriting = () => {
                   <Users className="w-8 h-8" style={{ color: '#10B981' }} />
                 </div>
                 <h3 className="text-xl font-semibold mb-3 text-gray-900">真实文献来源</h3>
-                <p className="text-gray-600 mb-4">确保所有引用文献的真实性与可访问性</p>
+                <p className="text-gray-600 mb-4">所有参考文献可提供原文及出处</p>
               </Card>
             </div>
           </div>

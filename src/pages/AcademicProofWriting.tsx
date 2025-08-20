@@ -17,6 +17,7 @@ import citationPanel from '@/assets/citation-verification-panel.webp';
 import painPointsSolutions from '@/assets/pain-points-solutions.webp';
 import evidencePackage from '@/assets/evidence-package-thumbnails.webp';
 import threeStepProcess from '@/assets/three-step-process.webp';
+import HeroCarousel from '@/components/HeroCarousel';
 
 const AcademicProofWriting = () => {
   const navigate = useNavigate();
@@ -172,14 +173,9 @@ const AcademicProofWriting = () => {
               DOI/ISBN 实时校验 · 个人文风基线 · 证据包可导出
             </div>
 
-            <div className="relative">
-              <img 
-                src={heroImage} 
-                alt="可校验学术写作工具界面展示" 
-                className="w-full max-w-4xl mx-auto rounded-2xl shadow-lg"
-                style={{ aspectRatio: '16/9' }}
-              />
-              <p className="text-sm text-gray-500 mt-4">
+            <div className="relative max-w-4xl mx-auto">
+              <HeroCarousel />
+              <p className="text-sm text-gray-500 mt-4 text-center">
                 不承诺"过检"。我们提供可校验的证据与整改建议。
               </p>
             </div>

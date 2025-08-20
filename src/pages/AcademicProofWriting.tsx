@@ -688,7 +688,7 @@ const AcademicProofWriting = () => {
                   <Award className="w-8 h-8" style={{ color: '#EA580C' }} />
                 </div>
                 <h3 className="text-xl font-semibold mb-3 text-gray-900">教育用途声明</h3>
-                <p className="text-gray-600 mb-4">不提供代写与"过检承诺"；产品定位为合规辅助</p>
+                <p className="text-gray-600 mb-4">产品仅作教学示例，不提供代写与过检承诺</p>
               </Card>
               <Card className="p-6 text-center bg-white rounded-2xl shadow-lg">
                 <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" 

@@ -7,12 +7,10 @@ interface MobileMenuProps {
 }
 
 const navigationItems = [
-  { label: "功能", href: "#features" },
-  { label: "为什么", href: "#reasons" },
-  { label: "闭环方案", href: "#loop" },
-  { label: "流程", href: "#process" },
   { label: "价格", href: "#pricing" },
-  { label: "FAQ", href: "#faq" }
+  { label: "关于", href: "#about" },
+  { label: "实际案例", href: "#cases" },
+  { label: "博客", href: "#blog" }
 ];
 
 const resourceItems = [

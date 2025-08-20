@@ -649,7 +649,7 @@ const AcademicProofWriting = () => {
               </Card>
               <Card className="p-8 text-center bg-white rounded-2xl shadow-lg">
                 <h3 className="text-4xl font-bold mb-2" style={{ color: '#4F46E5' }}>-68%</h3>
-                <p className="text-gray-600 font-medium">风险分下降幅度</p>
+                <p className="text-gray-600 font-medium">AI率 下降</p>
               </Card>
             </div>
             <p className="text-center text-sm text-gray-500 mt-4">

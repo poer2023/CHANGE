@@ -488,7 +488,6 @@ const AcademicProofWriting = () => {
                 <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">可证据的写作过程：留痕 + 证据包 + 口头核验</h3>
                 
                 <div className="mb-6">
-                  <h4 className="font-semibold mb-3 text-gray-900">我们实际做什么（降噪版）</h4>
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />

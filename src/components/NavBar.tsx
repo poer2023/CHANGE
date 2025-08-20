@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, FileCheck } from 'lucide-react';
-import ResourceDropdown from './ResourceDropdown';
 import MobileMenu from './MobileMenu';
 
 const navigationItems = [
@@ -131,9 +130,6 @@ const NavBar: React.FC = () => {
                   </button>
                 );
               })}
-              
-              {/* Resources Dropdown */}
-              <ResourceDropdown />
             </div>
 
             {/* Desktop Action Buttons */}

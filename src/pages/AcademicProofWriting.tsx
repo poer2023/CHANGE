@@ -11,8 +11,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Import images - using provided names or placeholders
-import heroImage from '@/assets/hero-evidence-thumbs.webp';
+// Import existing images
+import heroImage from '@/assets/hero-proof-of-authorship-dashboard.webp';
 import citationPanel from '@/assets/citation-verification-panel.webp';
 import painPointsSolutions from '@/assets/pain-points-solutions.webp';
 import evidencePackage from '@/assets/evidence-package-thumbnails.webp';
@@ -178,9 +178,6 @@ const AcademicProofWriting = () => {
                 alt="可校验学术写作工具界面展示" 
                 className="w-full max-w-4xl mx-auto rounded-2xl shadow-lg"
                 style={{ aspectRatio: '16/9' }}
-                onError={(e) => {
-                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQ1MCIgdmlld0JveD0iMCAwIDgwMCA0NTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iNDUwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjQwMCIgeT0iMjI1IiBmaWxsPSIjOUIyQzJGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiI+aGVyby1ldmlkZW5jZS10aHVtYnMud2VicCAoMTY6OTxUZXh0IGNvbXBvbmVudCAvPjwvdGV4dD4KPC9zdmc+';
-                }}
               />
               <p className="text-sm text-gray-500 mt-4">
                 不承诺"过检"。我们提供可校验的证据与整改建议。
@@ -251,9 +248,6 @@ const AcademicProofWriting = () => {
                   src={painPointsSolutions} 
                   alt="痛点分析与解决方案对比图"
                   className="w-full rounded-2xl shadow-lg"
-                  onError={(e) => {
-                    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDUwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjI1MCIgeT0iMjAwIiBmaWxsPSIjOUIyQzJGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCI+UGFpbiBQb2ludHMgJiBTb2x1dGlvbnM8L3RleHQ+Cjwvc3ZnPg==';
-                  }}
                 />
               </div>
             </div>
@@ -363,9 +357,6 @@ const AcademicProofWriting = () => {
                   src={citationPanel} 
                   alt="DOI验证与APA格式化面板截图"
                   className="w-full rounded-2xl shadow-lg"
-                  onError={(e) => {
-                    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDUwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjI1MCIgeT0iMTUwIiBmaWxsPSIjOUIyQzJGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCI+Q2l0YXRpb24gVmVyaWZpY2F0aW9uIFBhbmVsPC90ZXh0Pgo8L3N2Zz4=';
-                  }}
                 />
               </div>
             </div>
@@ -454,9 +445,6 @@ const AcademicProofWriting = () => {
                   src={evidencePackage} 
                   alt="可导出证据包三页缩略图"
                   className="w-full rounded-2xl shadow-lg"
-                  onError={(e) => {
-                    e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDUwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjI1MCIgeT0iMTUwIiBmaWxsPSIjOUIyQzJGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCI+RXZpZGVuY2UgUGFja2FnZSBUaHVtYm5haWxzPC90ZXh0Pgo8L3N2Zz4=';
-                  }}
                 />
               </div>
             </div>
@@ -543,9 +531,6 @@ const AcademicProofWriting = () => {
               src={threeStepProcess} 
               alt="三步走流程：上传、对齐、导出"
               className="w-full max-w-4xl mx-auto rounded-2xl shadow-lg"
-              onError={(e) => {
-                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDgwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjQwMCIgeT0iMTUwIiBmaWxsPSIjOUIyQzJGIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiI+VGhyZWUtU3RlcCBQcm9jZXNzPC90ZXh0Pgo8L3N2Zz4=';
-              }}
             />
           </div>
         </section>

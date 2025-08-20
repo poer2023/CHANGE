@@ -695,15 +695,8 @@ const AcademicProofWriting = () => {
                      style={{ background: 'linear-gradient(135deg, #F0FDF4, #DCFCE7)' }}>
                   <Users className="w-8 h-8" style={{ color: '#10B981' }} />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">教师合作</h3>
-                <p className="text-gray-600 mb-4">申请教育试用与 API</p>
-                <Button 
-                  variant="outline" 
-                  onClick={handleEducationTrial}
-                  className="border-green-600 text-green-600 hover:bg-green-50 rounded-xl"
-                >
-                  申请教育试用
-                </Button>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">真实文献来源</h3>
+                <p className="text-gray-600 mb-4">确保所有引用文献的真实性与可访问性</p>
               </Card>
             </div>
           </div>

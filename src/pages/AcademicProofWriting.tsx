@@ -349,121 +349,193 @@ const AcademicProofWriting = () => {
           style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
         >
           <div className="max-w-6xl mx-auto space-y-16">
-            {/* 真实引用与零幻觉校验 */}
+            {/* 3.1 真实引用与零幻觉校验（左文右图） */}
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
                 <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">真实引用与零幻觉校验</h3>
-                <ul className="space-y-4 mb-6">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">DOI/PMID/ISBN 实时校验，卷期页码一致性检查</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">高风险断言"需证据"标注，提供可替代权威来源</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">APA/MLA/GB/T 7714 一键格式化与批量纠错</span>
-                  </li>
-                </ul>
-                <p className="text-sm text-gray-500 mb-4">样例指标：引用合规度≥95%，假引文拦截率≥90%</p>
+                
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-3 text-gray-900">我们实际做什么</h4>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700"><strong>写作时自动检索</strong>相关论文/书籍/权威网页，给出可引用候选。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700">生成后，支持用 <strong>Cite 工具/Agent</strong> 一句话<strong>插入或替换</strong>引用。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700"><strong>一键规范</strong>正文引注与参考文献（APA/MLA/GB/T）。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700">找不到可靠来源时，<strong>明确提示未检得</strong>，不会硬凑。</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-3 text-gray-900">界面上用户会看到</h4>
+                  <ul className="space-y-2 text-gray-600">
+                    <li>• 列表行：<code className="bg-gray-100 px-2 py-1 rounded text-sm">[标题] · 2021 · nature.com [插入] [替换]</code></li>
+                    <li>• 成功提示：<code className="bg-gray-100 px-2 py-1 rounded text-sm">已插入到第 3 段</code></li>
+                    <li>• 样式下拉：<code className="bg-gray-100 px-2 py-1 rounded text-sm">格式：APA / MLA / GB/T</code> + 按钮 <code className="bg-gray-100 px-2 py-1 rounded text-sm">一键规范</code></li>
+                  </ul>
+                </div>
+
                 <Button 
                   variant="outline" 
                   onClick={handleFreeTrial}
                   className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-xl"
                 >
-                  试跑 3 条引用
+                  试跑 Cite 工具
                 </Button>
               </div>
               <div>
                 <div className="bg-white p-8 rounded-2xl shadow-lg border">
-                  <h4 className="font-semibold mb-4 text-gray-900">引用面板预览</h4>
+                  <h4 className="font-semibold mb-4 text-gray-900">Cite 面板预览</h4>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                      <span className="text-sm text-gray-700">DOI: 10.1038/nature.2023.001 ✓ Verified</span>
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div className="text-sm">
+                        <div className="font-medium">Machine Learning in Academia</div>
+                        <div className="text-gray-500">2021 · nature.com</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" className="text-xs">插入</Button>
+                        <Button size="sm" variant="outline" className="text-xs">替换</Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-red-50">
-                      <X className="w-5 h-5 text-red-600" />
-                      <span className="text-sm text-gray-700">期刊不匹配 - 建议替代来源</span>
+                    <div className="flex items-center gap-2 p-2 rounded bg-green-50">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="text-sm text-green-700">已插入到第 3 段</span>
                     </div>
-                    <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-                      Fix to APA
-                    </Button>
+                    <div className="flex items-center gap-3 pt-3">
+                      <select className="text-sm border rounded px-2 py-1">
+                        <option>APA</option>
+                        <option>MLA</option>
+                        <option>GB/T</option>
+                      </select>
+                      <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs">
+                        一键规范
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 个人文风对齐 */}
+            {/* 3.2 个人文风对齐（非母语友好）（右文左图） */}
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div className="md:order-2">
                 <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">个人文风对齐（非母语友好）</h3>
-                <ul className="space-y-4 mb-6">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">用 3–5 篇历史作业建"个人基线"</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">偏移指数（句长/词汇/突发度）可视化，一键对齐到基线</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">润色强度滑杆与术语一致性字典，保留自然错误率</span>
-                  </li>
-                </ul>
-                <p className="text-sm text-gray-500 mb-4">样例指标：偏移指数下降≥40%，手动回改次数下降≥30%</p>
+                
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-3 text-gray-900">我们实际做什么</h4>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700">你<strong>上传一篇</strong>历史作业，建立<strong>个人文风基线</strong>。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700">给出 0–100 的<strong>风格距离</strong>，并可视化句长/词汇复杂度/突发度。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700"><strong>润色强度可控</strong>，保留"自然错误率"，避免"AI 味"。</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-3 text-gray-900">界面上用户会看到</h4>
+                  <ul className="space-y-2 text-gray-600">
+                    <li>• 指标：<code className="bg-gray-100 px-2 py-1 rounded text-sm">风格距离 28（目标 &lt;30）</code></li>
+                    <li>• 控件：<code className="bg-gray-100 px-2 py-1 rounded text-sm">对齐到个人基线</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">润色强度：轻/中/重</code></li>
+                    <li>• 三个 chips：<code className="bg-gray-100 px-2 py-1 rounded text-sm">句长对齐</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">词汇稳定</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">突发度正常</code></li>
+                  </ul>
+                </div>
+
                 <Button 
                   variant="outline" 
                   onClick={handleFreeTrial}
                   className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-xl"
                 >
-                  上传历史样本文本
+                  上传历史样本
                 </Button>
               </div>
               <div className="md:order-1">
                 <div className="bg-white p-8 rounded-2xl shadow-lg border">
+                  <h4 className="font-semibold mb-4 text-gray-900 text-center">Style Alignment (1 past essay)</h4>
                   <div className="text-center mb-4">
-                    <h4 className="font-semibold mb-4 text-gray-900">Style 仪表 + 三个 chips</h4>
                     <div className="w-32 h-32 mx-auto border-8 rounded-full flex items-center justify-center mb-4" 
                          style={{ borderColor: '#4F46E5' }}>
                       <div>
                         <span className="text-3xl font-bold" style={{ color: '#4F46E5' }}>28</span>
-                        <div className="text-xs text-gray-500">从 72</div>
+                        <div className="text-xs text-gray-500">从 54</div>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-500 mb-4">Deviation 28</p>
-                    <div className="flex gap-2 justify-center">
-                      <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">句长对齐</span>
-                      <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">词汇稳定</span>
-                      <span className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded">突发度正常</span>
+                    <div className="flex gap-2 justify-center mb-4">
+                      <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">Sentence length</span>
+                      <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">Lexical variety</span>
+                      <span className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded">Burstiness</span>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-600">Polish strength:</span>
+                        <div className="flex gap-2">
+                          <span className="px-2 py-1 text-xs bg-gray-100 rounded">Light</span>
+                          <span className="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded">Medium</span>
+                          <span className="px-2 py-1 text-xs bg-gray-100 rounded">Strong</span>
+                        </div>
+                      </div>
+                      <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs">
+                        Align to baseline
+                      </Button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 可证据的写作过程 */}
+            {/* 3.3 可证据的写作过程：留痕 + 证据包 + 口头核验（左文右图） */}
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
                 <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">可证据的写作过程：留痕 + 证据包 + 口头核验</h3>
-                <ul className="space-y-4 mb-6">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">记录"检索→生成→改写→人工编辑"的时间线与时间戳</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">段落级 diff 与来源快照；一键导出 timeline.json / diff.pdf / sources.csv</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">口头核验演练：速答卡 + 讲解提纲，"当场小改"附证据指向</span>
-                  </li>
-                </ul>
-                <p className="text-sm text-gray-500 mb-4">样例指标：证据包导出≤5 秒；可追溯率≈100%</p>
+                
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-3 text-gray-900">我们实际做什么（降噪版）</h4>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700">轻量留痕：记录<strong>会话开始/结束时间</strong>、核心<strong>检索关键词</strong>、<strong>插入/替换的引用</strong>、主要<strong>Agent 指令</strong>、以及<strong>用户手动编辑次数</strong>。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700">一键导出<strong>写作过程摘要</strong>（PDF 一页）与<strong>引用清单</strong>（CSV）；用于老师快速查看与面谈备份。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700">生成<strong>面谈速答卡</strong>（1 页 PDF）：来源、改动理由、结论依据。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700">可创建<strong>只读链接</strong>，设置有效期与可见范围。</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-3 text-gray-900">界面上用户会看到</h4>
+                  <ul className="space-y-2 text-gray-600">
+                    <li>• 简洁时间线：<code className="bg-gray-100 px-2 py-1 rounded text-sm">开始写作 → 插入 2 个引用 → Agent 排版 → 完成</code></li>
+                    <li>• 导出卡片：<code className="bg-gray-100 px-2 py-1 rounded text-sm">writing-summary.pdf</code>、<code className="bg-gray-100 px-2 py-1 rounded text-sm">sources.csv</code>、<code className="bg-gray-100 px-2 py-1 rounded text-sm">viva-qa.pdf</code></li>
+                    <li>• 按钮：<code className="bg-gray-100 px-2 py-1 rounded text-sm">导出过程摘要</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">复制只读链接</code></li>
+                  </ul>
+                </div>
+
                 <Button 
                   variant="outline" 
                   onClick={handleDownloadSample}
@@ -476,50 +548,91 @@ const AcademicProofWriting = () => {
               </div>
               <div>
                 <div className="bg-white p-6 rounded-2xl shadow-lg border">
-                  <h4 className="font-semibold mb-4 text-gray-900">三页证据包缩略图 + 时间线</h4>
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    <div className="aspect-[4/3] bg-gray-100 rounded border flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-gray-400" />
+                  <h4 className="font-semibold mb-4 text-gray-900">Timeline & Export</h4>
+                  
+                  {/* Timeline */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="text-gray-600">Start session</span>
+                      <span className="text-gray-400">14:32</span>
                     </div>
-                    <div className="aspect-[4/3] bg-gray-100 rounded border flex items-center justify-center">
-                      <Clock className="w-6 h-6 text-gray-400" />
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="text-gray-600">Inserted 2 citations</span>
+                      <span className="text-gray-400">14:45</span>
                     </div>
-                    <div className="aspect-[4/3] bg-gray-100 rounded border flex items-center justify-center">
-                      <Database className="w-6 h-6 text-gray-400" />
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="text-gray-600">Agent formatting</span>
+                      <span className="text-gray-400">14:52</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Finished</span>
+                      <span className="text-gray-400">15:08</span>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    timeline.json • diff.pdf • sources.csv
+
+                  {/* Export files */}
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <FileText className="w-4 h-4" />
+                      <span>writing-summary.pdf</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Database className="w-4 h-4" />
+                      <span>sources.csv</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <MessageSquare className="w-4 h-4" />
+                      <span>viva-qa.pdf</span>
+                    </div>
                   </div>
+
+                  <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                    Export
+                  </Button>
                 </div>
               </div>
             </div>
 
-            {/* 专业二次 AI Agent 审查编辑 */}
+            {/* 3.4 专业二次 AI Agent 审查编辑（右文左图） */}
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div className="md:order-2">
                 <h3 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">专业二次 AI Agent 审查编辑</h3>
-                <ul className="space-y-4 mb-6">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">结构化重写：按提纲重排章节，生成变更说明</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">格式与版式：脚注、题注、交叉引用、目录自动更新；批量规范参考文献</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">数据到图表：从段落/表格抽取数值，生成柱/折/散点图；图表元数据记录来源与参数</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
-                    <span className="text-gray-700">护栏：不伪造引用/数据；无法验证则标"需核验"；所有操作可撤销并留痕</span>
-                  </li>
-                </ul>
-                <p className="text-sm text-gray-500 mb-4">
-                  自然语言指令示例："把第2节拆成related work与method，并补齐引文占位。"
-                </p>
+                
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-3 text-gray-900">我们实际做什么</h4>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700"><strong>结构化重写</strong>：按你给的提纲重排章节并生成变更说明。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700"><strong>格式排版</strong>：题注、脚注、交叉引用、目录自动更新；参考文献批量规范。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700"><strong>插表插图</strong>：从段落/表格数据生成柱/折/散点图，<strong>图注写清来源</strong>；流程图按描述生成并自动编号。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700"><strong>自然语言操控</strong>：一句话做复杂操作；常用步骤可保存为"配方"。</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: '#10B981' }} />
+                      <span className="text-gray-700"><strong>护栏</strong>：不伪造引用/数据；无法验证会标注"待核验"；全部操作可撤销并留痕。</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-3 text-gray-900">界面上用户会看到</h4>
+                  <ul className="space-y-2 text-gray-600">
+                    <li>• 命令输入：<code className="bg-gray-100 px-2 py-1 rounded text-sm">把第 2 节拆成 related work 和 method，并统一 APA 7，插入统计图。</code></li>
+                    <li>• 反馈：右侧文档标题层级与目录更新；下方出现图表和题注；底部出现"变更说明"小框。</li>
+                    <li>• 按钮：<code className="bg-gray-100 px-2 py-1 rounded text-sm">应用修改</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">撤销</code> <code className="bg-gray-100 px-2 py-1 rounded text-sm">保存为配方</code></li>
+                  </ul>
+                </div>
+
                 <Button 
                   variant="outline" 
                   onClick={handleFreeTrial}
@@ -530,19 +643,42 @@ const AcademicProofWriting = () => {
               </div>
               <div className="md:order-1">
                 <div className="bg-white p-6 rounded-2xl shadow-lg border">
-                  <h4 className="font-semibold mb-4 text-gray-900">Agent 命令输入 + 排版/图表即时更新</h4>
-                  <div className="space-y-4">
-                    <div className="p-3 bg-gray-50 rounded text-sm">
-                      <span className="text-gray-600">输入：</span> "从这段数据生成均值柱状图与趋势折线，图注写清来源。"
-                    </div>
-                    <div className="flex justify-center">
-                      <div className="w-24 h-16 bg-blue-100 rounded flex items-center justify-center">
-                        <TrendingUp className="w-6 h-6 text-blue-600" />
+                  <h4 className="font-semibold mb-4 text-gray-900">Agent 命令界面</h4>
+                  
+                  {/* Command input */}
+                  <div className="mb-4">
+                    <div className="p-3 bg-gray-50 rounded-lg text-sm border">
+                      <span className="text-gray-600 font-medium">输入：</span>
+                      <div className="mt-1 text-gray-800">
+                        "把第 2 节拆成 related work 和 method，并统一 APA 7，插入统计图。"
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 text-center">
-                      图表自动生成 + 来源标注
+                  </div>
+
+                  {/* Document preview */}
+                  <div className="mb-4 p-3 border rounded-lg">
+                    <div className="text-xs text-gray-500 mb-2">文档更新预览：</div>
+                    <div className="space-y-1 text-sm">
+                      <div className="font-medium">2.1 Related Work</div>
+                      <div className="font-medium">2.2 Method</div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <TrendingUp className="w-4 h-4 text-blue-600" />
+                        <span className="text-xs text-gray-600">Figure 1: Statistics (Source: Table 2)</span>
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2">
+                    <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs">
+                      应用修改
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-xs">
+                      撤销
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-xs">
+                      保存为配方
+                    </Button>
                   </div>
                 </div>
               </div>

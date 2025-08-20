@@ -189,7 +189,7 @@ const AcademicProofWriting = () => {
 
             {/* 卖点条目 */}
             <div className="text-gray-600 mb-12">
-              DOI/ISBN 实时校验 · 个人文风基线 · 证据包可导出 · 二次 AI Agent
+              真实文献引用 · 个人文风基线 · 证据包可导出 · AI agent文稿编辑
             </div>
 
             <div className="relative max-w-4xl mx-auto">

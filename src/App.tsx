@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CreditProvider } from "@/contexts/CreditContext";
 import AuthGuard from "@/components/AuthGuard";
-import Index from "./pages/Index";
+
 import EssayForm from "./pages/EssayForm";
 import EssayEditor from "./pages/EssayEditor";
 import ProgressiveFormPage from "./pages/ProgressiveFormPage";
@@ -49,7 +49,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={
               <AuthGuard requireAuth={false}>
-                <Index />
+                <AcademicProofWriting />
               </AuthGuard>
             } />
             <Route path="/form" element={
@@ -185,11 +185,6 @@ const App = () => (
             <Route path="/delivery-report/:orderId" element={
               <AuthGuard requireAuth={true}>
                 <DeliveryReport />
-              </AuthGuard>
-            } />
-            <Route path="/academic-proofwriting" element={
-              <AuthGuard requireAuth={false}>
-                <AcademicProofWriting />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer, ReactNode, useCallback } 
 import { Deliverables, DeliverableState, TimelineEvent, AssetItem, QualityScore } from '@/types/writing-flow';
 
 // 交付物操作类型
-export type DeliverableKey = 'quality' | 'processPdf' | 'refs' | 'timeline' | 'viva' | 'assets' | 'bundle';
+export type DeliverableKey = 'quality' | 'processPdf' | 'refs' | 'timeline' | 'viva' | 'assets' | 'share' | 'bundle';
 
 export type DeliverableAction =
   | { type: 'GENERATE'; key: DeliverableKey }
@@ -43,6 +43,9 @@ const initialDeliverables: Deliverables = {
   assets: { 
     items: [], 
     state: 'idle' as DeliverableState 
+  },
+  share: {
+    state: 'idle' as DeliverableState
   },
   bundle: { 
     progress: 0, 

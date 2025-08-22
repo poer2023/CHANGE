@@ -337,6 +337,12 @@ export interface Deliverables {
     zipUrl?: string;
     state: DeliverableState;
   };
+  share: {
+    url?: string;
+    qrCode?: string;
+    expiresAt?: string;
+    state: DeliverableState;
+  };
   bundle: {
     zipUrl?: string;
     progress: number;

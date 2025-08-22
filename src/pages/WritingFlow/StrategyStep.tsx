@@ -4,6 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import OutcomePanel from '@/components/WritingFlow/OutcomePanel';
+import Gate1Modal from '@/components/Gate1Modal';
+import { useStep1, useEstimate, useAutopilot, useApp, useWritingFlow as useNewWritingFlow, usePayment } from '@/state/AppContext';
+import { lockPrice, createPaymentIntent, confirmPayment, startAutopilot as apiStartAutopilot, streamAutopilotProgress, track } from '@/services/pricing';
 import { useWritingFlow } from '@/contexts/WritingFlowContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -217,11 +221,20 @@ const structureTemplates = {
 
 const StrategyStep: React.FC = () => {
   const { project, updateStrategy, setCurrentStep, completeStep } = useWritingFlow();
+  const { track: trackEvent } = useApp();
+  const { step1 } = useStep1();
+  const { estimate, setEstimate } = useEstimate();
+  const { autopilot, startAutopilot, minimizeAutopilot, pauseAutopilot, resumeAutopilot, stopAutopilot } = useAutopilot();
+  const { writingFlow, updateMetrics, toggleAddon, setError } = useNewWritingFlow();
+  const { pay, lockPrice: lockPriceState } = usePayment();
   const { toast } = useToast();
   const navigate = useNavigate();
   
   const [expandedClaims, setExpandedClaims] = useState<Set<string>>(new Set());
   const [isGeneratingEvidence, setIsGeneratingEvidence] = useState<string | null>(null);
+  const [showGate1Modal, setShowGate1Modal] = useState(false);
+  const [verificationLevel, setVerificationLevel] = useState<'Basic' | 'Standard' | 'Pro'>('Standard');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const form = useForm<Strategy>({
     resolver: zodResolver(strategySchema),
@@ -352,6 +365,182 @@ const StrategyStep: React.FC = () => {
     });
   };
 
+  // OutcomePanel handlers
+  const handleShowPreview = () => {
+    trackEvent('preview_sample_click', { context: 'strategy_step', sampleType: 'academic_writing' });
+    toast({
+      title: '功能开发中',
+      description: '样例预览功能即将上线'
+    });
+  };
+
+  const handlePayAndWrite = async () => {
+    try {
+      track('outcome_pay_and_write_click', { step: 'strategy' });
+      
+      let finalPrice = pay.lockedPrice;
+      
+      if (!finalPrice) {
+        const priceLockResponse = await lockPrice({
+          title: step1.title,
+          wordCount: step1.wordCount,
+          verifyLevel: verificationLevel
+        });
+        
+        lockPriceState(priceLockResponse.value, priceLockResponse.expiresAt);
+        finalPrice = priceLockResponse;
+      }
+      
+      setShowGate1Modal(true);
+      
+    } catch (error) {
+      console.error('Error in pay and write:', error);
+      setError(error instanceof Error ? error.message : '价格锁定失败，请重试');
+      
+      toast({
+        title: '错误',
+        description: '价格锁定失败，请重试',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleGate1Unlock = async () => {
+    try {
+      setIsProcessingPayment(true);
+      
+      if (!pay.lockedPrice) {
+        throw new Error('No locked price available');
+      }
+      
+      const paymentIntent = await createPaymentIntent({
+        price: pay.lockedPrice.value
+      });
+      
+      track('gate1_payment_intent_created', {
+        paymentIntentId: paymentIntent.paymentIntentId,
+        price: pay.lockedPrice.value
+      });
+      
+      const confirmResponse = await confirmPayment(paymentIntent.paymentIntentId);
+      
+      if (confirmResponse.status === 'succeeded') {
+        track('gate1_payment_success', {
+          paymentIntentId: paymentIntent.paymentIntentId,
+          price: pay.lockedPrice.value
+        });
+        
+        setShowGate1Modal(false);
+        await startAutopilotFlow();
+        
+        toast({
+          title: '支付成功',
+          description: '正在启动自动推进流程...'
+        });
+      } else {
+        throw new Error('Payment failed');
+      }
+      
+    } catch (error) {
+      console.error('Payment error:', error);
+      setError(error instanceof Error ? error.message : '支付失败，请重试');
+      
+      track('gate1_payment_error', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      
+      toast({
+        title: '支付失败',
+        description: '请稍后重试',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleGate1PreviewOnly = () => {
+    setShowGate1Modal(false);
+    toast({
+      title: '预览模式',
+      description: '您可以继续浏览，稍后再解锁完整功能'
+    });
+  };
+
+  const startAutopilotFlow = async () => {
+    try {
+      const config = {
+        verifyLevel: verificationLevel,
+        allowPreprint: true,
+        useStyle: step1.styleSamples.length > 0
+      };
+      
+      const response = await apiStartAutopilot({
+        fromStep: 'outline' as any,
+        config
+      });
+      
+      await startAutopilot(config);
+      
+      const cancelStream = streamAutopilotProgress(
+        response.taskId,
+        (progressData) => {
+          // Progress handling via existing autopilot system
+        },
+        (docId) => {
+          navigate(`/result?from=autopilot&docId=${docId}`);
+        },
+        (error) => {
+          setError(error);
+          toast({
+            title: '自动推进失败',
+            description: error,
+            variant: 'destructive'
+          });
+        }
+      );
+      
+      track('autopilot_started_from_strategy', {
+        taskId: response.taskId,
+        config
+      });
+      
+    } catch (error) {
+      console.error('Failed to start autopilot:', error);
+      setError(error instanceof Error ? error.message : '启动自动推进失败');
+    }
+  };
+
+  const handleVerifyLevelChange = (level: 'Basic' | 'Standard' | 'Pro') => {
+    setVerificationLevel(level);
+    track('outcome_verify_change', { level, step: 'strategy' });
+  };
+
+  const handleToggleAddon = (key: string, enabled: boolean) => {
+    toggleAddon(key, enabled);
+    track('outcome_addon_toggle', { key, enabled, step: 'strategy' });
+  };
+
+  const handleRetry = () => {
+    setError(undefined);
+    toast({
+      title: '重试',
+      description: '请重新尝试操作'
+    });
+  };
+
+  // Update metrics when strategy data changes
+  useEffect(() => {
+    const currentData = watch();
+    if (currentData.claims) {
+      updateMetrics({
+        thesisCandidates: currentData.claims.length,
+        pickedStructure: currentData.structure ? 1 : 0,
+        claimCount: currentData.claims.filter(claim => claim.strength > 75).length
+      });
+    }
+  }, [watch(), updateMetrics]);
+
   const onSubmit = async (data: Strategy) => {
     try {
       // 生成段落蓝图
@@ -445,7 +634,11 @@ const StrategyStep: React.FC = () => {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Two Column Layout */}
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Left Column - Main Form */}
+        <div className="flex-1 lg:max-w-[680px]">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* 质量建议提示 */}
         {averageScore < 60 && (
           <Card className="border-blue-200 bg-blue-50">
@@ -1240,7 +1433,52 @@ const StrategyStep: React.FC = () => {
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
-      </form>
+          </form>
+        </div>
+
+        {/* Right Column - Outcome Panel */}
+        <div className="w-full lg:w-[360px] lg:flex-shrink-0">
+          <OutcomePanel
+            step="strategy"
+            lockedPrice={pay.lockedPrice}
+            estimate={{
+              priceRange: estimate.priceRange,
+              etaMinutes: estimate.etaMinutes,
+              citesRange: estimate.citesRange,
+              verifyLevel: verificationLevel
+            }}
+            metrics={writingFlow.metrics}
+            addons={writingFlow.addons}
+            autopilot={autopilot.running ? {
+              running: autopilot.running,
+              step: autopilot.step as any,
+              progress: autopilot.progress,
+              message: autopilot.logs[autopilot.logs.length - 1]?.msg
+            } : undefined}
+            error={writingFlow.error}
+            onVerifyChange={handleVerifyLevelChange}
+            onToggleAddon={handleToggleAddon}
+            onPreviewSample={handleShowPreview}
+            onPayAndWrite={handlePayAndWrite}
+            onRetry={handleRetry}
+          />
+        </div>
+      </div>
+
+      {/* Gate1 Modal */}
+      {pay.lockedPrice && (
+        <Gate1Modal
+          open={showGate1Modal}
+          price={pay.lockedPrice}
+          benefits={[
+            '一次完整生成',
+            '2 次局部重写',
+            '全量引用核验'
+          ]}
+          onPreviewOnly={handleGate1PreviewOnly}
+          onUnlock={handleGate1Unlock}
+        />
+      )}
     </div>
   );
 };

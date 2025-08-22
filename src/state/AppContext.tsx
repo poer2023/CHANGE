@@ -442,4 +442,69 @@ export const useResult = () => {
   };
 };
 
+export const useWritingFlow = () => {
+  const { state, dispatch, track, trackTyped } = useApp();
+  
+  const setCurrentStep = (step: AppState['writingFlow']['currentStep']) => {
+    dispatch({ type: 'WRITING_FLOW_SET_STEP', payload: step });
+    
+    trackTyped('step_enter', {
+      step,
+      previousStep: state.writingFlow.currentStep,
+      timeSpent: 0 // TODO: Calculate time spent on previous step
+    }, 'writing_flow', 'step_navigation');
+  };
+
+  const updateMetrics = (metrics: Partial<AppState['writingFlow']['metrics']>) => {
+    dispatch({ type: 'WRITING_FLOW_UPDATE_METRICS', payload: metrics });
+    
+    // Track metrics updates
+    Object.keys(metrics).forEach(key => {
+      const value = metrics[key as keyof typeof metrics];
+      if (value !== undefined) {
+        trackTyped('metrics_update', {
+          step: state.writingFlow.currentStep,
+          metric: key,
+          value: typeof value === 'number' ? value : JSON.stringify(value),
+          source: 'auto'
+        }, 'writing_flow', 'metrics');
+      }
+    });
+  };
+
+  const toggleAddon = (addon: string, enabled: boolean) => {
+    dispatch({ type: 'WRITING_FLOW_TOGGLE_ADDON', payload: { addon, enabled } });
+    
+    trackTyped('addon_toggle', {
+      addon,
+      enabled,
+      step: state.writingFlow.currentStep,
+      totalAddons: enabled 
+        ? state.writingFlow.addons.length + 1 
+        : state.writingFlow.addons.length - 1
+    }, 'payment', 'addon_selection');
+  };
+
+  const setError = (error: string | undefined) => {
+    dispatch({ type: 'WRITING_FLOW_SET_ERROR', payload: error });
+    
+    if (error) {
+      trackTyped('workflow_error', {
+        step: state.writingFlow.currentStep,
+        error,
+        context: 'writing_flow',
+        recoverable: true
+      }, 'error', 'workflow');
+    }
+  };
+
+  return {
+    writingFlow: state.writingFlow,
+    setCurrentStep,
+    updateMetrics,
+    toggleAddon,
+    setError
+  };
+};
+
 export default AppContext;

@@ -1,4 +1,4 @@
-import type { AppState, Action, Step1Inputs, Estimate, Autopilot, PayLocks, ResultState } from './types';
+import type { AppState, Action, Step1Inputs, Estimate, Autopilot, PayLocks, ResultState, WritingFlowState } from './types';
 
 // Initial state factory
 export const createInitialState = (): AppState => ({
@@ -36,6 +36,11 @@ export const createInitialState = (): AppState => ({
   result: {
     generation: 'idle',
     exportPending: false
+  },
+  writingFlow: {
+    currentStep: 'topic',
+    metrics: {},
+    addons: []
   }
 });
 
@@ -263,6 +268,51 @@ export function appReducer(state: AppState, action: Action): AppState {
 
     case 'RESET_STATE':
       return createInitialState();
+
+    case 'WRITING_FLOW_SET_STEP':
+      return {
+        ...state,
+        writingFlow: {
+          ...state.writingFlow,
+          currentStep: action.payload
+        }
+      };
+
+    case 'WRITING_FLOW_UPDATE_METRICS':
+      return {
+        ...state,
+        writingFlow: {
+          ...state.writingFlow,
+          metrics: {
+            ...state.writingFlow.metrics,
+            ...action.payload
+          }
+        }
+      };
+
+    case 'WRITING_FLOW_TOGGLE_ADDON':
+      const { addon, enabled } = action.payload;
+      const currentAddons = state.writingFlow.addons;
+      const updatedAddons = enabled
+        ? [...currentAddons, addon as any]
+        : currentAddons.filter(a => a !== addon);
+      
+      return {
+        ...state,
+        writingFlow: {
+          ...state.writingFlow,
+          addons: updatedAddons
+        }
+      };
+
+    case 'WRITING_FLOW_SET_ERROR':
+      return {
+        ...state,
+        writingFlow: {
+          ...state.writingFlow,
+          error: action.payload
+        }
+      };
 
     case 'LOAD_PERSISTED_STATE':
       return {

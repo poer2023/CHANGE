@@ -3,6 +3,7 @@
 export type Level = 'UG' | 'PG' | 'ESL' | 'Pro';
 export type Format = 'APA' | 'MLA' | 'Chicago' | 'IEEE' | 'GBT';
 export type VerifyLevel = 'Basic' | 'Standard' | 'Pro';
+export type WritingStep = 'topic' | 'research' | 'strategy' | 'outline';
 
 export interface Step1Inputs {
   title: string;
@@ -69,12 +70,40 @@ export interface ResultState {
   streamId?: string;
 }
 
+export interface QualityMetrics {
+  // Step1 (topic) - always available
+  styleSamples?: number;
+  
+  // Step2 (research)
+  sourcesHit?: number;
+  verifiableRatio?: number;
+  recent5yRatio?: number;
+  
+  // Step3 (strategy)
+  thesisCandidates?: number;
+  pickedStructure?: number;
+  claimCount?: number;
+  
+  // Step4 (outline)
+  outlineDepth?: number;
+  sections?: number;
+  perSectionCiteBalance?: number; // 0-100
+}
+
+export interface WritingFlowState {
+  currentStep: WritingStep;
+  metrics: QualityMetrics;
+  addons: Array<'evidencePack' | 'defenseCard' | 'latex' | 'aiCheck' | 'plagiarism' | 'shareLink'>;
+  error?: string;
+}
+
 export interface AppState {
   step1: Step1Inputs;
   estimate: Estimate;
   autopilot: Autopilot;
   pay: PayLocks;
   result: ResultState;
+  writingFlow: WritingFlowState;
 }
 
 export type Action =
@@ -94,6 +123,10 @@ export type Action =
   | { type: 'RESULT_SET_ID'; payload: { docId: string } }
   | { type: 'GENERATION_STATE'; payload: ResultState['generation'] }
   | { type: 'GENERATION_START'; payload: { streamId: string } }
+  | { type: 'WRITING_FLOW_SET_STEP'; payload: WritingStep }
+  | { type: 'WRITING_FLOW_UPDATE_METRICS'; payload: Partial<QualityMetrics> }
+  | { type: 'WRITING_FLOW_TOGGLE_ADDON'; payload: { addon: string; enabled: boolean } }
+  | { type: 'WRITING_FLOW_SET_ERROR'; payload: string | undefined }
   | { type: 'RESET_STATE' }
   | { type: 'LOAD_PERSISTED_STATE'; payload: Partial<AppState> };
 
@@ -184,4 +217,33 @@ export interface Gate2DialogProps {
 export interface DeckTabsProps {
   disabled: boolean; // 预览模式下 true
   docId: string;
+}
+
+export interface OutcomePanelProps {
+  step: WritingStep;
+  lockedPrice?: { 
+    value: number; 
+    currency: 'CNY'; 
+    expiresAt: number; 
+  } | null;
+  estimate: {
+    priceRange: [number, number];
+    etaMinutes: [number, number];
+    citesRange: [number, number];
+    verifyLevel: VerifyLevel;
+  };
+  metrics: QualityMetrics;
+  addons: Array<'evidencePack' | 'defenseCard' | 'latex' | 'aiCheck' | 'plagiarism' | 'shareLink'>;
+  autopilot?: {
+    running: boolean;
+    step: 'search' | 'strategy' | 'outline' | 'done' | 'error';
+    progress: number;
+    message?: string;
+  };
+  error?: string;
+  onVerifyChange: (level: VerifyLevel) => void;
+  onToggleAddon: (key: string, enabled: boolean) => void;
+  onPreviewSample: () => void;
+  onPayAndWrite: () => Promise<void>;
+  onRetry?: () => void;
 }

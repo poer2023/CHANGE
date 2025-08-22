@@ -3,6 +3,10 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
+import OutcomePanel from '@/components/WritingFlow/OutcomePanel';
+import Gate1Modal from '@/components/Gate1Modal';
+import { useStep1, useEstimate, useAutopilot, useApp, useWritingFlow as useNewWritingFlow, usePayment } from '@/state/AppContext';
+import { lockPrice, createPaymentIntent, confirmPayment, startAutopilot as apiStartAutopilot, streamAutopilotProgress, track } from '@/services/pricing';
 import { useWritingFlow } from '@/contexts/WritingFlowContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -387,6 +391,12 @@ const calculateQualityScore = (item: ReferenceItem): number => {
 
 const ResearchStep: React.FC = () => {
   const { project, updateStrategy, setCurrentStep, completeStep } = useWritingFlow();
+  const { track: trackEvent } = useApp();
+  const { step1 } = useStep1();
+  const { estimate, setEstimate } = useEstimate();
+  const { autopilot, startAutopilot, minimizeAutopilot, pauseAutopilot, resumeAutopilot, stopAutopilot } = useAutopilot();
+  const { writingFlow, updateMetrics, toggleAddon, setError } = useNewWritingFlow();
+  const { pay, lockPrice: lockPriceState } = usePayment();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -395,6 +405,9 @@ const ResearchStep: React.FC = () => {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newItem, setNewItem] = useState<Partial<ReferenceItem>>({});
+  const [showGate1Modal, setShowGate1Modal] = useState(false);
+  const [verificationLevel, setVerificationLevel] = useState<'Basic' | 'Standard' | 'Pro'>('Standard');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const form = useForm<ResearchState>({
     resolver: zodResolver(researchSchema),
@@ -443,6 +456,17 @@ const ResearchStep: React.FC = () => {
     };
   }, [watchedData.library]);
 
+  // Update metrics when research data changes
+  useEffect(() => {
+    if (watchedData.library && watchedData.results) {
+      updateMetrics({
+        sourcesHit: watchedData.results.length,
+        verifiableRatio: watchedData.library.filter(item => item.peerReviewed || item.doi).length / Math.max(watchedData.library.length, 1) * 100,
+        recent5yRatio: watchedData.library.filter(item => item.year && item.year >= new Date().getFullYear() - 5).length / Math.max(watchedData.library.length, 1) * 100
+      });
+    }
+  }, [watchedData, updateMetrics]);
+
   // 自动保存
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -466,6 +490,170 @@ const ResearchStep: React.FC = () => {
       }
     }
   }, [setValue]);
+
+  // OutcomePanel handlers
+  const handleShowPreview = () => {
+    trackEvent('preview_sample_click', { context: 'research_step', sampleType: 'academic_writing' });
+    toast({
+      title: '功能开发中',
+      description: '样例预览功能即将上线'
+    });
+  };
+
+  const handlePayAndWrite = async () => {
+    try {
+      track('outcome_pay_and_write_click', { step: 'research' });
+      
+      let finalPrice = pay.lockedPrice;
+      
+      if (!finalPrice) {
+        const priceLockResponse = await lockPrice({
+          title: step1.title,
+          wordCount: step1.wordCount,
+          verifyLevel: verificationLevel
+        });
+        
+        lockPriceState(priceLockResponse.value, priceLockResponse.expiresAt);
+        finalPrice = priceLockResponse;
+      }
+      
+      setShowGate1Modal(true);
+      
+    } catch (error) {
+      console.error('Error in pay and write:', error);
+      setError(error instanceof Error ? error.message : '价格锁定失败，请重试');
+      
+      toast({
+        title: '错误',
+        description: '价格锁定失败，请重试',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleGate1Unlock = async () => {
+    try {
+      setIsProcessingPayment(true);
+      
+      if (!pay.lockedPrice) {
+        throw new Error('No locked price available');
+      }
+      
+      const paymentIntent = await createPaymentIntent({
+        price: pay.lockedPrice.value
+      });
+      
+      track('gate1_payment_intent_created', {
+        paymentIntentId: paymentIntent.paymentIntentId,
+        price: pay.lockedPrice.value
+      });
+      
+      const confirmResponse = await confirmPayment(paymentIntent.paymentIntentId);
+      
+      if (confirmResponse.status === 'succeeded') {
+        track('gate1_payment_success', {
+          paymentIntentId: paymentIntent.paymentIntentId,
+          price: pay.lockedPrice.value
+        });
+        
+        setShowGate1Modal(false);
+        await startAutopilotFlow();
+        
+        toast({
+          title: '支付成功',
+          description: '正在启动自动推进流程...'
+        });
+      } else {
+        throw new Error('Payment failed');
+      }
+      
+    } catch (error) {
+      console.error('Payment error:', error);
+      setError(error instanceof Error ? error.message : '支付失败，请重试');
+      
+      track('gate1_payment_error', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      
+      toast({
+        title: '支付失败',
+        description: '请稍后重试',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleGate1PreviewOnly = () => {
+    setShowGate1Modal(false);
+    toast({
+      title: '预览模式',
+      description: '您可以继续浏览，稍后再解锁完整功能'
+    });
+  };
+
+  const startAutopilotFlow = async () => {
+    try {
+      const config = {
+        verifyLevel: verificationLevel,
+        allowPreprint: true,
+        useStyle: step1.styleSamples.length > 0
+      };
+      
+      const response = await apiStartAutopilot({
+        fromStep: 'strategy' as any,
+        config
+      });
+      
+      await startAutopilot(config);
+      
+      const cancelStream = streamAutopilotProgress(
+        response.taskId,
+        (progressData) => {
+          // Progress handling via existing autopilot system
+        },
+        (docId) => {
+          navigate(`/result?from=autopilot&docId=${docId}`);
+        },
+        (error) => {
+          setError(error);
+          toast({
+            title: '自动推进失败',
+            description: error,
+            variant: 'destructive'
+          });
+        }
+      );
+      
+      track('autopilot_started_from_research', {
+        taskId: response.taskId,
+        config
+      });
+      
+    } catch (error) {
+      console.error('Failed to start autopilot:', error);
+      setError(error instanceof Error ? error.message : '启动自动推进失败');
+    }
+  };
+
+  const handleVerifyLevelChange = (level: 'Basic' | 'Standard' | 'Pro') => {
+    setVerificationLevel(level);
+    track('outcome_verify_change', { level, step: 'research' });
+  };
+
+  const handleToggleAddon = (key: string, enabled: boolean) => {
+    toggleAddon(key, enabled);
+    track('outcome_addon_toggle', { key, enabled, step: 'research' });
+  };
+
+  const handleRetry = () => {
+    setError(undefined);
+    toast({
+      title: '重试',
+      description: '请重新尝试操作'
+    });
+  };
 
   // 搜索处理
   const handleSearch = useCallback(async () => {
@@ -606,7 +794,11 @@ const ResearchStep: React.FC = () => {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Two Column Layout */}
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Left Column - Main Form */}
+        <div className="flex-1 lg:max-w-[680px]">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* 门槛告警 */}
         {!qualityThreshold.canProceed && (
           <Card className="border-yellow-200 bg-yellow-50">
@@ -1149,7 +1341,52 @@ const ResearchStep: React.FC = () => {
             </Button>
           </div>
         </div>
-      </form>
+          </form>
+        </div>
+
+        {/* Right Column - Outcome Panel */}
+        <div className="w-full lg:w-[360px] lg:flex-shrink-0">
+          <OutcomePanel
+            step="research"
+            lockedPrice={pay.lockedPrice}
+            estimate={{
+              priceRange: estimate.priceRange,
+              etaMinutes: estimate.etaMinutes,
+              citesRange: estimate.citesRange,
+              verifyLevel: verificationLevel
+            }}
+            metrics={writingFlow.metrics}
+            addons={writingFlow.addons}
+            autopilot={autopilot.running ? {
+              running: autopilot.running,
+              step: autopilot.step as any,
+              progress: autopilot.progress,
+              message: autopilot.logs[autopilot.logs.length - 1]?.msg
+            } : undefined}
+            error={writingFlow.error}
+            onVerifyChange={handleVerifyLevelChange}
+            onToggleAddon={handleToggleAddon}
+            onPreviewSample={handleShowPreview}
+            onPayAndWrite={handlePayAndWrite}
+            onRetry={handleRetry}
+          />
+        </div>
+      </div>
+
+      {/* Gate1 Modal */}
+      {pay.lockedPrice && (
+        <Gate1Modal
+          open={showGate1Modal}
+          price={pay.lockedPrice}
+          benefits={[
+            '一次完整生成',
+            '2 次局部重写',
+            '全量引用核验'
+          ]}
+          onPreviewOnly={handleGate1PreviewOnly}
+          onUnlock={handleGate1Unlock}
+        />
+      )}
     </div>
   );
 };

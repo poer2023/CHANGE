@@ -22,6 +22,10 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import OutcomePanel from '@/components/WritingFlow/OutcomePanel';
+import Gate1Modal from '@/components/Gate1Modal';
+import { useStep1, useEstimate, useAutopilot, useApp, useWritingFlow as useNewWritingFlow, usePayment } from '@/state/AppContext';
+import { lockPrice, createPaymentIntent, confirmPayment, startAutopilot as apiStartAutopilot, streamAutopilotProgress, track } from '@/services/pricing';
 import { useWritingFlow } from '@/contexts/WritingFlowContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -861,6 +865,12 @@ const SortableOutlineNode: React.FC<{
 
 const OutlineStep: React.FC = () => {
   const { project, setOutline: setProjectOutline, setCurrentStep, completeStep } = useWritingFlow();
+  const { track: trackEvent } = useApp();
+  const { step1 } = useStep1();
+  const { estimate, setEstimate } = useEstimate();
+  const { autopilot, startAutopilot, minimizeAutopilot, pauseAutopilot, resumeAutopilot, stopAutopilot } = useAutopilot();
+  const { writingFlow, updateMetrics, toggleAddon, setError } = useNewWritingFlow();
+  const { pay, lockPrice: lockPriceState } = usePayment();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -876,6 +886,9 @@ const OutlineStep: React.FC = () => {
   
   const [selectedNodeId, setSelectedNodeId] = useState<string>();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [showGate1Modal, setShowGate1Modal] = useState(false);
+  const [verificationLevel, setVerificationLevel] = useState<'Basic' | 'Standard' | 'Pro'>('Standard');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   
   // DnD 传感器
   const sensors = useSensors(

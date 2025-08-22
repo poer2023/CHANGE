@@ -14,9 +14,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import EstimateCard from '@/components/WritingFlow/EstimateCard';
+import OutcomePanel from '@/components/WritingFlow/OutcomePanel';
 import AutopilotBanner from '@/components/AutopilotBanner';
-import { useStep1, useEstimate, useAutopilot, useApp } from '@/state/AppContext';
+import Gate1Modal from '@/components/Gate1Modal';
+import { useStep1, useEstimate, useAutopilot, useApp, useWritingFlow, usePayment } from '@/state/AppContext';
+import { lockPrice, createPaymentIntent, confirmPayment, startAutopilot as apiStartAutopilot, streamAutopilotProgress, track } from '@/services/pricing';
 import { debouncedEstimate, validateStep1ForEstimate } from '@/services/estimate';
 import { 
   BookOpen, 
@@ -59,93 +61,6 @@ const topicSchema = z.object({
 
 type TopicFormData = z.infer<typeof topicSchema>;
 
-// Autopilot confirmation dialog
-interface AutopilotDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: (config: { verifyLevel: VerifyLevel; allowPreprint: boolean; useStyle: boolean }) => void;
-}
-
-const AutopilotDialog: React.FC<AutopilotDialogProps> = ({ open, onOpenChange, onConfirm }) => {
-  const [verifyLevel, setVerifyLevel] = useState<VerifyLevel>('Standard');
-  const [allowPreprint, setAllowPreprint] = useState(true);
-  const [useStyle, setUseStyle] = useState(false);
-  const { step1 } = useStep1();
-
-  const handleConfirm = () => {
-    onConfirm({ verifyLevel, allowPreprint, useStyle });
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] rounded-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 text-xl">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#6E5BFF] to-[#8B7FFF] flex items-center justify-center">
-              <Zap className="h-4 w-4 text-white" />
-            </div>
-            自动推进
-          </DialogTitle>
-          <DialogDescription className="text-gray-600 leading-relaxed">
-            将自动完成文献检索、写作策略与大纲构建。此过程不收费。完成后进入结果页，正文生成前需付费解锁。
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Verification Level */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">核验等级</Label>
-            <Select value={verifyLevel} onValueChange={(v: VerifyLevel) => setVerifyLevel(v)}>
-              <SelectTrigger className="rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Basic">Basic - 基础核验</SelectItem>
-                <SelectItem value="Standard">Standard - 标准核验</SelectItem>
-                <SelectItem value="Pro">Pro - 专业核验</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Options */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label className="text-sm font-medium">允许替代资源</Label>
-                <p className="text-xs text-gray-600">包含预印本、二手引用等</p>
-              </div>
-              <Switch checked={allowPreprint} onCheckedChange={setAllowPreprint} />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label className="text-sm font-medium">使用文风样本对齐</Label>
-                <p className="text-xs text-gray-600">
-                  {step1.styleSamples.length > 0 ? `已上传 ${step1.styleSamples.length} 个样本` : '暂无样本文件'}
-                </p>
-              </div>
-              <Switch 
-                checked={useStyle} 
-                onCheckedChange={setUseStyle}
-                disabled={step1.styleSamples.length === 0}
-              />
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter className="gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-full">
-            取消
-          </Button>
-          <Button onClick={handleConfirm} className="rounded-full bg-gradient-to-r from-[#6E5BFF] to-[#8B7FFF]">
-            开始自动推进
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 
 // Card Section Component
@@ -319,13 +234,16 @@ const TopicStep: React.FC = () => {
   const { step1, updateStep1 } = useStep1();
   const { estimate, setEstimate } = useEstimate();
   const { autopilot, startAutopilot, minimizeAutopilot, pauseAutopilot, resumeAutopilot, stopAutopilot } = useAutopilot();
+  const { writingFlow, updateMetrics, toggleAddon, setError } = useWritingFlow();
+  const { pay, lockPrice: lockPriceState } = usePayment();
   const { toast } = useToast();
   const navigate = useNavigate();
   
   // Track page load time for analytics
   const [pageLoadTime] = useState(() => Date.now());
-  const [showAutopilotDialog, setShowAutopilotDialog] = useState(false);
+  const [showGate1Modal, setShowGate1Modal] = useState(false);
   const [verificationLevel, setVerificationLevel] = useState<VerifyLevel>('Standard');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   
   // Track page entry
   useEffect(() => {
@@ -492,14 +410,6 @@ const TopicStep: React.FC = () => {
     });
   };
 
-  const handleAutopilotStart = (config: { verifyLevel: VerifyLevel; allowPreprint: boolean; useStyle: boolean }) => {
-    startAutopilot(config);
-    toast({
-      title: 'AI 自动推进已启动',
-      description: '正在进行文献检索、策略制定和大纲构建'
-    });
-  };
-
   const handleShowPreview = () => {
     trackTyped('preview_sample_click', {
       context: 'topic_step',
@@ -511,6 +421,180 @@ const TopicStep: React.FC = () => {
       description: '样例预览功能即将上线'
     });
   };
+
+  const handlePayAndWrite = async () => {
+    try {
+      track('outcome_pay_and_write_click', { step: 'topic' });
+      
+      let finalPrice = pay.lockedPrice;
+      
+      // Step 1: Lock price if not already locked
+      if (!finalPrice) {
+        const priceLockResponse = await lockPrice({
+          title: step1.title,
+          wordCount: step1.wordCount,
+          verifyLevel: verificationLevel
+        });
+        
+        lockPriceState(priceLockResponse.value, priceLockResponse.expiresAt);
+        finalPrice = priceLockResponse;
+      }
+      
+      // Step 2: Show Gate1 modal for payment
+      setShowGate1Modal(true);
+      
+    } catch (error) {
+      console.error('Error in pay and write:', error);
+      setError(error instanceof Error ? error.message : '价格锁定失败，请重试');
+      
+      toast({
+        title: '错误',
+        description: '价格锁定失败，请重试',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleGate1Unlock = async () => {
+    try {
+      setIsProcessingPayment(true);
+      
+      if (!pay.lockedPrice) {
+        throw new Error('No locked price available');
+      }
+      
+      // Create payment intent
+      const paymentIntent = await createPaymentIntent({
+        price: pay.lockedPrice.value
+      });
+      
+      track('gate1_payment_intent_created', {
+        paymentIntentId: paymentIntent.paymentIntentId,
+        price: pay.lockedPrice.value
+      });
+      
+      // Simulate payment confirmation
+      const confirmResponse = await confirmPayment(paymentIntent.paymentIntentId);
+      
+      if (confirmResponse.status === 'succeeded') {
+        track('gate1_payment_success', {
+          paymentIntentId: paymentIntent.paymentIntentId,
+          price: pay.lockedPrice.value
+        });
+        
+        setShowGate1Modal(false);
+        
+        // Start autopilot after successful payment
+        await startAutopilotFlow();
+        
+        toast({
+          title: '支付成功',
+          description: '正在启动自动推进流程...'
+        });
+      } else {
+        throw new Error('Payment failed');
+      }
+      
+    } catch (error) {
+      console.error('Payment error:', error);
+      setError(error instanceof Error ? error.message : '支付失败，请重试');
+      
+      track('gate1_payment_error', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      
+      toast({
+        title: '支付失败',
+        description: '请稍后重试',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleGate1PreviewOnly = () => {
+    setShowGate1Modal(false);
+    toast({
+      title: '预览模式',
+      description: '您可以继续浏览，稍后再解锁完整功能'
+    });
+  };
+
+  const startAutopilotFlow = async () => {
+    try {
+      const config = {
+        verifyLevel: verificationLevel,
+        allowPreprint: true,
+        useStyle: step1.styleSamples.length > 0
+      };
+      
+      // Start autopilot via API
+      const response = await apiStartAutopilot({
+        fromStep: 'research' as any, // Continue from research since topic is done
+        config
+      });
+      
+      // Start local autopilot state
+      await startAutopilot(config);
+      
+      // Set up progress streaming
+      const cancelStream = streamAutopilotProgress(
+        response.taskId,
+        (progressData) => {
+          // Update autopilot progress
+          // This would be handled by the existing autopilot system
+        },
+        (docId) => {
+          // Navigate to result page when complete
+          navigate(`/result?from=autopilot&docId=${docId}`);
+        },
+        (error) => {
+          setError(error);
+          toast({
+            title: '自动推进失败',
+            description: error,
+            variant: 'destructive'
+          });
+        }
+      );
+      
+      track('autopilot_started_from_topic', {
+        taskId: response.taskId,
+        config
+      });
+      
+    } catch (error) {
+      console.error('Failed to start autopilot:', error);
+      setError(error instanceof Error ? error.message : '启动自动推进失败');
+    }
+  };
+
+  const handleVerifyLevelChange = (level: VerifyLevel) => {
+    setVerificationLevel(level);
+    track('outcome_verify_change', { level, step: 'topic' });
+  };
+
+  const handleToggleAddon = (key: string, enabled: boolean) => {
+    toggleAddon(key, enabled);
+    track('outcome_addon_toggle', { key, enabled, step: 'topic' });
+  };
+
+  const handleRetry = () => {
+    setError(undefined);
+    // Could retry the last failed operation
+    toast({
+      title: '重试',
+      description: '请重新尝试操作'
+    });
+  };
+
+  // Update metrics when style samples change
+  useEffect(() => {
+    updateMetrics({
+      styleSamples: step1.styleSamples.length
+    });
+  }, [step1.styleSamples.length, updateMetrics]);
 
   // Update pricing estimation when form values change
   useEffect(() => {
@@ -920,24 +1004,50 @@ const TopicStep: React.FC = () => {
             </form>
           </div>
 
-          {/* Right Column - Estimate Card */}
+          {/* Right Column - Outcome Panel */}
           <div className="w-full lg:w-[360px] lg:flex-shrink-0">
-            <EstimateCard
-              estimate={estimate}
-              onVerifyLevelChange={setVerificationLevel}
+            <OutcomePanel
+              step="topic"
+              lockedPrice={pay.lockedPrice}
+              estimate={{
+                priceRange: estimate.priceRange,
+                etaMinutes: estimate.etaMinutes,
+                citesRange: estimate.citesRange,
+                verifyLevel: verificationLevel
+              }}
+              metrics={writingFlow.metrics}
+              addons={writingFlow.addons}
+              autopilot={autopilot.running ? {
+                running: autopilot.running,
+                step: autopilot.step as any,
+                progress: autopilot.progress,
+                message: autopilot.logs[autopilot.logs.length - 1]?.msg
+              } : undefined}
+              error={writingFlow.error}
+              onVerifyChange={handleVerifyLevelChange}
+              onToggleAddon={handleToggleAddon}
               onPreviewSample={handleShowPreview}
-              onAutopilotClick={() => setShowAutopilotDialog(true)}
+              onPayAndWrite={handlePayAndWrite}
+              onRetry={handleRetry}
             />
           </div>
         </div>
       </div>
 
-      {/* Autopilot Dialog */}
-      <AutopilotDialog
-        open={showAutopilotDialog}
-        onOpenChange={setShowAutopilotDialog}
-        onConfirm={handleAutopilotStart}
-      />
+      {/* Gate1 Modal */}
+      {pay.lockedPrice && (
+        <Gate1Modal
+          open={showGate1Modal}
+          price={pay.lockedPrice}
+          benefits={[
+            '一次完整生成',
+            '2 次局部重写',
+            '全量引用核验'
+          ]}
+          onPreviewOnly={handleGate1PreviewOnly}
+          onUnlock={handleGate1Unlock}
+        />
+      )}
     </>
   );
 };

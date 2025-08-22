@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, FileCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import MobileMenu from './MobileMenu';
+import LoginDialog from './LoginDialog';
 
 const navigationItems = [
   { label: "价格", href: "#pricing" },
@@ -13,6 +16,10 @@ const NavBar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+  
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -67,6 +74,22 @@ const NavBar: React.FC = () => {
         });
       }
     }
+  };
+
+  const handleLoginClick = () => {
+    setIsLoginDialogOpen(true);
+  };
+
+  const handleTrialClick = () => {
+    if (isAuthenticated) {
+      navigate('/writing-flow');
+    } else {
+      setIsLoginDialogOpen(true);
+    }
+  };
+
+  const handleLoginSuccess = () => {
+    navigate('/writing-flow');
   };
 
   return (
@@ -135,6 +158,7 @@ const NavBar: React.FC = () => {
             {/* Desktop Action Buttons */}
             <div className="hidden lg:flex items-center space-x-3">
               <button
+                onClick={handleLoginClick}
                 className="px-6 py-2.5 text-indigo-700 border border-indigo-600 rounded-full hover:text-indigo-900 hover:border-indigo-700 transition-colors duration-120 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 data-event="cta_click"
                 data-label="login"
@@ -142,6 +166,7 @@ const NavBar: React.FC = () => {
                 登录
               </button>
               <button
+                onClick={handleTrialClick}
                 className="px-6 py-2.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors duration-120 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 data-event="cta_click"
                 data-label="start"
@@ -168,6 +193,13 @@ const NavBar: React.FC = () => {
       <MobileMenu 
         isOpen={isMobileMenuOpen} 
         onClose={() => setIsMobileMenuOpen(false)} 
+      />
+
+      {/* Login Dialog */}
+      <LoginDialog
+        open={isLoginDialogOpen}
+        onOpenChange={setIsLoginDialogOpen}
+        onSuccess={handleLoginSuccess}
       />
     </>
   );

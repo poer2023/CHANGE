@@ -18,7 +18,7 @@ const LandingNavigation = () => {
   const handleStartWriting = () => {
     if (isAuthenticated) {
       // 已登录用户直接跳转到表单页面
-      window.location.href = "/form";
+      window.location.href = "/writing-flow";
     } else {
       // 未登录用户打开登录弹窗
       setShowLoginDialog(true);

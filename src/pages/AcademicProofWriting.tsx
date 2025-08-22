@@ -10,6 +10,7 @@ import {
   Zap, Lock, Database, GraduationCap, AlertTriangle, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Import existing images
 import heroImage from '@/assets/hero-proof-of-authorship-dashboard.webp';
@@ -19,10 +20,13 @@ import evidencePackage from '@/assets/evidence-package-thumbnails.webp';
 import threeStepProcess from '@/assets/three-step-process.webp';
 import HeroCarousel from '@/components/HeroCarousel';
 import NavBar from '@/components/NavBar';
+import LoginDialog from '@/components/LoginDialog';
 
 const AcademicProofWriting = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [visibleSections, setVisibleSections] = useState(new Set());
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -45,7 +49,16 @@ const AcademicProofWriting = () => {
     document.dispatchEvent(new CustomEvent('analytics', {
       detail: { event: 'cta_primary_click', section: 'hero' }
     }));
-    navigate('/form');
+    
+    if (isAuthenticated) {
+      navigate('/writing-flow');
+    } else {
+      setIsLoginDialogOpen(true);
+    }
+  };
+
+  const handleLoginSuccess = () => {
+    navigate('/writing-flow');
   };
 
   const handleDownloadSample = () => {
@@ -942,6 +955,13 @@ const AcademicProofWriting = () => {
         </section>
         </main>
       </div>
+
+      {/* Login Dialog */}
+      <LoginDialog
+        open={isLoginDialogOpen}
+        onOpenChange={setIsLoginDialogOpen}
+        onSuccess={handleLoginSuccess}
+      />
     </>
   );
 };

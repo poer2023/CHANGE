@@ -61,12 +61,65 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Brand design system colors
+				brand: {
+					500: 'hsl(var(--brand-500))',
+					600: 'hsl(var(--brand-600))'
+				},
+				surface: {
+					DEFAULT: 'hsl(var(--surface))',
+					alt: 'hsl(var(--surface-alt))'
+				},
+				text: 'hsl(var(--text))',
+				'text-muted': 'hsl(var(--text-muted))',
+				// Status badge colors
+				'status-draft': {
+					bg: 'hsl(var(--status-draft-bg))',
+					text: 'hsl(var(--status-draft-text))',
+					border: 'hsl(var(--status-draft-border))'
+				},
+				'status-running': {
+					bg: 'hsl(var(--status-running-bg))',
+					text: 'hsl(var(--status-running-text))',
+					border: 'hsl(var(--status-running-border))'
+				},
+				'status-ready': {
+					bg: 'hsl(var(--status-ready-bg))',
+					text: 'hsl(var(--status-ready-text))',
+					border: 'hsl(var(--status-ready-border))'
+				},
+				'status-gate1': {
+					bg: 'hsl(var(--status-gate1-bg))',
+					text: 'hsl(var(--status-gate1-text))',
+					border: 'hsl(var(--status-gate1-border))'
+				},
+				'status-addon': {
+					bg: 'hsl(var(--status-addon-bg))',
+					text: 'hsl(var(--status-addon-text))',
+					border: 'hsl(var(--status-addon-border))'
 				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				sm: 'calc(var(--radius) - 4px)',
+				// Design system border radius
+				'card': '20px',
+				'btn': '12px',
+				'input': '12px'
+			},
+			boxShadow: {
+				'card': 'var(--shadow-card)',
+				'card-hover': 'var(--shadow-hover)'
+			},
+			backgroundImage: {
+				'brand-gradient': 'var(--brand-gradient)'
+			},
+			fontSize: {
+				'h1': ['28px', { lineHeight: '1.3', fontWeight: '700' }],
+				'h2': ['20px', { lineHeight: '1.4', fontWeight: '600' }],
+				'body': ['14px', { lineHeight: '1.45', fontWeight: '400' }]
 			},
 			keyframes: {
 				'accordion-down': {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -9,26 +9,25 @@ interface AuthGuardProps {
 
 const AuthGuard: React.FC<AuthGuardProps> = ({ children, requireAuth = true }) => {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">加载中...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
   if (requireAuth && !isAuthenticated) {
-    return <Navigate to="/" replace />;
+    // Redirect to signin with next parameter for protected routes
+    const currentPath = location.pathname + location.search;
+    const redirectUrl = `/?signin=1&next=${encodeURIComponent(currentPath)}`;
+    return <Navigate to={redirectUrl} replace />;
   }
-
-  // 移除自动重定向逻辑，允许已登录用户访问演示页面
-  // if (!requireAuth && isAuthenticated) {
-  //   return <Navigate to="/form" replace />;
-  // }
 
   return <>{children}</>;
 };

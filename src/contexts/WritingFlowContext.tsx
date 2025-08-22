@@ -10,7 +10,10 @@ import {
   Content,
   ChangeLog,
   ProjectMetadata,
-  StepValidation
+  StepValidation,
+  PricingEstimation,
+  AutoProgressState,
+  AutoProgressConfig
 } from '../types/writing-flow';
 
 // Action types for the reducer
@@ -35,7 +38,12 @@ type WritingFlowAction =
   | { type: 'LOAD_PROJECT'; payload: WritingProject }
   | { type: 'UPDATE_PROJECT_STATUS'; payload: 'draft' | 'in_progress' | 'completed' }
   | { type: 'UPDATE_METADATA'; payload: Partial<ProjectMetadata> }
-  | { type: 'SET_OUTLINE'; payload: OutlineNode[] };
+  | { type: 'SET_OUTLINE'; payload: OutlineNode[] }
+  | { type: 'UPDATE_PRICING_ESTIMATION'; payload: PricingEstimation }
+  | { type: 'START_AUTO_PROGRESS'; payload: AutoProgressConfig }
+  | { type: 'UPDATE_AUTO_PROGRESS'; payload: Partial<AutoProgressState> }
+  | { type: 'COMPLETE_AUTO_PROGRESS' }
+  | { type: 'CANCEL_AUTO_PROGRESS' };
 
 // Initial state
 const createInitialProject = (): WritingProject => {
@@ -102,6 +110,13 @@ interface WritingFlowContextType {
   resetProject: () => void;
   loadProject: (project: WritingProject) => void;
   updateProjectStatus: (status: 'draft' | 'in_progress' | 'completed') => void;
+  
+  // Pricing and auto-progress methods
+  updatePricingEstimation: (estimation: PricingEstimation) => void;
+  startAutoProgress: (config: AutoProgressConfig) => Promise<void>;
+  updateAutoProgress: (updates: Partial<AutoProgressState>) => void;
+  completeAutoProgress: () => void;
+  cancelAutoProgress: () => void;
   
   // Validation and utility methods
   validateStep: (step: WritingStep) => StepValidation;
@@ -321,6 +336,81 @@ const writingFlowReducer = (state: WritingProject, action: WritingFlowAction): W
         outline: action.payload
       };
 
+    case 'UPDATE_PRICING_ESTIMATION':
+      return {
+        ...updatedState,
+        metadata: {
+          ...state.metadata,
+          pricingEstimation: action.payload,
+          updatedAt: new Date()
+        }
+      };
+
+    case 'START_AUTO_PROGRESS':
+      return {
+        ...updatedState,
+        metadata: {
+          ...state.metadata,
+          autoProgressState: {
+            isActive: true,
+            currentStage: 'research',
+            progress: 0,
+            stages: [
+              { name: '文献检索', status: 'in_progress' },
+              { name: '写作策略', status: 'pending' },
+              { name: '大纲构建', status: 'pending' }
+            ],
+            config: action.payload
+          },
+          updatedAt: new Date()
+        }
+      };
+
+    case 'UPDATE_AUTO_PROGRESS':
+      return {
+        ...updatedState,
+        metadata: {
+          ...state.metadata,
+          autoProgressState: state.metadata.autoProgressState 
+            ? { ...state.metadata.autoProgressState, ...action.payload }
+            : undefined,
+          updatedAt: new Date()
+        }
+      };
+
+    case 'COMPLETE_AUTO_PROGRESS':
+      return {
+        ...updatedState,
+        currentStep: 'outline',
+        completedSteps: ['topic', 'research', 'strategy'],
+        metadata: {
+          ...state.metadata,
+          autoProgressState: state.metadata.autoProgressState 
+            ? { 
+                ...state.metadata.autoProgressState, 
+                isActive: false, 
+                currentStage: 'completed',
+                progress: 100,
+                stages: state.metadata.autoProgressState.stages.map(stage => ({
+                  ...stage,
+                  status: 'completed' as const
+                }))
+              }
+            : undefined,
+          updatedAt: new Date()
+        }
+      };
+
+    case 'CANCEL_AUTO_PROGRESS':
+      return {
+        ...updatedState,
+        metadata: {
+          ...state.metadata,
+          autoProgressState: undefined,
+          updatedAt: new Date()
+        }
+      };
+
     default:
       return state;
   }
@@ -434,6 +524,61 @@ export const WritingFlowProvider: React.FC<WritingFlowProviderProps> = ({ childr
 
   const updateProjectStatus = (status: 'draft' | 'in_progress' | 'completed') => {
     dispatch({ type: 'UPDATE_PROJECT_STATUS', payload: status });
+  };
+
+  // Pricing and auto-progress methods
+  const updatePricingEstimation = (estimation: PricingEstimation) => {
+    dispatch({ type: 'UPDATE_PRICING_ESTIMATION', payload: estimation });
+  };
+
+  const startAutoProgress = async (config: AutoProgressConfig) => {
+    dispatch({ type: 'START_AUTO_PROGRESS', payload: config });
+    
+    try {
+      // Simulate research step
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      dispatch({ type: 'UPDATE_AUTO_PROGRESS', payload: { 
+        currentStage: 'strategy',
+        progress: 33,
+        stages: [
+          { name: '文献检索', status: 'completed', message: '已找到相关文献' },
+          { name: '写作策略', status: 'in_progress' },
+          { name: '大纲构建', status: 'pending' }
+        ]
+      }});
+
+      // Simulate strategy step
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      dispatch({ type: 'UPDATE_AUTO_PROGRESS', payload: { 
+        currentStage: 'outline',
+        progress: 66,
+        stages: [
+          { name: '文献检索', status: 'completed', message: '已找到相关文献' },
+          { name: '写作策略', status: 'completed', message: '策略制定完成' },
+          { name: '大纲构建', status: 'in_progress' }
+        ]
+      }});
+
+      // Simulate outline step
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      dispatch({ type: 'COMPLETE_AUTO_PROGRESS' });
+      
+    } catch (error) {
+      console.error('Auto-progress failed:', error);
+      dispatch({ type: 'CANCEL_AUTO_PROGRESS' });
+    }
+  };
+
+  const updateAutoProgress = (updates: Partial<AutoProgressState>) => {
+    dispatch({ type: 'UPDATE_AUTO_PROGRESS', payload: updates });
+  };
+
+  const completeAutoProgress = () => {
+    dispatch({ type: 'COMPLETE_AUTO_PROGRESS' });
+  };
+
+  const cancelAutoProgress = () => {
+    dispatch({ type: 'CANCEL_AUTO_PROGRESS' });
   };
 
   // Validation and utility methods
@@ -625,6 +770,13 @@ export const WritingFlowProvider: React.FC<WritingFlowProviderProps> = ({ childr
     resetProject,
     loadProject,
     updateProjectStatus,
+    
+    // Pricing and auto-progress methods
+    updatePricingEstimation,
+    startAutoProgress,
+    updateAutoProgress,
+    completeAutoProgress,
+    cancelAutoProgress,
     
     // Validation and utility methods
     validateStep,

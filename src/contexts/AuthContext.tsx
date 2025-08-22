@@ -8,6 +8,7 @@ interface User {
   phone?: string;
   joinDate?: string;
   lastLoginDate?: string;
+  plan?: 'Free' | 'Standard' | 'Pro';
 }
 
 interface AuthContextType {
@@ -61,7 +62,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       avatar: `https://ui-avatars.com/api/?name=${email.split('@')[0]}&background=random`,
       phone: '+86 138****8888',
       joinDate: '2024-01-01',
-      lastLoginDate: new Date().toISOString()
+      lastLoginDate: new Date().toISOString(),
+      plan: 'Standard'
     };
     
     setUser(mockUser);

@@ -15,6 +15,12 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        // Status badge variants using design system colors
+        draft: "bg-status-draft-bg text-status-draft-text border-status-draft-border",
+        running: "bg-status-running-bg text-status-running-text border-status-running-border",
+        ready: "bg-status-ready-bg text-status-ready-text border-status-ready-border",
+        gate1: "bg-status-gate1-bg text-status-gate1-text border-status-gate1-border",
+        addon: "bg-status-addon-bg text-status-addon-text border-status-addon-border",
       },
     },
     defaultVariants: {

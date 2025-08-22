@@ -6,6 +6,7 @@ export type SourceType = 'any' | 'papers' | 'books' | 'web' | 'datasets' | 'othe
 export type NoteType = 'direct' | 'paraphrase' | 'summary';
 export type ArgumentType = 'argumentative' | 'analytical' | 'comparative' | 'descriptive';
 export type WritingStep = 'topic' | 'research' | 'strategy' | 'outline' | 'content';
+export type VerificationLevel = 'Basic' | 'Standard' | 'Pro';
 
 // 文件元数据
 export interface FileMeta {
@@ -144,6 +145,54 @@ export interface StyleMetrics {
   polishLevel: 'light' | 'medium' | 'strong';
 }
 
+// 定价估算
+export interface PricingEstimation {
+  basePrice: number;
+  finalPrice: number;
+  priceRange: {
+    min: number;
+    max: number;
+  };
+  tier: 'budget' | 'standard' | 'premium';
+  estimatedCitations: {
+    min: number;
+    max: number;
+  };
+  verificationCoverage: number;
+  estimatedTime: {
+    min: number;
+    max: number;
+  };
+  breakdown: {
+    base: number;
+    complexity: number;
+    verification: number;
+    resources: number;
+    style: number;
+  };
+  deliverables: string[];
+}
+
+// 自动进度配置
+export interface AutoProgressConfig {
+  strictVerification: boolean;
+  conservativeCitations: boolean;
+  allowAlternativeResources: boolean;
+}
+
+// 自动进度状态
+export interface AutoProgressState {
+  isActive: boolean;
+  currentStage: 'research' | 'strategy' | 'outline' | 'completed' | null;
+  progress: number;
+  stages: Array<{
+    name: string;
+    status: 'pending' | 'in_progress' | 'completed' | 'error';
+    message?: string;
+  }>;
+  config?: AutoProgressConfig;
+}
+
 // 项目元数据
 export interface ProjectMetadata {
   createdAt: Date;
@@ -164,6 +213,8 @@ export interface ProjectMetadata {
   manualEditCount: number;
   exportVersion: number;
   userId?: string;
+  pricingEstimation?: PricingEstimation;
+  autoProgressState?: AutoProgressState;
 }
 
 // 写作项目（完整数据结构）

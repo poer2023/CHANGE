@@ -18,6 +18,7 @@ import {
   Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useApp } from '@/state/AppContext';
 
 import { 
   AgentPanelState, 
@@ -51,6 +52,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
   onScopeChange,
   className = ''
 }) => {
+  const { trackTyped } = useApp();
   const [activeTab, setActiveTab] = useState<'command' | 'audit'>('command');
   const [state, setState] = useState<AgentPanelState>({
     status: 'idle',
@@ -86,12 +88,21 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
 
   // 处理命令提交
   const handleCommandSubmit = useCallback(async (command: string) => {
+    const startTime = Date.now();
+    
     setState(prev => ({ 
       ...prev, 
       status: 'planning', 
       currentCommand: command,
       error: undefined
     }));
+
+    // Track command submission
+    trackTyped('agent_command_submit', {
+      command,
+      commandLength: command.length,
+      scope: state.scope.type
+    }, 'ai_assistant', 'command');
 
     try {
       const request: PlanCommandRequest = {
@@ -110,6 +121,14 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
         showPreview: true
       }));
 
+      // Track plan generation success
+      trackTyped('agent_plan_generated', {
+        planId: response.plan.id,
+        stepsCount: response.plan.steps.length,
+        estimatedTime: response.plan.estimatedTime,
+        commandType: response.plan.steps.map(s => s.type).join(',')
+      }, 'ai_assistant', 'plan');
+
       if (response.warnings.length > 0) {
         response.warnings.forEach(warning => {
           toast.warning(warning);
@@ -123,16 +142,33 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
         status: 'error',
         error: errorMessage
       }));
+      
+      // Track command error
+      trackTyped('error_occurred', {
+        errorType: 'client',
+        errorMessage,
+        context: 'agent_command_submit',
+        userAgent: navigator.userAgent
+      }, 'error', 'agent');
+      
       toast.error(errorMessage);
     }
-  }, [state.scope]);
+  }, [state.scope, trackTyped]);
 
   // 应用修改
   const handleApplyChanges = useCallback(async () => {
     if (!state.plan) return;
 
+    const startTime = Date.now();
     setState(prev => ({ ...prev, status: 'applying' }));
     setExecutionProgress(0);
+
+    // Track plan application start
+    trackTyped('agent_plan_apply', {
+      planId: state.plan.id,
+      stepsCount: state.plan.steps.length,
+      executionTime: 0
+    }, 'ai_assistant', 'execution');
 
     // 模拟进度更新
     const progressInterval = setInterval(() => {
@@ -152,6 +188,8 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
       clearInterval(progressInterval);
       setExecutionProgress(100);
 
+      const executionTime = Date.now() - startTime;
+
       setState(prev => ({
         ...prev,
         status: response.result.status,
@@ -160,9 +198,24 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
 
       setLastOperation(response.auditEntry.id);
 
+      // Track operation success/failure
       if (response.result.status === 'success') {
+        trackTyped('agent_operation_success', {
+          operationId: response.auditEntry.id,
+          operationType: 'plan_execution',
+          executionTime,
+          changedFiles: response.result.changedFiles || 0
+        }, 'ai_assistant', 'success');
+        
         toast.success(`修改已成功应用！耗时 ${Math.round(response.result.duration / 1000)}s`);
       } else if (response.result.status === 'partial') {
+        trackTyped('agent_operation_failed', {
+          operationId: response.auditEntry.id,
+          error: 'partial_success',
+          partialSuccess: true,
+          failedSteps: response.result.failedSteps.length
+        }, 'error', 'agent');
+        
         toast.warning(`部分修改成功，${response.result.failedSteps.length} 个步骤失败`);
       }
 
@@ -172,19 +225,29 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
     } catch (error) {
       clearInterval(progressInterval);
       const errorMessage = error instanceof Error ? error.message : '执行失败';
+      
       setState(prev => ({ 
         ...prev, 
         status: 'error',
         error: errorMessage
       }));
+      
+      trackTyped('agent_operation_failed', {
+        operationId: state.plan.id,
+        error: errorMessage,
+        partialSuccess: false,
+        failedSteps: state.plan.steps.length
+      }, 'error', 'agent');
+      
       toast.error(errorMessage);
     }
-  }, [state.plan]);
+  }, [state.plan, trackTyped]);
 
   // 撤销操作
   const handleUndo = useCallback(async () => {
     if (!lastOperation) return;
 
+    const startTime = Date.now();
     try {
       setState(prev => ({ ...prev, status: 'applying' }));
       
@@ -193,15 +256,30 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
       setState(prev => ({ ...prev, status: 'idle' }));
       setLastOperation(null);
       
+      const undoTime = Date.now() - startTime;
+      
+      trackTyped('agent_undo', {
+        operationId: lastOperation,
+        undoTime,
+        success: true
+      }, 'ai_assistant', 'undo');
+      
       toast.success('操作已成功撤销');
       
       // TODO: 刷新相关数据
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '撤销失败';
+      
+      trackTyped('agent_undo', {
+        operationId: lastOperation,
+        undoTime: Date.now() - startTime,
+        success: false
+      }, 'error', 'agent');
+      
       toast.error(errorMessage);
     }
-  }, [lastOperation]);
+  }, [lastOperation, trackTyped]);
 
   // 保存为配方
   const handleSaveRecipe = useCallback(() => {
@@ -219,11 +297,24 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
         usageCount: 0
       });
 
+      trackTyped('agent_recipe_save', {
+        recipeName,
+        command: state.currentCommand,
+        stepsCount: state.plan.steps.length
+      }, 'ai_assistant', 'recipe');
+
       toast.success(`配方 "${recipe.name}" 已保存`);
     } catch (error) {
+      trackTyped('error_occurred', {
+        errorType: 'client',
+        errorMessage: '保存配方失败',
+        context: 'agent_recipe_save',
+        userAgent: navigator.userAgent
+      }, 'error', 'agent');
+      
       toast.error('保存配方失败');
     }
-  }, [state.currentCommand, state.plan]);
+  }, [state.currentCommand, state.plan, trackTyped]);
 
   // 重置状态
   const handleReset = useCallback(() => {
@@ -252,7 +343,15 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
           variant={activeTab === 'command' ? 'default' : 'ghost'}
           size="sm"
           className="flex-1 rounded-none border-0 h-10"
-          onClick={() => setActiveTab('command')}
+          onClick={() => {
+            setActiveTab('command');
+            trackTyped('tab_change', {
+              tabGroup: 'agent_panel',
+              previousTab: activeTab,
+              newTab: 'command',
+              context: 'agent_ui'
+            }, 'user_action', 'ui_interaction');
+          }}
         >
           <Zap className="w-4 h-4 mr-2" />
           命令执行
@@ -261,7 +360,15 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
           variant={activeTab === 'audit' ? 'default' : 'ghost'}
           size="sm"
           className="flex-1 rounded-none border-0 h-10"
-          onClick={() => setActiveTab('audit')}
+          onClick={() => {
+            setActiveTab('audit');
+            trackTyped('tab_change', {
+              tabGroup: 'agent_panel',
+              previousTab: activeTab,
+              newTab: 'audit',
+              context: 'agent_ui'
+            }, 'user_action', 'ui_interaction');
+          }}
         >
           <Activity className="w-4 h-4 mr-2" />
           操作审计

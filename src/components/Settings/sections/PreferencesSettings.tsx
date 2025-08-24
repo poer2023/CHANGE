@@ -10,8 +10,10 @@ import { Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserPreferences } from '@/lib/types';
 import { mockUserPreferences } from '@/lib/mockData';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const PreferencesSettings: React.FC = () => {
+  const { t } = useTranslation();
   const [preferences, setPreferences] = useState<UserPreferences>(mockUserPreferences);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,33 +22,33 @@ const PreferencesSettings: React.FC = () => {
     try {
       // TODO: API call to save preferences
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('偏好设置已保存');
+      toast.success(t('preferences.saved_success'));
     } catch (error) {
-      toast.error('保存失败，请重试');
+      toast.error(t('preferences.save_failed'));
     } finally {
       setIsLoading(false);
     }
   };
 
   const citationFormats = [
-    { value: 'APA', label: 'APA (American Psychological Association)' },
-    { value: 'MLA', label: 'MLA (Modern Language Association)' },
-    { value: 'Chicago', label: 'Chicago/Turabian' },
-    { value: 'IEEE', label: 'IEEE (Institute of Electrical and Electronics Engineers)' },
-    { value: 'GB/T 7714', label: 'GB/T 7714 (中国国家标准)' }
+    { value: 'APA', label: t('citation.format.apa') },
+    { value: 'MLA', label: t('citation.format.mla') },
+    { value: 'Chicago', label: t('citation.format.chicago') },
+    { value: 'IEEE', label: t('citation.format.ieee') },
+    { value: 'GB/T 7714', label: t('citation.format.gb_t_7714') }
   ];
 
   const languageLevels = [
-    { value: '本科', label: '本科 (Undergraduate)' },
-    { value: '研究生', label: '研究生 (Graduate)' },
-    { value: 'ESL', label: 'ESL (English as Second Language)' },
-    { value: '专业', label: '专业 (Professional)' }
+    { value: '本科', label: t('language_level.undergraduate') },
+    { value: '研究生', label: t('language_level.graduate') },
+    { value: 'ESL', label: t('language_level.esl') },
+    { value: '专业', label: t('language_level.professional') }
   ];
 
   const verificationLevels = [
-    { value: 'Basic', label: '基础', description: '基本引用检查' },
-    { value: 'Standard', label: '标准', description: '全面引用核验' },
-    { value: 'Pro', label: '专业', description: '深度学术验证' }
+    { value: 'Basic', label: t('verification.basic'), description: t('verification.basic_desc') },
+    { value: 'Standard', label: t('verification.standard'), description: t('verification.standard_desc') },
+    { value: 'Pro', label: t('verification.pro'), description: t('verification.pro_desc') }
   ];
 
   return (
@@ -54,16 +56,16 @@ const PreferencesSettings: React.FC = () => {
       {/* 默认设置 */}
       <Card className="rounded-2xl border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle className="text-[16px] font-semibold">默认设置</CardTitle>
+          <CardTitle className="text-[16px] font-semibold">{t('preferences.default_settings')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* 默认引用格式 */}
           <div className="space-y-3">
-            <Label>默认引用格式</Label>
+            <Label>{t('preferences.default_citation_format')}</Label>
             <RadioGroup
               value={preferences.defaultCitationFormat}
-              onValueChange={(value: any) => 
-                setPreferences({...preferences, defaultCitationFormat: value})
+              onValueChange={(value: string) => 
+                setPreferences({...preferences, defaultCitationFormat: value as UserPreferences['defaultCitationFormat']})
               }
               className="space-y-2"
             >
@@ -82,11 +84,11 @@ const PreferencesSettings: React.FC = () => {
 
           {/* 默认语言水平 */}
           <div className="space-y-2">
-            <Label htmlFor="language-level">默认语言水平</Label>
+            <Label htmlFor="language-level">{t('preferences.default_language_level')}</Label>
             <Select 
               value={preferences.defaultLanguageLevel} 
-              onValueChange={(value: any) => 
-                setPreferences({...preferences, defaultLanguageLevel: value})
+              onValueChange={(value: string) => 
+                setPreferences({...preferences, defaultLanguageLevel: value as UserPreferences['defaultLanguageLevel']})
               }
             >
               <SelectTrigger>
@@ -106,7 +108,7 @@ const PreferencesSettings: React.FC = () => {
 
           {/* 默认核验等级 */}
           <div className="space-y-3">
-            <Label>默认核验等级</Label>
+            <Label>{t('preferences.default_verification_level')}</Label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {verificationLevels.map((level) => (
                 <div
@@ -117,7 +119,7 @@ const PreferencesSettings: React.FC = () => {
                       : 'border-muted hover:border-muted-foreground/50'
                   }`}
                   onClick={() => 
-                    setPreferences({...preferences, defaultVerificationLevel: level.value as any})
+                    setPreferences({...preferences, defaultVerificationLevel: level.value as UserPreferences['defaultVerificationLevel']})
                   }
                 >
                   <div className="flex items-center space-x-2 mb-1">
@@ -139,15 +141,15 @@ const PreferencesSettings: React.FC = () => {
       {/* 编辑器设置 */}
       <Card className="rounded-2xl border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle className="text-[16px] font-semibold">编辑器设置</CardTitle>
+          <CardTitle className="text-[16px] font-semibold">{t('preferences.editor_settings')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* 自动保存 */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label>自动保存</Label>
+              <Label>{t('preferences.auto_save')}</Label>
               <p className="text-xs text-muted-foreground">
-                自动保存您的编辑内容
+                {t('preferences.auto_save_desc')}
               </p>
             </div>
             <Switch
@@ -163,9 +165,9 @@ const PreferencesSettings: React.FC = () => {
           {/* 启用快捷键 */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label>启用快捷键</Label>
+              <Label>{t('preferences.enable_shortcuts')}</Label>
               <p className="text-xs text-muted-foreground">
-                / 搜索、N 新建、U 上传、A 一键完成
+                {t('preferences.shortcuts_desc')}
               </p>
             </div>
             <Switch
@@ -182,8 +184,8 @@ const PreferencesSettings: React.FC = () => {
           <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-200">
             <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-xs text-blue-800">
-              <p className="font-medium">结果页文档宽度</p>
-              <p>文档显示宽度固定为 760px，以确保最佳阅读体验。此设置不可更改。</p>
+              <p className="font-medium">{t('preferences.document_width_note_title')}</p>
+              <p>{t('preferences.document_width_note_desc')}</p>
             </div>
           </div>
         </CardContent>
@@ -192,14 +194,14 @@ const PreferencesSettings: React.FC = () => {
       {/* 证据包设置 */}
       <Card className="rounded-2xl border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle className="text-[16px] font-semibold">证据包默认包含项</CardTitle>
+          <CardTitle className="text-[16px] font-semibold">{t('preferences.evidence_pack_settings')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label>引用清单</Label>
+              <Label>{t('preferences.citation_list')}</Label>
               <p className="text-xs text-muted-foreground">
-                导出完整的引用来源清单
+                {t('preferences.citation_list_desc')}
               </p>
             </div>
             <Switch
@@ -218,9 +220,9 @@ const PreferencesSettings: React.FC = () => {
 
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label>操作时间线</Label>
+              <Label>{t('preferences.timeline')}</Label>
               <p className="text-xs text-muted-foreground">
-                包含详细的操作审计记录
+                {t('preferences.timeline_desc')}
               </p>
             </div>
             <Switch
@@ -239,9 +241,9 @@ const PreferencesSettings: React.FC = () => {
 
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label>口头核验卡</Label>
+              <Label>{t('preferences.defense_card')}</Label>
               <p className="text-xs text-muted-foreground">
-                生成面谈答辩要点总结
+                {t('preferences.defense_card_desc')}
               </p>
             </div>
             <Switch
@@ -267,7 +269,7 @@ const PreferencesSettings: React.FC = () => {
           disabled={isLoading}
           className="rounded-xl"
         >
-          {isLoading ? '保存中...' : '保存偏好设置'}
+          {isLoading ? t('preferences.saving') : t('preferences.save_preferences')}
         </Button>
       </div>
     </div>

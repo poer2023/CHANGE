@@ -5,7 +5,7 @@ export type AssignmentType = 'paper' | 'report' | 'review' | 'comment';
 export type SourceType = 'any' | 'papers' | 'books' | 'web' | 'datasets' | 'other';
 export type NoteType = 'direct' | 'paraphrase' | 'summary';
 export type ArgumentType = 'argumentative' | 'analytical' | 'comparative' | 'descriptive';
-export type WritingStep = 'topic' | 'research' | 'strategy' | 'outline' | 'content';
+export type WritingStep = 'topic' | 'research' | 'strategy' | 'outline';
 export type VerificationLevel = 'Basic' | 'Standard' | 'Pro';
 
 // 文件元数据
@@ -285,7 +285,7 @@ export interface SearchResult {
   verified: boolean;
 }
 
-// Document Data for ContentStep
+// Document Data for Content Generation
 export interface DocumentData {
   docTitle: string;
   createdAt: string;

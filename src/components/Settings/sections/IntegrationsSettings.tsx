@@ -4,17 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Cloud, Link, Settings } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const IntegrationsSettings: React.FC = () => {
+  const { t } = useTranslation();
+  
   const handleConnectCloud = () => {
-    toast.info('云盘集成功能正在开发中，敬请期待');
+    toast.info(t('settings.integrations.cloud_dev_toast'));
   };
 
   const integrations = [
     {
       id: 'cloud-storage',
-      name: '云盘同步',
-      description: '将您的文档自动同步到云端存储服务',
+      name: t('settings.integrations.cloud_sync'),
+      description: t('settings.integrations.cloud_sync_desc'),
       icon: Cloud,
       status: 'not_connected',
       providers: ['百度网盘', '阿里云盘', 'OneDrive', 'Google Drive'],
@@ -24,9 +27,9 @@ const IntegrationsSettings: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
-      connected: { label: '已连接', className: 'bg-green-100 text-green-800' },
-      not_connected: { label: '未连接', className: 'bg-gray-100 text-gray-800' },
-      error: { label: '连接错误', className: 'bg-red-100 text-red-800' }
+      connected: { label: t('settings.integrations.status.connected'), className: 'bg-green-100 text-green-800' },
+      not_connected: { label: t('settings.integrations.status.not_connected'), className: 'bg-gray-100 text-gray-800' },
+      error: { label: t('settings.integrations.status.error'), className: 'bg-red-100 text-red-800' }
     };
 
     const config = statusMap[status as keyof typeof statusMap] || statusMap.not_connected;
@@ -44,12 +47,12 @@ const IntegrationsSettings: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-[16px] font-semibold flex items-center gap-2">
             <Link className="h-4 w-4" />
-            第三方集成
+            {t('settings.integrations.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            连接第三方服务以增强您的写作体验。我们正在不断添加新的集成选项。
+            {t('settings.integrations.description')}
           </p>
         </CardContent>
       </Card>
@@ -74,7 +77,7 @@ const IntegrationsSettings: React.FC = () => {
                         {getStatusBadge(integration.status)}
                         {integration.comingSoon && (
                           <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                            即将推出
+                            {t('settings.integrations.coming_soon')}
                           </Badge>
                         )}
                       </div>
@@ -85,7 +88,7 @@ const IntegrationsSettings: React.FC = () => {
                       
                       {integration.providers && (
                         <div className="flex flex-wrap gap-1 mt-2">
-                          <span className="text-xs text-muted-foreground">支持：</span>
+                          <span className="text-xs text-muted-foreground">{t('settings.integrations.supports')}</span>
                           {integration.providers.map((provider, index) => (
                             <span key={provider} className="text-xs text-muted-foreground">
                               {provider}
@@ -106,7 +109,7 @@ const IntegrationsSettings: React.FC = () => {
                         onClick={handleConnectCloud}
                         disabled={integration.comingSoon}
                       >
-                        连接
+                        {t('settings.integrations.connect')}
                       </Button>
                     )}
                     
@@ -118,14 +121,14 @@ const IntegrationsSettings: React.FC = () => {
                           className="rounded-xl"
                         >
                           <Settings className="h-3 w-3 mr-1" />
-                          设置
+                          {t('settings.integrations.settings')}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
-                          断开
+                          {t('settings.integrations.disconnect')}
                         </Button>
                       </>
                     )}
@@ -144,9 +147,9 @@ const IntegrationsSettings: React.FC = () => {
             <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mx-auto">
               <Settings className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">更多集成即将推出</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('settings.integrations.more_coming')}</p>
             <p className="text-xs text-muted-foreground">
-              我们正在开发更多第三方服务集成，包括文献管理工具、写作助手等
+              {t('settings.integrations.more_coming_desc')}
             </p>
           </div>
         </CardContent>

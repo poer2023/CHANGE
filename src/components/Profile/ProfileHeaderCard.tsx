@@ -13,6 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { User as UserType } from '@/lib/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ProfileHeaderCardProps {
   user: UserType;
@@ -20,6 +21,7 @@ interface ProfileHeaderCardProps {
 
 const ProfileHeaderCard: React.FC<ProfileHeaderCardProps> = ({ user }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const formatLastLogin = (timestamp: string, city?: string, ip?: string) => {
     const date = new Date(timestamp);
@@ -71,12 +73,12 @@ const ProfileHeaderCard: React.FC<ProfileHeaderCardProps> = ({ user }) => {
                 <AlertCircle className="h-4 w-4 text-amber-500" />
               )}
               <span className="text-xs">
-                {user.emailVerified ? '已验证' : '未验证'}
+                {user.emailVerified ? t('profile.header.email_verified') : t('profile.header.email_not_verified')}
               </span>
             </div>
             
             <div className="text-sm text-muted-foreground">
-              最后登录：{formatLastLogin(user.lastLoginAt, user.lastLoginCity, user.lastLoginIp)}
+              {t('profile.header.last_login')}{formatLastLogin(user.lastLoginAt, user.lastLoginCity, user.lastLoginIp)}
             </div>
           </div>
         </div>
@@ -89,7 +91,7 @@ const ProfileHeaderCard: React.FC<ProfileHeaderCardProps> = ({ user }) => {
             onClick={() => handleQuickAction('account')}
           >
             <User className="h-4 w-4 mr-2" />
-            编辑资料
+            {t('profile.header.edit_profile')}
           </Button>
           
           <Button
@@ -99,7 +101,7 @@ const ProfileHeaderCard: React.FC<ProfileHeaderCardProps> = ({ user }) => {
             onClick={() => handleQuickAction('security')}
           >
             <Shield className="h-4 w-4 mr-2" />
-            管理安全
+            {t('profile.header.manage_security')}
           </Button>
           
           <Button
@@ -109,7 +111,7 @@ const ProfileHeaderCard: React.FC<ProfileHeaderCardProps> = ({ user }) => {
             onClick={() => handleQuickAction('billing')}
           >
             <CreditCard className="h-4 w-4 mr-2" />
-            订单发票
+            {t('profile.header.billing_invoices')}
           </Button>
           
           <Button
@@ -119,7 +121,7 @@ const ProfileHeaderCard: React.FC<ProfileHeaderCardProps> = ({ user }) => {
             onClick={() => handleQuickAction('data')}
           >
             <Download className="h-4 w-4 mr-2" />
-            下载数据
+            {t('profile.header.download_data')}
           </Button>
         </div>
       </div>

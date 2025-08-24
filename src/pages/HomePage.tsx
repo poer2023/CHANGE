@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
+import LanguageToggle from '@/components/LanguageToggle';
 
 // Import home components
 import HomeSidebar from '@/components/Home/HomeSidebar';
@@ -19,6 +21,7 @@ import type { DocItem } from '@/types/home';
 const HomePage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -93,9 +96,9 @@ const HomePage: React.FC = () => {
       // In real app, this would call payment API
       await new Promise(resolve => setTimeout(resolve, 1000));
       updateDocumentStatus(docId, 'generating');
-      toast.success('解锁成功！正在生成您的文档...');
+      toast.success(t('home.unlock_success'));
     } catch (error) {
-      toast.error('支付失败，请重试');
+      toast.error(t('home.payment_failed'));
     }
   };
 
@@ -107,15 +110,15 @@ const HomePage: React.FC = () => {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
       removeDocumentAddons(docId);
-      toast.success('购买成功！正在导出您的文档...');
+      toast.success(t('home.purchase_success'));
     } catch (error) {
-      toast.error('购买失败，请重试');
+      toast.error(t('home.purchase_failed'));
     }
   };
 
   const handleUploadConfirm = (files: File[]) => {
     setUploadDialogOpen(false);
-    toast.success(`已选择 ${files.length} 个文件，正在处理...`);
+    toast.success(t('home.files_selected').replace('${count}', files.length.toString()));
     // Navigate to writing flow with upload context
     navigate('/writing-flow/topic', { state: { uploadedFiles: files } });
   };
@@ -153,16 +156,17 @@ const HomePage: React.FC = () => {
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div className="min-w-0">
                   <h1 className="text-h1 text-text">
-                    欢迎回来，{user?.name}
+                    {t('home.welcome_back')}{user?.name}
                   </h1>
                   <p className="text-body text-text-muted mt-1">
-                    开始你的新作品
+                    {t('home.getting_started')}
                   </p>
                 </div>
                 
-                {/* Inline search - priority position */}
-                <div className="flex-shrink-0">
+                {/* Inline search and language toggle - priority position */}
+                <div className="flex-shrink-0 flex items-center gap-4">
                   <InlineSearch />
+                  <LanguageToggle />
                 </div>
               </div>
 

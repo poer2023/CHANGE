@@ -41,7 +41,11 @@ export const createInitialState = (): AppState => ({
     currentStep: 'topic',
     metrics: {},
     addons: []
-  }
+  },
+  ui: {
+    gate1ModalOpen: false
+  },
+  demoMode: false
 });
 
 // Reducer function
@@ -290,7 +294,7 @@ export function appReducer(state: AppState, action: Action): AppState {
         }
       };
 
-    case 'WRITING_FLOW_TOGGLE_ADDON':
+    case 'WRITING_FLOW_TOGGLE_ADDON': {
       const { addon, enabled } = action.payload;
       const currentAddons = state.writingFlow.addons;
       const updatedAddons = enabled
@@ -304,6 +308,7 @@ export function appReducer(state: AppState, action: Action): AppState {
           addons: updatedAddons
         }
       };
+    }
 
     case 'WRITING_FLOW_SET_ERROR':
       return {
@@ -314,10 +319,36 @@ export function appReducer(state: AppState, action: Action): AppState {
         }
       };
 
+    case 'DEMO_MODE_TOGGLE':
+      return {
+        ...state,
+        demoMode: action.payload
+      };
+
     case 'LOAD_PERSISTED_STATE':
       return {
         ...state,
         ...action.payload
+      };
+
+    case 'SHOW_GATE1_MODAL':
+      return {
+        ...state,
+        ui: {
+          ...state.ui,
+          gate1ModalOpen: true,
+          gate1ModalData: action.payload
+        }
+      };
+
+    case 'HIDE_GATE1_MODAL':
+      return {
+        ...state,
+        ui: {
+          ...state.ui,
+          gate1ModalOpen: false,
+          gate1ModalData: undefined
+        }
       };
 
     default:

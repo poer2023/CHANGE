@@ -15,12 +15,14 @@ interface AutopilotInlineProps {
   currentStep: 'search' | 'strategy' | 'outline' | 'done' | 'error';
   progress: number; // 0-100
   message?: string;
+  variant?: 'default' | 'ghost';
 }
 
 const AutopilotInline: React.FC<AutopilotInlineProps> = ({
   currentStep,
   progress,
-  message
+  message,
+  variant = 'default'
 }) => {
   const steps = [
     { key: 'search', label: '文献检索', icon: Search },
@@ -48,6 +50,26 @@ const AutopilotInline: React.FC<AutopilotInlineProps> = ({
       return 'pending';
     }
   };
+
+  if (variant === 'ghost') {
+    // Simplified ghost variant - only progress bar
+    return (
+      <div className="space-y-2">
+        <Progress 
+          value={progress} 
+          className="h-1"
+          indicatorClassName={cn(
+            currentStep === 'error' ? 'bg-red-500' : 'bg-[#6E5BFF]'
+          )}
+        />
+        {message && (
+          <div className="text-xs text-muted-foreground">
+            {message}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

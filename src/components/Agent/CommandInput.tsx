@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Scope } from '@/types/agent';
 import { EXAMPLE_COMMANDS } from '@/services/agentApi';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface CommandInputProps {
   onSubmit: (command: string) => void;
@@ -32,6 +33,7 @@ const CommandInput: React.FC<CommandInputProps> = ({
   placeholder,
   className = ''
 }) => {
+  const { t } = useTranslation();
   const [command, setCommand] = useState('');
   const [showExamples, setShowExamples] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -80,10 +82,10 @@ const CommandInput: React.FC<CommandInputProps> = ({
   // 获取作用域显示信息
   const getScopeDisplay = (scope: Scope) => {
     const scopeInfo = {
-      document: { label: '整个文档', icon: BookOpen, color: 'bg-blue-100 text-blue-700' },
-      chapter: { label: `第 ${scope.id} 章`, icon: BookOpen, color: 'bg-green-100 text-green-700' },
-      section: { label: `第 ${scope.id} 节`, icon: BookOpen, color: 'bg-purple-100 text-purple-700' },
-      selection: { label: '选中内容', icon: Target, color: 'bg-orange-100 text-orange-700' }
+      document: { label: t('agent.scope.document'), icon: BookOpen, color: 'bg-blue-100 text-blue-700' },
+      chapter: { label: `${t('agent.scope.chapter').replace(' ', ` ${scope.id} `)}`, icon: BookOpen, color: 'bg-green-100 text-green-700' },
+      section: { label: `${t('agent.scope.section').replace(' ', ` ${scope.id} `)}`, icon: BookOpen, color: 'bg-purple-100 text-purple-700' },
+      selection: { label: t('agent.scope.selection'), icon: Target, color: 'bg-orange-100 text-orange-700' }
     };
     
     return scopeInfo[scope.kind];
@@ -95,21 +97,21 @@ const CommandInput: React.FC<CommandInputProps> = ({
   // 示例命令分类
   const exampleCategories = {
     structure: { 
-      label: '结构调整', 
+      label: t('agent.input.examples.structural'), 
       icon: BookOpen, 
       examples: EXAMPLE_COMMANDS.filter(cmd => 
         cmd.text.includes('拆成') || cmd.text.includes('合并') || cmd.text.includes('提升')
       )
     },
     format: { 
-      label: '格式规范', 
+      label: t('agent.input.examples.format'), 
       icon: RefreshCw, 
       examples: EXAMPLE_COMMANDS.filter(cmd => 
         cmd.text.includes('统一') || cmd.text.includes('APA') || cmd.text.includes('引用')
       )
     },
     content: { 
-      label: '内容增补', 
+      label: t('agent.input.examples.content'), 
       icon: BarChart, 
       examples: EXAMPLE_COMMANDS.filter(cmd => 
         cmd.text.includes('插入') || cmd.text.includes('补充')
@@ -130,7 +132,7 @@ const CommandInput: React.FC<CommandInputProps> = ({
         </div>
         <Badge variant="outline" className="text-xs">
           <Target className="w-3 h-3 mr-1" />
-          作用域
+          {t('agent.scope.label')}
         </Badge>
       </div>
 
@@ -142,7 +144,7 @@ const CommandInput: React.FC<CommandInputProps> = ({
             value={command}
             onChange={(e) => setCommand(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder || "输入 Agent 命令，例如：把第 2 章拆成 related work 和 method，统一 APA7，插入统计图..."}
+            placeholder={placeholder || t('agent.command.placeholder')}
             className="w-full min-h-[80px] max-h-[120px] p-3 pr-12 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:border-[#6E5BFF] focus:ring-1 focus:ring-[#6E5BFF] disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={disabled}
             aria-label="Agent Command Input"
@@ -157,7 +159,7 @@ const CommandInput: React.FC<CommandInputProps> = ({
                 disabled={!command.trim() || disabled || loading}
                 size="sm"
                 className="absolute bottom-3 right-3 h-6 w-6 p-0 bg-[#6E5BFF] hover:bg-[#5A4ACF] transition-all duration-200 hover:scale-105"
-                aria-label="执行命令 (Ctrl+Enter)"
+                aria-label={t('agent.input.shortcut.execute')}
               >
                 {loading ? (
                   <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
@@ -167,7 +169,7 @@ const CommandInput: React.FC<CommandInputProps> = ({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>执行命令 (Ctrl+Enter)</p>
+              <p>{t('agent.input.shortcut.execute')}</p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -179,18 +181,18 @@ const CommandInput: React.FC<CommandInputProps> = ({
         >
           <div className="flex items-center gap-1">
             <Keyboard className="w-3 h-3" />
-            <span>Ctrl+Enter 执行</span>
+            <span>{t('agent.input.shortcut.execute')}</span>
           </div>
           <div className="flex items-center gap-1">
             <Target className="w-3 h-3" />
-            <span>A 键聚焦</span>
+            <span>{t('agent.input.shortcut.focus')}</span>
           </div>
           <button
             onClick={() => setShowExamples(!showExamples)}
             className="flex items-center gap-1 hover:text-[#6E5BFF] transition-colors"
           >
             <Lightbulb className="w-3 h-3" />
-            <span>查看示例</span>
+            <span>{t('agent.input.shortcut.examples')}</span>
           </button>
         </div>
       </div>
@@ -200,7 +202,7 @@ const CommandInput: React.FC<CommandInputProps> = ({
         <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="w-4 h-4 text-[#6E5BFF]" />
-            <span className="text-sm font-medium text-slate-700">示例命令</span>
+            <span className="text-sm font-medium text-slate-700">{t('agent.input.examples.title')}</span>
           </div>
           
           {Object.entries(exampleCategories).map(([category, info]) => {

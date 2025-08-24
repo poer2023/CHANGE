@@ -9,8 +9,10 @@ import { Bell, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { NotificationSettings } from '@/lib/types';
 import { mockNotificationSettings } from '@/lib/mockData';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const NotificationsSettings: React.FC = () => {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<NotificationSettings>(mockNotificationSettings);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -19,9 +21,9 @@ const NotificationsSettings: React.FC = () => {
     try {
       // TODO: API call to save notification settings
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('通知设置已保存');
+      toast.success(t('notifications.save.success'));
     } catch (error) {
-      toast.error('保存失败，请重试');
+      toast.error(t('notifications.save.error'));
     } finally {
       setIsLoading(false);
     }
@@ -30,30 +32,30 @@ const NotificationsSettings: React.FC = () => {
   const notificationTypes = [
     {
       key: 'generationComplete',
-      title: '生成完成',
-      description: '文档生成完成时通知'
+      title: t('notifications.type.generation_complete.title'),
+      description: t('notifications.type.generation_complete.description')
     },
     {
       key: 'exportComplete',
-      title: '导出完成',
-      description: '文档导出完成时通知'
+      title: t('notifications.type.export_complete.title'),
+      description: t('notifications.type.export_complete.description')
     },
     {
       key: 'orderStatus',
-      title: '订单状态',
-      description: '订单状态变更时通知'
+      title: t('notifications.type.order_status.title'),
+      description: t('notifications.type.order_status.description')
     },
     {
       key: 'systemAnnouncement',
-      title: '系统公告',
-      description: '重要系统更新和公告'
+      title: t('notifications.type.system_announcement.title'),
+      description: t('notifications.type.system_announcement.description')
     }
   ] as const;
 
   const frequencyOptions = [
-    { value: 'immediate', label: '即时通知' },
-    { value: 'daily', label: '每日汇总' },
-    { value: 'off', label: '关闭' }
+    { value: 'immediate', label: t('notifications.frequency.immediate') },
+    { value: 'daily', label: t('notifications.frequency.daily') },
+    { value: 'off', label: t('notifications.frequency.off') }
   ];
 
   return (
@@ -63,7 +65,7 @@ const NotificationsSettings: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-[16px] font-semibold flex items-center gap-2">
             <Bell className="h-4 w-4" />
-            站内通知
+            {t('notifications.in_app.title')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -100,13 +102,13 @@ const NotificationsSettings: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-[16px] font-semibold flex items-center gap-2">
             <Mail className="h-4 w-4" />
-            邮件通知
+            {t('notifications.email.title')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* 通知频率 */}
           <div className="space-y-2">
-            <Label htmlFor="email-frequency">通知频率</Label>
+            <Label htmlFor="email-frequency">{t('notifications.frequency.label')}</Label>
             <Select 
               value={settings.email.frequency} 
               onValueChange={(value: 'immediate' | 'daily' | 'off') => 
@@ -131,7 +133,7 @@ const NotificationsSettings: React.FC = () => {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              选择 "每日汇总" 将在每天固定时间发送一封邮件汇总
+              {t('notifications.frequency.description')}
             </p>
           </div>
 
@@ -139,7 +141,7 @@ const NotificationsSettings: React.FC = () => {
 
           {/* 各类邮件通知开关 */}
           <div className="space-y-4">
-            <Label className="text-sm font-medium">邮件通知类型</Label>
+            <Label className="text-sm font-medium">{t('notifications.email_types.label')}</Label>
             {notificationTypes.map((type, index) => (
               <React.Fragment key={type.key}>
                 <div className="flex items-center justify-between">
@@ -179,7 +181,7 @@ const NotificationsSettings: React.FC = () => {
           disabled={isLoading}
           className="rounded-xl"
         >
-          {isLoading ? '保存中...' : '保存通知设置'}
+          {isLoading ? t('notifications.save.loading') : t('notifications.save.button')}
         </Button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from '@/hooks/useTranslation';
 import { 
   Sidebar,
   SidebarContent,
@@ -40,9 +41,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+
 interface MenuItem {
   id: string;
-  label: string;
+  labelKey: string;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
   badge?: string | number;
@@ -51,19 +53,19 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   {
     id: 'dashboard',
-    label: '仪表盘',
+    labelKey: 'sidebar.dashboard',
     icon: Home,
     href: '/home'
   },
   {
     id: 'documents',
-    label: '写作记录',
+    labelKey: 'sidebar.documents',
     icon: FileText,
     href: '/documents'
   },
   {
     id: 'library',
-    label: '图书馆',
+    labelKey: 'sidebar.library',
     icon: Library,
     href: '/library'
   }
@@ -73,6 +75,7 @@ const HomeSidebar: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const { state } = useSidebar();
+  const { t } = useTranslation();
 
   const getPlanBadge = (plan: string = 'Free') => {
     switch (plan.toLowerCase()) {
@@ -109,17 +112,18 @@ const HomeSidebar: React.FC = () => {
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
+                const label = t(item.labelKey);
                 
                 return (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton 
                       asChild 
                       isActive={isActive}
-                      tooltip={item.label}
+                      tooltip={label}
                     >
                       <Link to={item.href} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm hover:bg-muted data-[active=true]:bg-muted">
                         <Icon className="size-5" />
-                        <span>{item.label}</span>
+                        <span>{label}</span>
                         {item.badge && state === 'expanded' && (
                           <Badge variant="secondary" className="ml-auto text-xs">
                             {item.badge}
@@ -200,14 +204,14 @@ const HomeSidebar: React.FC = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="flex items-center gap-2">
                     <User className="size-4" />
-                    个人中心
+                    {t('sidebar.profile')}
                   </Link>
                 </DropdownMenuItem>
                 
                 <DropdownMenuItem asChild>
                   <Link to="/settings" className="flex items-center gap-2">
                     <Settings className="size-4" />
-                    设置
+                    {t('sidebar.settings')}
                   </Link>
                 </DropdownMenuItem>
 
@@ -219,7 +223,7 @@ const HomeSidebar: React.FC = () => {
                   className="flex items-center gap-2 text-red-600 focus:text-red-600"
                 >
                   <LogOut className="h-4 w-4" />
-                  退出登录
+                  {t('sidebar.logout')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

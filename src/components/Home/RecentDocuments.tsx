@@ -46,6 +46,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { DocItem, HomeFilters, DocStatus } from '@/types/home';
 import { getStatusLabel, getStatusBadgeVariant } from '@/lib/mockHomeData';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface RecentDocumentsProps {
   documents: DocItem[];
@@ -60,6 +61,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
   onFiltersChange,
   onDocumentAction
 }) => {
+  const { t } = useTranslation();
   const [localSearch, setLocalSearch] = useState('');
 
   const handleStatusFilter = (status: DocStatus | 'all') => {
@@ -93,10 +95,10 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return '刚刚';
-    if (diffMins < 60) return `${diffMins}分钟前`;
-    if (diffHours < 24) return `${diffHours}小时前`;
-    if (diffDays < 7) return `${diffDays}天前`;
+    if (diffMins < 1) return t('recent.time.just_now');
+    if (diffMins < 60) return t('recent.time.minutes_ago').replace('${minutes}', diffMins.toString());
+    if (diffHours < 24) return t('recent.time.hours_ago').replace('${hours}', diffHours.toString());
+    if (diffDays < 7) return t('recent.time.days_ago').replace('${days}', diffDays.toString());
     
     return date.toLocaleDateString('zh-CN', { 
       month: 'short', 
@@ -160,7 +162,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
             onClick={() => onDocumentAction(doc, 'continue')}
           >
             <PenTool className="size-3" />
-            继续写作
+            {t('recent.continue_writing')}
           </Button>
         );
       case 'generating':
@@ -171,7 +173,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
             className="h-7 text-xs gap-1 rounded-xl"
             disabled
           >
-            生成中...
+            {t('recent.generating')}
           </Button>
         );
       case 'ready':
@@ -183,7 +185,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
             onClick={() => onDocumentAction(doc, 'view')}
           >
             <Eye className="size-3" />
-            查看结果
+            {t('recent.view_result')}
           </Button>
         );
       case 'gate1':
@@ -194,7 +196,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
             className="h-7 text-xs gap-1 text-amber-600 border-amber-200 hover:bg-amber-50 rounded-xl"
             onClick={() => onDocumentAction(doc, 'unlock')}
           >
-            解锁生成
+            {t('recent.unlock_generate')}
           </Button>
         );
       case 'addon':
@@ -206,7 +208,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
             onClick={() => onDocumentAction(doc, 'export')}
           >
             <Download className="size-3" />
-            导出
+            {t('recent.export')}
           </Button>
         );
       default:
@@ -220,7 +222,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
       <section className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
-            最近文件
+            {t('recent.title')}
           </h2>
         </div>
 
@@ -229,9 +231,9 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
             <div className="w-24 h-24 rounded-full bg-muted/50 flex items-center justify-center mb-4">
               <FileImage className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">空空如也</h3>
+            <h3 className="text-lg font-medium text-foreground mb-2">{t('recent.empty.title')}</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-md leading-[1.4]">
-              还没有创建任何文档。选择下方任一方式开始您的学术写作之旅。
+              {t('recent.empty.description')}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-3">
@@ -240,7 +242,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
                 className="gap-2 rounded-xl"
               >
                 <Plus className="size-4" />
-                新建文稿
+                {t('recent.empty.new_document')}
               </Button>
               <Button
                 onClick={() => onDocumentAction({} as DocItem, 'upload')}
@@ -248,7 +250,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
                 className="gap-2 rounded-xl"
               >
                 <Upload className="size-4" />
-                上传资料
+                {t('recent.empty.upload_resources')}
               </Button>
               <Button
                 onClick={() => onDocumentAction({} as DocItem, 'autopilot')}
@@ -256,7 +258,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
                 className="gap-2 rounded-xl"
               >
                 <Zap className="size-4" />
-                粘贴要求→一键AI完成
+                {t('recent.empty.autopilot')}
               </Button>
             </div>
           </CardContent>
@@ -270,10 +272,10 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-h2 text-text">
-            最近文件
+            {t('recent.title')}
           </h2>
           <p className="text-body text-text-muted mt-1">
-            {documents.length} 个文档
+            {documents.length} {t('recent.document_count')}
           </p>
         </div>
 
@@ -308,12 +310,12 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">全部</SelectItem>
-            <SelectItem value="draft">草稿</SelectItem>
-            <SelectItem value="generating">生成中</SelectItem>
-            <SelectItem value="ready">已完成</SelectItem>
-            <SelectItem value="gate1">待解锁</SelectItem>
-            <SelectItem value="addon">需补购</SelectItem>
+            <SelectItem value="all">{t('recent.filters.all')}</SelectItem>
+            <SelectItem value="draft">{t('recent.filters.draft')}</SelectItem>
+            <SelectItem value="generating">{t('recent.filters.generating')}</SelectItem>
+            <SelectItem value="ready">{t('recent.filters.ready')}</SelectItem>
+            <SelectItem value="gate1">{t('recent.filters.gate1')}</SelectItem>
+            <SelectItem value="addon">{t('recent.filters.addon')}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -321,7 +323,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="搜索文档标题..."
+            placeholder={t('recent.search_placeholder')}
             value={localSearch}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-7 h-8 text-xs"
@@ -340,12 +342,12 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="updatedAt-desc">最新优先</SelectItem>
-            <SelectItem value="updatedAt-asc">最旧优先</SelectItem>
-            <SelectItem value="title-asc">标题A-Z</SelectItem>
-            <SelectItem value="title-desc">标题Z-A</SelectItem>
-            <SelectItem value="words-desc">字数最多</SelectItem>
-            <SelectItem value="words-asc">字数最少</SelectItem>
+            <SelectItem value="updatedAt-desc">{t('recent.sort.newest')}</SelectItem>
+            <SelectItem value="updatedAt-asc">{t('recent.sort.oldest')}</SelectItem>
+            <SelectItem value="title-asc">{t('recent.sort.title_az')}</SelectItem>
+            <SelectItem value="title-desc">{t('recent.sort.title_za')}</SelectItem>
+            <SelectItem value="words-desc">{t('recent.sort.most_words')}</SelectItem>
+            <SelectItem value="words-asc">{t('recent.sort.least_words')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -360,19 +362,19 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
                   className="cursor-pointer hover:text-foreground w-[40%]"
                   onClick={() => handleSortChange('title')}
                 >
-                  文件名
+                  {t('recent.table.filename')}
                 </TableHead>
-                <TableHead>状态</TableHead>
+                <TableHead>{t('recent.table.status')}</TableHead>
                 <TableHead className="cursor-pointer hover:text-foreground" onClick={() => handleSortChange('words')}>
-                  字数
+                  {t('recent.table.words')}
                 </TableHead>
                 <TableHead className="cursor-pointer hover:text-foreground" onClick={() => handleSortChange('cites')}>
-                  引用
+                  {t('recent.table.citations')}
                 </TableHead>
                 <TableHead className="cursor-pointer hover:text-foreground" onClick={() => handleSortChange('updatedAt')}>
-                  更新时间
+                  {t('recent.table.updated')}
                 </TableHead>
-                <TableHead className="w-32">操作</TableHead>
+                <TableHead className="w-32">{t('recent.table.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -407,24 +409,24 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
                         <DropdownMenuContent align="end" className="w-32">
                           <DropdownMenuItem onClick={() => onDocumentAction(doc, 'continue')}>
                             <PenTool className="h-3 w-3 mr-2" />
-                            继续写作
+                            {t('recent.actions.continue')}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => onDocumentAction(doc, 'view')}>
                             <Eye className="h-3 w-3 mr-2" />
-                            查看结果
+                            {t('recent.actions.view')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem>
                             <Edit className="h-3 w-3 mr-2" />
-                            重命名
+                            {t('recent.actions.rename')}
                           </DropdownMenuItem>
                           <DropdownMenuItem>
                             <Archive className="h-3 w-3 mr-2" />
-                            归档
+                            {t('recent.actions.archive')}
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-red-600 focus:text-red-600">
                             <Trash2 className="h-3 w-3 mr-2" />
-                            删除
+                            {t('recent.actions.delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -453,10 +455,10 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => onDocumentAction(doc, 'continue')}>
-                        继续写作
+                        {t('recent.actions.continue')}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onDocumentAction(doc, 'view')}>
-                        查看结果
+                        {t('recent.actions.view')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -466,8 +468,8 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({
               
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span>{doc.words.toLocaleString()} 字</span>
-                  <span>{doc.cites} 引用</span>
+                  <span>{doc.words.toLocaleString()} {t('recent.words')}</span>
+                  <span>{doc.cites} {t('recent.citations')}</span>
                 </div>
                 
                 <div className="text-xs text-muted-foreground">

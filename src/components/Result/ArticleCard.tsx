@@ -25,6 +25,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useApp, useResult, usePayment } from '@/state/AppContext';
 import { useGenerationStream, useGenerationContentListener } from '@/hooks/useStreaming';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ArticleCardProps {
   docId: string;
@@ -35,6 +36,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
   const { track, trackTyped } = useApp();
   const { result, startDocumentGeneration } = useResult();
   const { pay } = usePayment();
+  const { t } = useTranslation();
   const [isExporting, setIsExporting] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<Map<string, string>>(new Map());
   const [streamingContent, setStreamingContent] = useState<string>('');
@@ -141,14 +143,14 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
       case 'idle':
         return {
           icon: Clock,
-          label: '等待开始',
+          label: t('result.article.status.idle'),
           color: 'text-gray-500',
           bgColor: 'bg-gray-100'
         };
       case 'starting':
         return {
           icon: Loader2,
-          label: '准备中',
+          label: t('result.article.status.starting'),
           color: 'text-blue-500',
           bgColor: 'bg-blue-100',
           animate: 'animate-spin'
@@ -156,7 +158,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
       case 'streaming':
         return {
           icon: Loader2,
-          label: '生成中',
+          label: t('result.article.status.streaming'),
           color: 'text-blue-500',
           bgColor: 'bg-blue-100',
           animate: 'animate-spin'
@@ -164,21 +166,21 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
       case 'ready':
         return {
           icon: CheckCircle,
-          label: '已完成',
+          label: t('result.article.status.ready'),
           color: 'text-green-500',
           bgColor: 'bg-green-100'
         };
       case 'error':
         return {
           icon: AlertTriangle,
-          label: '生成失败',
+          label: t('result.article.status.error'),
           color: 'text-red-500',
           bgColor: 'bg-red-100'
         };
       default:
         return {
           icon: Clock,
-          label: '等待开始',
+          label: t('result.article.status.idle'),
           color: 'text-gray-500',
           bgColor: 'bg-gray-100'
         };
@@ -198,10 +200,10 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                学术论文
+                {t('result.article.title')}
               </h2>
               <p className="text-sm text-gray-600">
-                文档 ID: {docId.slice(0, 8)}...
+                {t('result.article.document_id')}: {docId.slice(0, 8)}...
               </p>
             </div>
           </div>
@@ -224,29 +226,29 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
                   disabled={disabled || result.generation !== 'ready'}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  导出 DOCX
+                  {t('result.article.export.docx')}
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => handleExport('pdf')}
                   disabled={disabled || result.generation !== 'ready'}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  导出 PDF
+                  {t('result.article.export.pdf')}
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => handleExport('latex')}
                   disabled={disabled || result.generation !== 'ready'}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  导出 LaTeX
+                  {t('result.article.export.latex')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleCopyLink}>
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  复制分享链接
+                  {t('result.article.actions.copy_share_link')}
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <History className="w-4 h-4 mr-2" />
-                  查看变更历史
+                  {t('result.article.actions.view_history')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -262,36 +264,36 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
             <div className="space-y-6">
               <div className="text-center py-8">
                 <Eye className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">预览模式</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('result.article.preview.title')}</h3>
                 <p className="text-sm text-gray-600">
-                  当前为预览模式，内容受限。解锁后可查看完整内容。
+                  {t('result.article.preview.description')}
                 </p>
               </div>
 
               {/* Sample Content */}
               <div className="space-y-4">
                 <div className="p-4 bg-white rounded-lg border-2 border-dashed border-gray-200">
-                  <h4 className="font-semibold text-gray-900 mb-2">摘要</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">{t('result.article.preview.abstract')}</h4>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    本研究探讨了... [预览内容] ...具有重要的理论意义和实践价值。
+                    {t('result.article.preview.sample_text_abstract')}
                     <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded ml-2">
-                      预览模式 - 内容受限
+                      {t('result.article.preview.content_limited')}
                     </span>
                   </p>
                 </div>
 
                 <div className="p-4 bg-white rounded-lg border-2 border-dashed border-gray-200">
-                  <h4 className="font-semibold text-gray-900 mb-2">1. 引言</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">1. {t('result.article.preview.introduction')}</h4>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    随着技术的发展... [预览内容] ...本研究的目标是...
+                    {t('result.article.preview.sample_text_introduction')}
                     <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded ml-2">
-                      预览模式 - 内容受限
+                      {t('result.article.preview.content_limited')}
                     </span>
                   </p>
                 </div>
 
                 <div className="text-center py-4 text-gray-400">
-                  <div className="text-xs">更多内容请解锁后查看</div>
+                  <div className="text-xs">{t('result.article.preview.more_content')}</div>
                 </div>
               </div>
             </div>
@@ -303,11 +305,11 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
                 <div className="prose max-w-none">
                   <div className="flex items-center justify-between mb-6">
                     <h1 className="text-2xl font-bold text-gray-900">
-                      学术论文
+                      {t('result.article.title')}
                     </h1>
                     <Badge className="bg-green-100 text-green-800">
                       <CheckCircle className="h-3 w-3 mr-1" />
-                      生成完成
+                      {t('result.article.generation.completed')}
                     </Badge>
                   </div>
                   
@@ -323,18 +325,18 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
                       /* Default content if no streaming data */
                       <>
                         <section>
-                          <h2 className="text-lg font-semibold text-gray-900 mb-3">摘要</h2>
-                          <p>本研究探讨了相关理论和实践问题，通过系统性分析和实证研究，得出了具有价值的结论...</p>
+                          <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('result.article.preview.abstract')}</h2>
+                          <p>{t('result.article.preview.sample_text_abstract')}</p>
                         </section>
 
                         <section>
-                          <h2 className="text-lg font-semibold text-gray-900 mb-3">1. 引言</h2>
-                          <p>随着相关领域的快速发展，本研究关注的问题日益突出。本文旨在通过深入分析...</p>
+                          <h2 className="text-lg font-semibold text-gray-900 mb-3">1. {t('result.article.preview.introduction')}</h2>
+                          <p>{t('result.article.preview.sample_text_introduction')}</p>
                         </section>
 
                         <section>
-                          <h2 className="text-lg font-semibold text-gray-900 mb-3">2. 文献综述</h2>
-                          <p>前人研究表明，该领域存在多种理论观点和实践方法。Smith et al. (2023) 指出...</p>
+                          <h2 className="text-lg font-semibold text-gray-900 mb-3">2. Literature Review</h2>
+                          <p>Previous research indicates that this field encompasses various theoretical perspectives and practical approaches. Smith et al. (2023) point out...</p>
                         </section>
                       </>
                     )}
@@ -345,10 +347,10 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-sm text-blue-600 mb-4">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    正在生成内容...
+                    {t('result.article.generation.streaming')}
                     {isStreaming && (
                       <Badge variant="secondary" className="text-xs">
-                        实时流式传输
+                        {t('result.article.generation.realtime_streaming')}
                       </Badge>
                     )}
                   </div>
@@ -374,9 +376,9 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
                 /* Waiting State */
                 <div className="text-center py-12">
                   <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">等待生成</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('result.article.waiting.title')}</h3>
                   <p className="text-sm text-gray-600 mb-4">
-                    点击开始按钮开始生成学术论文内容
+                    {t('result.article.waiting.description')}
                   </p>
                   {!disabled && result.generation === 'idle' && (
                     <Button 
@@ -384,7 +386,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
                       className="bg-[#6E5BFF] hover:bg-[#5B4AE6] text-white"
                     >
                       <Loader2 className="h-4 w-4 mr-2" />
-                      开始生成
+                      {t('result.article.waiting.start_generation')}
                     </Button>
                   )}
                 </div>
@@ -396,19 +398,19 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ docId, disabled = false }) =>
         {/* Document Metadata */}
         <div className="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-100">
           <div className="flex items-center gap-4">
-            <span>创建时间: {new Date().toLocaleDateString()}</span>
-            <span>格式: APA</span>
-            <span>字数: ~{streamingContent ? streamingContent.length : generatedContent.size > 0 ? Array.from(generatedContent.values()).join('').length : 3500}</span>
+            <span>{t('result.article.metadata.created_time')}: {new Date().toLocaleDateString()}</span>
+            <span>{t('result.article.metadata.format')}: APA</span>
+            <span>{t('result.article.metadata.word_count')}: ~{streamingContent ? streamingContent.length : generatedContent.size > 0 ? Array.from(generatedContent.values()).join('').length : 3500}</span>
             {isStreaming && (
               <span className="flex items-center gap-1 text-blue-600">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                实时同步
+                {t('result.article.metadata.realtime_sync')}
               </span>
             )}
           </div>
           <div className="flex items-center gap-2">
             <Copy className="h-3 w-3" />
-            <span>{isStreaming ? '实时保存中' : '自动保存'}</span>
+            <span>{isStreaming ? t('result.article.metadata.saving') : t('result.article.metadata.auto_save')}</span>
           </div>
         </div>
       </CardContent>

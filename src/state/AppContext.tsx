@@ -507,4 +507,23 @@ export const useWritingFlow = () => {
   };
 };
 
+export const useDemoMode = () => {
+  const { state, dispatch, trackTyped } = useApp();
+
+  const toggleDemoMode = (enabled: boolean) => {
+    dispatch({ type: 'DEMO_MODE_TOGGLE', payload: enabled });
+    
+    trackTyped('demo_mode_toggle', {
+      enabled,
+      timestamp: Date.now(),
+      previousState: state.demoMode
+    }, 'user_action', 'demo_mode');
+  };
+
+  return {
+    demoMode: state.demoMode,
+    toggleDemoMode
+  };
+};
+
 export default AppContext;

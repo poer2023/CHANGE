@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Gate1ModalProps } from '@/state/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Gate1Modal: React.FC<Gate1ModalProps> = ({
   open,
@@ -30,6 +31,7 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
   onPreviewOnly,
   onUnlock
 }) => {
+  const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState(0);
   const [isUnlocking, setIsUnlocking] = useState(false);
 
@@ -39,7 +41,7 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
 
     const updateTimer = () => {
       const now = Date.now();
-      const remaining = Math.max(0, price.expiresAt - now);
+      const remaining = Math.max(0, (price?.expiresAt || 0) - now);
       setTimeLeft(remaining);
     };
 
@@ -65,9 +67,9 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
   };
 
   const defaultBenefits = [
-    '一次完整生成',
-    '2 次局部重写',
-    '全量引用核验'
+    t('result.gate1.benefit.complete_generation'),
+    t('result.gate1.benefit.partial_rewrites'),
+    t('result.gate1.benefit.full_verification')
   ];
 
   const displayBenefits = benefits.length > 0 ? benefits : defaultBenefits;
@@ -83,10 +85,10 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
             <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#6E5BFF] to-[#8B7FFF] flex items-center justify-center">
               <Unlock className="h-4 w-4 text-white" />
             </div>
-            解锁内容生成
+            {t('result.gate1.unlock_title')}
           </DialogTitle>
           <DialogDescription className="text-gray-600 leading-relaxed">
-            自动推进已完成，现在可以开始生成您的论文正文。
+            {t('result.gate1.unlock_description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -96,16 +98,16 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
             <div className="flex items-center justify-center gap-2">
               <Lock className="h-5 w-5 text-[#6E5BFF]" />
               <Badge className="bg-[#6E5BFF] text-white">
-                锁定价格
+                {t('result.gate1.locked_price')}
               </Badge>
             </div>
             
             <div className="space-y-1">
               <div className="text-3xl font-bold text-[#6E5BFF]">
-                ¥{price.value}
+                ¥{price?.value || 0}
               </div>
               <p className="text-sm text-gray-600">
-                {price.currency} · 含全部服务
+                {price?.currency || 'CNY'} · {t('result.gate1.includes_all')}
               </p>
             </div>
 
@@ -114,7 +116,7 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
               <div className="flex items-center justify-center gap-2 text-sm">
                 <Clock className="h-4 w-4 text-orange-500" />
                 <span className="text-orange-600 font-medium">
-                  锁价剩余: {formatTime(timeLeft)}
+                  {t('result.gate1.time_remaining')}: {formatTime(timeLeft)}
                 </span>
               </div>
             )}
@@ -123,7 +125,7 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
               <div className="flex items-center justify-center gap-2 text-sm">
                 <RefreshCw className="h-4 w-4 text-red-500" />
                 <span className="text-red-600 font-medium">
-                  价格已过期，需要重新估算
+                  {t('result.gate1.price_expired')}
                 </span>
               </div>
             )}
@@ -133,7 +135,7 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[#6E5BFF]" />
-              包含权益
+              {t('result.gate1.included_benefits')}
             </h4>
             
             <div className="grid gap-3">
@@ -155,8 +157,8 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
                 <FileText className="h-5 w-5 text-blue-600" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-900">智能生成</p>
-                <p className="text-xs text-gray-600">AI驱动写作</p>
+                <p className="text-xs font-medium text-gray-900">{t('result.gate1.feature.smart_generation')}</p>
+                <p className="text-xs text-gray-600">{t('result.gate1.feature.ai_driven')}</p>
               </div>
             </div>
 
@@ -165,8 +167,8 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
                 <Target className="h-5 w-5 text-purple-600" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-900">精准引用</p>
-                <p className="text-xs text-gray-600">全量核验</p>
+                <p className="text-xs font-medium text-gray-900">{t('result.gate1.feature.precise_citation')}</p>
+                <p className="text-xs text-gray-600">{t('result.gate1.feature.full_verification')}</p>
               </div>
             </div>
 
@@ -175,8 +177,8 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
                 <Edit3 className="h-5 w-5 text-green-600" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-gray-900">灵活编辑</p>
-                <p className="text-xs text-gray-600">多次重写</p>
+                <p className="text-xs font-medium text-gray-900">{t('result.gate1.feature.flexible_editing')}</p>
+                <p className="text-xs text-gray-600">{t('result.gate1.feature.multiple_rewrites')}</p>
               </div>
             </div>
           </div>
@@ -196,17 +198,17 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
               {isUnlocking ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  正在处理支付...
+                  {t('result.gate1.processing_payment')}
                 </>
               ) : timeLeft === 0 ? (
                 <>
                   <Lock className="h-4 w-4 mr-2" />
-                  价格已过期
+                  {t('result.gate1.expired')}
                 </>
               ) : (
                 <>
                   <Unlock className="h-4 w-4 mr-2" />
-                  立即解锁生成 ¥{price.value}
+                  {t('result.gate1.unlock_now')} ¥{price?.value || 0}
                 </>
               )}
             </Button>
@@ -217,15 +219,15 @@ const Gate1Modal: React.FC<Gate1ModalProps> = ({
               className="w-full rounded-full border-gray-300 text-gray-600 hover:text-gray-900 hover:border-gray-400"
             >
               <Shield className="h-4 w-4 mr-2" />
-              仅预览草案
+              {t('result.gate1.preview_only')}
             </Button>
           </div>
 
           {/* Disclaimer */}
           <div className="text-center">
             <p className="text-xs text-gray-500 leading-relaxed">
-              报价已锁定，{timeLeft > 0 ? `${formatTime(timeLeft)} 后过期` : '已过期'}。<br />
-              未付费前为预览模式，内容受限。
+              {t('result.gate1.price_locked_text')}{timeLeft > 0 ? `${formatTime(timeLeft)} ${t('result.gate1.price_locked_until')}` : t('result.gate1.expired')}。<br />
+              {t('result.gate1.payment_info')}
             </p>
           </div>
         </div>

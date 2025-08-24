@@ -21,14 +21,23 @@ import {
   Search,
   Zap,
   Users,
-  ExternalLink
+  ExternalLink,
+  Shield,
+  Target
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DeckTabsProps } from '@/state/types';
 import { useApp } from '@/state/AppContext';
+import { useTranslation } from '@/hooks/useTranslation';
+import CitationVerificationPanel from './CitationVerificationPanel';
+import StyleAnalysisPanel from './StyleAnalysisPanel';
+import AgentCommandPanel from './AgentCommandPanel';
+import EvidencePackagePanel from './EvidencePackagePanel';
+import ExportPreviewPanel from './ExportPreviewPanel';
 
 const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
   const { track, trackTyped } = useApp();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('deliverables');
 
   const handleTabChange = (tab: string) => {
@@ -48,8 +57,8 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
     const deliverables = [
       {
         id: 'quality',
-        title: '质量评分',
-        description: '综合评价文档质量',
+        title: t('result.deliverables.quality_score'),
+        description: t('result.deliverables.quality_description'),
         icon: BarChart,
         status: 'ready' as const,
         value: '85/100',
@@ -58,8 +67,8 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
       },
       {
         id: 'process',
-        title: '流程文档',
-        description: 'PDF 摘要报告',
+        title: t('result.deliverables.process_doc'),
+        description: t('result.deliverables.process_description'),
         icon: FileText,
         status: 'ready' as const,
         value: '2.3 MB',
@@ -68,18 +77,18 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
       },
       {
         id: 'references',
-        title: '文献列表',
-        description: 'CSV/BIB/RIS 格式',
+        title: t('result.deliverables.references'),
+        description: t('result.deliverables.references_description'),
         icon: BookOpen,
         status: 'ready' as const,
-        value: '24 条',
+        value: t('result.deliverables.references_count').replace('${count}', '24'),
         color: 'text-purple-600',
         bgColor: 'bg-purple-50'
       },
       {
         id: 'timeline',
-        title: '时间线',
-        description: '操作审计日志',
+        title: t('result.deliverables.timeline'),
+        description: t('result.deliverables.timeline_description'),
         icon: Activity,
         status: 'ready' as const,
         value: 'JSON',
@@ -88,8 +97,8 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
       },
       {
         id: 'viva',
-        title: '答辩卡',
-        description: 'PPT + 答辩要点',
+        title: t('result.deliverables.viva_cards'),
+        description: t('result.deliverables.viva_description'),
         icon: Users,
         status: disabled ? 'locked' : 'ready' as const,
         value: 'PDF',
@@ -98,8 +107,8 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
       },
       {
         id: 'assets',
-        title: '媒体资源',
-        description: '图表和素材包',
+        title: t('result.deliverables.media_assets'),
+        description: t('result.deliverables.media_description'),
         icon: Package,
         status: disabled ? 'locked' : 'ready' as const,
         value: 'ZIP',
@@ -108,8 +117,8 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
       },
       {
         id: 'share',
-        title: '分享链接',
-        description: '7天只读访问',
+        title: t('result.deliverables.share_link'),
+        description: t('result.deliverables.share_description'),
         icon: Share2,
         status: disabled ? 'locked' : 'ready' as const,
         value: 'URL',
@@ -118,11 +127,11 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
       },
       {
         id: 'bundle',
-        title: '完整包',
-        description: '全部文件打包',
+        title: t('result.deliverables.complete_bundle'),
+        description: t('result.deliverables.complete_description'),
         icon: Download,
         status: disabled ? 'locked' : 'generating' as const,
-        value: '进行中',
+        value: t('result.deliverables.generating'),
         color: 'text-gray-600',
         bgColor: 'bg-gray-50'
       }
@@ -167,7 +176,7 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
                   
                   {isLocked && (
                     <Badge variant="secondary" className="text-xs">
-                      需解锁
+                      {t('result.deliverables.locked')}
                     </Badge>
                   )}
                   
@@ -184,11 +193,11 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
               <CardContent className="pt-0">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">
-                    {isGenerating ? '生成中...' : item.value}
+                    {isGenerating ? t('result.deliverables.generating') : item.value}
                   </span>
                   {!isLocked && !isGenerating && (
                     <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                      下载
+                      {t('result.deliverables.download')}
                     </Button>
                   )}
                 </div>
@@ -205,8 +214,8 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
     const assistantCards = [
       {
         id: 'chat',
-        title: 'AI 助手',
-        description: '智能问答和编辑建议',
+        title: t('result.assistant.ai_chat'),
+        description: t('result.assistant.ai_chat_description'),
         icon: Bot,
         color: 'text-blue-600',
         bgColor: 'bg-blue-50',
@@ -214,17 +223,17 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
           <div className="space-y-3">
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-700">
-                您可以询问关于文档的任何问题，或请求编辑建议。
+                {t('result.assistant.ai_chat_content')}
               </p>
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" className="text-xs">
                 <MessageSquare className="h-3 w-3 mr-1" />
-                开始对话
+                {t('result.assistant.start_conversation')}
               </Button>
               <Button size="sm" variant="outline" className="text-xs">
                 <Edit3 className="h-3 w-3 mr-1" />
-                编辑建议
+                {t('result.assistant.edit_suggestions')}
               </Button>
             </div>
           </div>
@@ -232,8 +241,8 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
       },
       {
         id: 'search',
-        title: '文档搜索',
-        description: '快速定位内容和引用',
+        title: t('result.assistant.doc_search'),
+        description: t('result.assistant.doc_search_description'),
         icon: Search,
         color: 'text-green-600',
         bgColor: 'bg-green-50',
@@ -241,20 +250,20 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
           <div className="space-y-3">
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-700">
-                搜索文档中的特定内容、引用或关键词。
+                {t('result.assistant.doc_search_content')}
               </p>
             </div>
             <Button size="sm" variant="outline" className="text-xs w-full">
               <Search className="h-3 w-3 mr-1" />
-              开始搜索
+              {t('result.assistant.start_search')}
             </Button>
           </div>
         )
       },
       {
         id: 'enhancement',
-        title: '智能增强',
-        description: '自动优化和格式化',
+        title: t('result.assistant.enhancement'),
+        description: t('result.assistant.enhancement_description'),
         icon: Zap,
         color: 'text-purple-600',
         bgColor: 'bg-purple-50',
@@ -262,15 +271,15 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
           <div className="space-y-3">
             <div className="p-3 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-700">
-                使用 AI 自动改进文档结构、语言和格式。
+                {t('result.assistant.enhancement_content')}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Button size="sm" variant="outline" className="text-xs">
-                语言润色
+                {t('result.assistant.language_polish')}
               </Button>
               <Button size="sm" variant="outline" className="text-xs">
-                结构优化
+                {t('result.assistant.structure_optimize')}
               </Button>
             </div>
           </div>
@@ -315,7 +324,7 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
           <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
             <Activity className="h-4 w-4 text-gray-600" />
           </div>
-          操作审计
+          {t('result.audit.title')}
         </CardTitle>
       </CardHeader>
       
@@ -324,31 +333,31 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
             <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
             <div className="text-xs text-gray-700">
-              <div className="font-medium">文档已生成</div>
-              <div className="text-gray-500">2 分钟前</div>
+              <div className="font-medium">{t('result.audit.document_generated')}</div>
+              <div className="text-gray-500">2 {t('result.audit.minutes_ago')}</div>
             </div>
           </div>
           
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
             <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
             <div className="text-xs text-gray-700">
-              <div className="font-medium">引用核验完成</div>
-              <div className="text-gray-500">5 分钟前</div>
+              <div className="font-medium">{t('result.audit.citation_verified')}</div>
+              <div className="text-gray-500">5 {t('result.audit.minutes_ago')}</div>
             </div>
           </div>
           
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
             <Clock className="h-4 w-4 text-blue-500 flex-shrink-0" />
             <div className="text-xs text-gray-700">
-              <div className="font-medium">开始内容生成</div>
-              <div className="text-gray-500">8 分钟前</div>
+              <div className="font-medium">{t('result.audit.generation_started')}</div>
+              <div className="text-gray-500">8 {t('result.audit.minutes_ago')}</div>
             </div>
           </div>
         </div>
 
         <Button variant="outline" size="sm" className="w-full text-xs">
           <ExternalLink className="h-3 w-3 mr-1" />
-          查看完整日志
+          {t('result.audit.view_full_log')}
         </Button>
       </CardContent>
     </Card>
@@ -357,27 +366,51 @@ const DeckTabs: React.FC<DeckTabsProps> = ({ disabled, docId }) => {
   return (
     <div className="w-full min-w-[420px] max-w-[520px] flex-shrink-0">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className="grid grid-cols-6 w-full text-xs">
           <TabsTrigger value="deliverables" className="text-xs">
+            <Download className="h-3 w-3 mr-1" />
+            {t('result.tabs.export')}
+          </TabsTrigger>
+          <TabsTrigger value="evidence" className="text-xs">
             <Package className="h-3 w-3 mr-1" />
-            Deliverables
+            {t('result.tabs.evidence')}
+          </TabsTrigger>
+          <TabsTrigger value="verification" className="text-xs">
+            <Shield className="h-3 w-3 mr-1" />
+            {t('result.tabs.verification')}
+          </TabsTrigger>
+          <TabsTrigger value="style" className="text-xs">
+            <Target className="h-3 w-3 mr-1" />
+            {t('result.tabs.style')}
           </TabsTrigger>
           <TabsTrigger value="assistant" className="text-xs">
             <Bot className="h-3 w-3 mr-1" />
-            Assistant
+            {t('result.tabs.assistant')}
           </TabsTrigger>
           <TabsTrigger value="audit" className="text-xs">
             <Activity className="h-3 w-3 mr-1" />
-            Audit
+            {t('result.tabs.audit')}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="deliverables" className="mt-6">
-          <DeliverablesGrid />
+          <ExportPreviewPanel />
+        </TabsContent>
+
+        <TabsContent value="evidence" className="mt-6">
+          <EvidencePackagePanel />
+        </TabsContent>
+
+        <TabsContent value="verification" className="mt-6">
+          <CitationVerificationPanel />
+        </TabsContent>
+
+        <TabsContent value="style" className="mt-6">
+          <StyleAnalysisPanel />
         </TabsContent>
 
         <TabsContent value="assistant" className="mt-6">
-          <AssistantGrid />
+          <AgentCommandPanel />
         </TabsContent>
 
         <TabsContent value="audit" className="mt-6">

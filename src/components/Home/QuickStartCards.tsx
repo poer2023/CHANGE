@@ -8,6 +8,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface QuickStartCardsProps {
   onNewDocument: () => void;
@@ -17,8 +18,8 @@ interface QuickStartCardsProps {
 
 interface QuickStartCard {
   id: string;
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
   icon: React.ComponentType<{ className?: string }>;
   action: () => void;
   variant: 'default' | 'primary' | 'secondary';
@@ -29,27 +30,29 @@ const QuickStartCards: React.FC<QuickStartCardsProps> = ({
   onUploadResources,
   onAutopilotMode
 }) => {
+  const { t } = useTranslation();
+  
   const cards: QuickStartCard[] = [
     {
       id: 'new',
-      title: '新建文稿',
-      description: '从空白页面开始，按步骤完成学术写作',
+      titleKey: 'quickstart.new_document.title',
+      descriptionKey: 'quickstart.new_document.description',
       icon: Plus,
       action: onNewDocument,
       variant: 'default'
     },
     {
       id: 'upload',
-      title: '上传资料',
-      description: 'PDF/DOCX/图片，自动抽取要求与参考',
+      titleKey: 'quickstart.upload_resources.title',
+      descriptionKey: 'quickstart.upload_resources.description',
       icon: Upload,
       action: onUploadResources,
       variant: 'secondary'
     },
     {
       id: 'autopilot',
-      title: '粘贴要求→一键AI完成',
-      description: '直达Step1并弹出自动推进确认',
+      titleKey: 'quickstart.autopilot.title',
+      descriptionKey: 'quickstart.autopilot.description',
       icon: Zap,
       action: onAutopilotMode,
       variant: 'primary'
@@ -61,10 +64,10 @@ const QuickStartCards: React.FC<QuickStartCardsProps> = ({
     <section className="space-y-4">
       <div>
         <h2 className="text-h2 text-text">
-          快速开始
+          {t('quickstart.title')}
         </h2>
         <p className="text-body text-text-muted mt-1">
-          选择您的创作方式
+          {t('quickstart.subtitle')}
         </p>
       </div>
 
@@ -75,11 +78,12 @@ const QuickStartCards: React.FC<QuickStartCardsProps> = ({
           return (
             <Card
               key={card.id}
-              className="group relative overflow-hidden cursor-pointer bg-surface border-[hsl(var(--border))] hover:border-[color-mix(in_oklab,hsl(var(--brand-500))_25%,hsl(var(--border)))]"
+              className={cn(
+                "group relative overflow-hidden cursor-pointer bg-surface border-[hsl(var(--border))] hover:border-[color-mix(in_oklab,hsl(var(--brand-500))_25%,hsl(var(--border)))]",
+                card.id === 'new' && "border border-brand-500 shadow-[0_0_0_1px_hsl(var(--brand-500)),0_0_12px_hsl(var(--brand-500)/.3)]"
+              )}
               onClick={card.action}
             >
-              {/* Gradient top accent line */}
-              <div className="h-0.5 bg-brand-gradient" />
               
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -93,10 +97,10 @@ const QuickStartCards: React.FC<QuickStartCardsProps> = ({
                     {/* Content */}
                     <div className="min-w-0 flex-1 space-y-1">
                       <h3 className="text-base font-semibold text-text leading-tight">
-                        {card.title}
+                        {t(card.titleKey)}
                       </h3>
                       <p className="text-body text-text-muted">
-                        {card.description}
+                        {t(card.descriptionKey)}
                       </p>
                     </div>
                   </div>

@@ -4,8 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import OutcomePanel from '@/components/WritingFlow/OutcomePanel';
+import StepNav from '@/components/WritingFlow/StepNav';
 import Gate1Modal from '@/components/Gate1Modal';
-import { useStep1, useEstimate, useAutopilot, useApp, useWritingFlow as useNewWritingFlow, usePayment } from '@/state/AppContext';
+import DemoModeToggle from '@/components/DemoModeToggle';
+import { useStep1, useEstimate, useAutopilot, useApp, useWritingFlow as useNewWritingFlow, usePayment, useDemoMode } from '@/state/AppContext';
 import { lockPrice, createPaymentIntent, confirmPayment, startAutopilot as apiStartAutopilot, streamAutopilotProgress, track } from '@/services/pricing';
 import { useWritingFlow } from '@/contexts/WritingFlowContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 import { 
   Search,
   Plus,
@@ -107,11 +110,11 @@ interface ResearchState {
   };
 }
 
-// Zod 验证架构
-const referenceSchema = z.object({
+// Zod 验证架构工厂函数
+const createReferenceSchema = (t: (key: string) => string) => z.object({
   id: z.string(),
-  title: z.string().min(5, '标题至少5个字符'),
-  authors: z.array(z.string()).min(1, '至少需要一个作者'),
+  title: z.string().min(5, t('research.validation.title_min')),
+  authors: z.array(z.string()).min(1, t('research.validation.authors_min')),
   year: z.number().int().min(1800).max(new Date().getFullYear()).optional(),
   venue: z.string().optional(),
   type: z.enum(['paper', 'book', 'web', 'dataset', 'report']),
@@ -130,7 +133,7 @@ const referenceSchema = z.object({
   fromUpload: z.boolean().optional()
 });
 
-const researchSchema = z.object({
+const createResearchSchema = (t: (key: string) => string) => z.object({
   query: z.string(),
   filters: z.object({
     years: z.tuple([z.number(), z.number()]).optional(),
@@ -139,7 +142,7 @@ const researchSchema = z.object({
     openAccess: z.boolean().optional(),
     sortBy: z.enum(['relevance', 'year', 'citations'])
   }),
-  library: z.array(referenceSchema)
+  library: z.array(createReferenceSchema(t))
 });
 
 // Mock 数据生成函数
@@ -390,6 +393,7 @@ const calculateQualityScore = (item: ReferenceItem): number => {
 };
 
 const ResearchStep: React.FC = () => {
+  const { t } = useTranslation();
   const { project, updateStrategy, setCurrentStep, completeStep } = useWritingFlow();
   const { track: trackEvent } = useApp();
   const { step1 } = useStep1();
@@ -397,6 +401,7 @@ const ResearchStep: React.FC = () => {
   const { autopilot, startAutopilot, minimizeAutopilot, pauseAutopilot, resumeAutopilot, stopAutopilot } = useAutopilot();
   const { writingFlow, updateMetrics, toggleAddon, setError } = useNewWritingFlow();
   const { pay, lockPrice: lockPriceState } = usePayment();
+  const { demoMode } = useDemoMode();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -409,6 +414,8 @@ const ResearchStep: React.FC = () => {
   const [verificationLevel, setVerificationLevel] = useState<'Basic' | 'Standard' | 'Pro'>('Standard');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+  const researchSchema = createResearchSchema(t);
+  
   const form = useForm<ResearchState>({
     resolver: zodResolver(researchSchema),
     defaultValues: {
@@ -433,11 +440,21 @@ const ResearchStep: React.FC = () => {
       ? library.reduce((sum, item) => sum + (item.qualityScore || calculateQualityScore(item)), 0) / total 
       : 0;
     
+    const verifiableRatio = total > 0 
+      ? library.filter(item => item.peerReviewed || item.doi).length / total * 100 
+      : 0;
+    
+    const recent5yRatio = total > 0 
+      ? library.filter(item => item.year && item.year >= new Date().getFullYear() - 5).length / total * 100 
+      : 0;
+    
     return {
       total,
       dedupRemoved: 0,
       libraryCount: total,
-      avgQuality: Math.round(avgQuality)
+      avgQuality: Math.round(avgQuality),
+      verifiableRatio: Math.round(verifiableRatio),
+      recent5yRatio: Math.round(recent5yRatio)
     };
   }, [watchedData.library]);
 
@@ -486,7 +503,7 @@ const ResearchStep: React.FC = () => {
           setValue(key as keyof ResearchState, data[key]);
         });
       } catch (error) {
-        console.error('恢复研究数据失败:', error);
+        console.error(t('research.error.recovery_failed') + ':', error);
       }
     }
   }, [setValue]);
@@ -495,8 +512,8 @@ const ResearchStep: React.FC = () => {
   const handleShowPreview = () => {
     trackEvent('preview_sample_click', { context: 'research_step', sampleType: 'academic_writing' });
     toast({
-      title: '功能开发中',
-      description: '样例预览功能即将上线'
+      title: t('topic.toast.feature_developing'),
+      description: t('topic.toast.feature_developing_desc')
     });
   };
 
@@ -521,11 +538,11 @@ const ResearchStep: React.FC = () => {
       
     } catch (error) {
       console.error('Error in pay and write:', error);
-      setError(error instanceof Error ? error.message : '价格锁定失败，请重试');
+      setError(error instanceof Error ? error.message : t('topic.toast.lock_price_failed'));
       
       toast({
-        title: '错误',
-        description: '价格锁定失败，请重试',
+        title: t('common.error'),
+        description: t('topic.toast.lock_price_failed'),
         variant: 'destructive'
       });
     }
@@ -560,8 +577,8 @@ const ResearchStep: React.FC = () => {
         await startAutopilotFlow();
         
         toast({
-          title: '支付成功',
-          description: '正在启动自动推进流程...'
+          title: t('topic.toast.payment_success'),
+          description: t('topic.toast.payment_success_desc')
         });
       } else {
         throw new Error('Payment failed');
@@ -569,15 +586,15 @@ const ResearchStep: React.FC = () => {
       
     } catch (error) {
       console.error('Payment error:', error);
-      setError(error instanceof Error ? error.message : '支付失败，请重试');
+      setError(error instanceof Error ? error.message : t('topic.toast.payment_failed'));
       
       track('gate1_payment_error', {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       
       toast({
-        title: '支付失败',
-        description: '请稍后重试',
+        title: t('topic.toast.payment_failed'),
+        description: t('topic.toast.payment_failed_desc'),
         variant: 'destructive'
       });
     } finally {
@@ -588,8 +605,8 @@ const ResearchStep: React.FC = () => {
   const handleGate1PreviewOnly = () => {
     setShowGate1Modal(false);
     toast({
-      title: '预览模式',
-      description: '您可以继续浏览，稍后再解锁完整功能'
+      title: t('topic.toast.preview_mode'),
+      description: t('topic.toast.preview_mode_desc')
     });
   };
 
@@ -619,7 +636,7 @@ const ResearchStep: React.FC = () => {
         (error) => {
           setError(error);
           toast({
-            title: '自动推进失败',
+            title: t('topic.toast.autopilot_failed'),
             description: error,
             variant: 'destructive'
           });
@@ -633,13 +650,27 @@ const ResearchStep: React.FC = () => {
       
     } catch (error) {
       console.error('Failed to start autopilot:', error);
-      setError(error instanceof Error ? error.message : '启动自动推进失败');
+      setError(error instanceof Error ? error.message : t('research.error.autopilot_start_failed'));
     }
   };
 
   const handleVerifyLevelChange = (level: 'Basic' | 'Standard' | 'Pro') => {
     setVerificationLevel(level);
     track('outcome_verify_change', { level, step: 'research' });
+    
+    // Show confirmation feedback
+    toast({
+      title: `${t('research.toast.verification_updated')} ${level}`,
+      description: `${t('research.toast.verification_rate')}${level === 'Pro' ? '100%' : level === 'Standard' ? '95%' : '85%'}`,
+      duration: 2000
+    });
+    
+    // Update estimate with new verification level
+    setEstimate({
+      ...estimate,
+      verifyLevel: level,
+      updatedAt: Date.now()
+    });
   };
 
   const handleToggleAddon = (key: string, enabled: boolean) => {
@@ -650,8 +681,8 @@ const ResearchStep: React.FC = () => {
   const handleRetry = () => {
     setError(undefined);
     toast({
-      title: '重试',
-      description: '请重新尝试操作'
+      title: t('topic.toast.retry_title'),
+      description: t('topic.toast.retry_desc')
     });
   };
 
@@ -675,13 +706,13 @@ const ResearchStep: React.FC = () => {
       })));
       
       toast({
-        title: '搜索完成',
-        description: `找到 ${dedupResults.length} 条相关文献`
+        title: t('research.toast.search_complete'),
+        description: t('research.toast.found_references', { count: dedupResults.length })
       });
     } catch (error) {
       toast({
-        title: '搜索失败',
-        description: '请稍后重试',
+        title: t('research.toast.search_failed'),
+        description: t('research.toast.search_failed'),
         variant: 'destructive'
       });
     } finally {
@@ -696,8 +727,8 @@ const ResearchStep: React.FC = () => {
     
     if (exists) {
       toast({
-        title: '已存在',
-        description: '该文献已在文献库中',
+        title: t('research.toast.already_exists'),
+        description: t('research.toast.reference_exists'),
         variant: 'destructive'
       });
       return;
@@ -709,8 +740,8 @@ const ResearchStep: React.FC = () => {
     }]);
     
     toast({
-      title: '已添加',
-      description: '文献已加入文献库'
+      title: t('research.toast.added_to_library'),
+      description: t('research.toast.reference_added')
     });
   }, [getValues, setValue, toast]);
 
@@ -720,8 +751,8 @@ const ResearchStep: React.FC = () => {
     setValue('library', currentLibrary.filter(item => item.id !== itemId));
     
     toast({
-      title: '已移除',
-      description: '文献已从文献库移除'
+      title: t('research.toast.removed_from_library'),
+      description: t('research.toast.reference_removed')
     });
   }, [getValues, setValue, toast]);
 
@@ -730,8 +761,8 @@ const ResearchStep: React.FC = () => {
     const citation = formatCitation(item, style);
     navigator.clipboard.writeText(citation).then(() => {
       toast({
-        title: '已复制',
-        description: `${style} 格式引用已复制到剪贴板`
+        title: t('research.toast.citation_copied'),
+        description: t('research.toast.citation_copied_format', { format: style })
       });
     });
   }, [toast]);
@@ -758,13 +789,13 @@ const ResearchStep: React.FC = () => {
       navigate('/writing-flow/strategy');
       
       toast({
-        title: '文献研究完成',
-        description: '已保存文献库，正在进入策略制定...'
+        title: t('research.toast.completed'),
+        description: t('research.toast.entering_strategy')
       });
     } catch (error) {
       toast({
-        title: '保存失败',
-        description: '请稍后重试',
+        title: t('research.toast.search_failed'),
+        description: t('research.toast.search_failed'),
         variant: 'destructive'
       });
     }
@@ -774,30 +805,26 @@ const ResearchStep: React.FC = () => {
     const currentData = getValues();
     localStorage.setItem('writing-flow:research', JSON.stringify(currentData));
     toast({
-      title: '草稿已保存',
-      description: '您的研究进度已保存到本地'
+      title: t('research.toast.draft_saved'),
+      description: t('research.toast.progress_saved')
     });
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-[#6E5BFF] text-white">
-            <BookOpen className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-semibold leading-tight text-gray-900">文献研究</h1>
-            <p className="text-[#5B667A] text-sm leading-6 mt-1">搜集和整理支持论文写作的参考文献</p>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#F7F8FB] pt-6">
+      <div className="container max-w-[1660px] mx-auto px-6 md:px-8">
+        {/* Grid Layout */}
+        <div className="max-w-[1660px] mx-auto px-6 md:px-8">
+          <div className="grid gap-6 grid-cols-1 xl:grid-cols-[280px_minmax(900px,1fr)_360px] xl:gap-8">
+          {/* Left Column - Step Navigation */}
+          <aside className="hidden xl:block">
+            <div className="sticky top-6 -ml-6 md:-ml-8">
+              <StepNav />
+            </div>
+          </aside>
 
-      {/* Two Column Layout */}
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left Column - Main Form */}
-        <div className="flex-1 lg:max-w-[680px]">
+          {/* Main Column - Form Content */}
+          <main className="max-w-none mx-auto">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* 门槛告警 */}
         {!qualityThreshold.canProceed && (
@@ -806,13 +833,13 @@ const ResearchStep: React.FC = () => {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                 <div className="space-y-2">
-                  <h3 className="font-medium text-yellow-800">文献库未达标</h3>
+                  <h3 className="font-medium text-yellow-800">{t('research.warning.title')}</h3>
                   <div className="space-y-1 text-sm text-yellow-700">
                     {!qualityThreshold.hasMinimumSources && (
-                      <p>• 至少需要3条文献（任意类型均可）</p>
+                      <p>• {t('research.warning.min_sources')}</p>
                     )}
                     {!qualityThreshold.noDuplicates && (
-                      <p>• 存在重复文献，请移除或合并</p>
+                      <p>• {t('research.warning.no_duplicates')}</p>
                     )}
                   </div>
                 </div>
@@ -822,8 +849,8 @@ const ResearchStep: React.FC = () => {
         )}
 
         {/* 进度和标签 */}
-        <Card className="bg-white border-[#EEF0F4] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
-          <CardContent className="p-6">
+        <Card className="bg-white border-[#E7EAF3] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
+          <CardContent className="px-4 md:px-6 xl:px-8 py-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex gap-2">
                 <Button
@@ -832,7 +859,7 @@ const ResearchStep: React.FC = () => {
                   onClick={() => setActiveTab('academic')}
                   className="rounded-full"
                 >
-                  学术参考文献
+                  {t('research.tabs.academic')}
                   <Badge variant="secondary" className="ml-2">
                     {watchedData.library?.filter(item => ['paper', 'book'].includes(item.type)).length || 0}
                   </Badge>
@@ -844,7 +871,7 @@ const ResearchStep: React.FC = () => {
                   className="rounded-full"
                   disabled
                 >
-                  背景信息
+                  {t('research.tabs.background')}
                   <Badge variant="secondary" className="ml-2">
                     {watchedData.bgInfos?.length || 0}
                   </Badge>
@@ -852,7 +879,7 @@ const ResearchStep: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-4">
-                <div className="text-sm text-[#5B667A]">质量评分: {stats.avgQuality}%</div>
+                <div className="text-sm text-[#5B667A]">{t('research.quality_score')}: {stats.avgQuality}%</div>
                 <Progress value={stats.avgQuality} className="w-24 h-2" />
               </div>
             </div>
@@ -860,15 +887,15 @@ const ResearchStep: React.FC = () => {
         </Card>
 
         {/* 搜索卡片 */}
-        <Card className="bg-white border-[#EEF0F4] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
+        <Card className="bg-white border-[#E7EAF3] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-base font-semibold">
               <div className="w-2 h-2 rounded-full bg-[#6E5BFF]"></div>
               <Search className="h-5 w-5 text-[#6E5BFF]" />
-              文献搜索
+              {t('research.search.title')}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6 pt-0">
+          <CardContent className="px-4 md:px-6 xl:px-8 py-6 pt-0">
             {/* 搜索框 */}
             <div className="space-y-4">
               <div className="flex gap-2">
@@ -879,8 +906,8 @@ const ResearchStep: React.FC = () => {
                     render={({ field }) => (
                       <Input
                         {...field}
-                        placeholder="输入主题/关键词/DOI/ISBN"
-                        className="rounded-xl border-[#EEF0F4]"
+                        placeholder={t('research.search.placeholder')}
+                        className="rounded-xl border-[#E7EAF3]"
                         onKeyPress={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
@@ -897,7 +924,7 @@ const ResearchStep: React.FC = () => {
                   disabled={isSearching}
                   className="rounded-full bg-[#6E5BFF] hover:bg-[#5B4FCC] text-white"
                 >
-                  {isSearching ? '搜索中...' : '搜索'}
+                  {isSearching ? t('research.search.searching') : t('research.search.button')}
                 </Button>
               </div>
 
@@ -911,7 +938,7 @@ const ResearchStep: React.FC = () => {
                   size="sm"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  手动添加
+                  {t('research.search.add_manual')}
                 </Button>
                 <Button
                   type="button"
@@ -921,15 +948,15 @@ const ResearchStep: React.FC = () => {
                   disabled
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  导入 BibTeX/RIS
+                  {t('research.search.import_bibtex')}
                 </Button>
               </div>
 
               {/* 筛选条 */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-xl">
                 {/* 年份范围 */}
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-600">年份范围</Label>
+                  <Label className="text-xs text-gray-600">{t('research.filters.year_range')}</Label>
                   <Controller
                     name="filters.years"
                     control={control}
@@ -954,18 +981,18 @@ const ResearchStep: React.FC = () => {
 
                 {/* 来源类型 */}
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-600">来源类型</Label>
+                  <Label className="text-xs text-gray-600">{t('research.filters.source_types')}</Label>
                   <Controller
                     name="filters.types"
                     control={control}
                     render={({ field }) => (
                       <div className="flex flex-wrap gap-1">
                         {[
-                          { value: 'paper', label: '论文' },
-                          { value: 'book', label: '书籍' },
-                          { value: 'web', label: '网站' },
-                          { value: 'dataset', label: '数据集' },
-                          { value: 'report', label: '报告' }
+                          { value: 'paper', label: t('research.type.paper') },
+                          { value: 'book', label: t('research.type.book') },
+                          { value: 'web', label: t('research.type.web') },
+                          { value: 'dataset', label: t('research.type.dataset') },
+                          { value: 'report', label: t('research.type.report') }
                         ].map((type) => (
                           <Button
                             key={type.value}
@@ -992,7 +1019,7 @@ const ResearchStep: React.FC = () => {
 
                 {/* 排序 */}
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-600">排序方式</Label>
+                  <Label className="text-xs text-gray-600">{t('research.filters.sort_by')}</Label>
                   <Controller
                     name="filters.sortBy"
                     control={control}
@@ -1002,9 +1029,9 @@ const ResearchStep: React.FC = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="relevance">相关度</SelectItem>
-                          <SelectItem value="year">年份</SelectItem>
-                          <SelectItem value="citations">被引数</SelectItem>
+                          <SelectItem value="relevance">{t('research.filters.relevance')}</SelectItem>
+                          <SelectItem value="year">{t('research.filters.year')}</SelectItem>
+                          <SelectItem value="citations">{t('research.filters.citations')}</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
@@ -1017,16 +1044,16 @@ const ResearchStep: React.FC = () => {
 
         {/* 搜索结果 */}
         {watchedData.results && watchedData.results.length > 0 && (
-          <Card className="bg-white border-[#EEF0F4] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
+          <Card className="bg-white border-[#E7EAF3] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3 text-base font-semibold">
                 <div className="w-2 h-2 rounded-full bg-[#6E5BFF]"></div>
                 <FileText className="h-5 w-5 text-[#6E5BFF]" />
-                搜索结果
+                {t('research.results.title')}
                 <Badge variant="secondary">{watchedData.results.length}</Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 pt-0">
+            <CardContent className="px-4 md:px-6 xl:px-8 py-6 pt-0">
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 {watchedData.results.map((item) => {
                   const isInLibrary = watchedData.library?.some(lib => lib.id === item.id) || false;
@@ -1062,23 +1089,23 @@ const ResearchStep: React.FC = () => {
                             {item.citedCount && (
                               <Badge variant="outline" className="text-xs">
                                 <BarChart3 className="h-3 w-3 mr-1" />
-                                {item.citedCount} 次引用
+                                {item.citedCount}{t('research.results.citations_count')}
                               </Badge>
                             )}
                             {item.peerReviewed && (
                               <Badge variant="default" className="text-xs bg-green-100 text-green-700">
                                 <CheckCircle className="h-3 w-3 mr-1" />
-                                同行评审
+                                {t('research.results.peer_reviewed')}
                               </Badge>
                             )}
                             {item.openAccess && (
                               <Badge variant="default" className="text-xs bg-blue-100 text-blue-700">
                                 <ExternalLink className="h-3 w-3 mr-1" />
-                                开放获取
+                                {t('research.results.open_access')}
                               </Badge>
                             )}
                             <Badge variant="secondary" className="text-xs">
-                              质量: {item.qualityScore}%
+                              {t('research.results.quality')}: {item.qualityScore}%
                             </Badge>
                           </div>
                           
@@ -1106,7 +1133,7 @@ const ResearchStep: React.FC = () => {
                           {isInLibrary ? (
                             <Badge variant="secondary" className="text-xs">
                               <CheckCircle className="h-3 w-3 mr-1" />
-                              已加入
+                              {t('research.results.added')}
                             </Badge>
                           ) : (
                             <Button
@@ -1115,7 +1142,7 @@ const ResearchStep: React.FC = () => {
                               className="rounded-full bg-[#6E5BFF] hover:bg-[#5B4FCC] text-white text-xs px-3 py-1 h-auto"
                             >
                               <Plus className="h-3 w-3 mr-1" />
-                              加入文献库
+                              {t('research.results.add_to_library')}
                             </Button>
                           )}
                           
@@ -1127,19 +1154,19 @@ const ResearchStep: React.FC = () => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                               <DropdownMenuItem onClick={() => copyCitation(item, 'APA')}>
-                                复制 APA 格式
+                                {t('research.results.copy_apa')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => copyCitation(item, 'MLA')}>
-                                复制 MLA 格式
+                                {t('research.results.copy_mla')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => copyCitation(item, 'Chicago')}>
-                                复制 Chicago 格式
+                                {t('research.results.copy_chicago')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => copyCitation(item, 'IEEE')}>
-                                复制 IEEE 格式
+                                {t('research.results.copy_ieee')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => copyCitation(item, 'GBT')}>
-                                复制 GB/T 格式
+                                {t('research.results.copy_gbt')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1153,15 +1180,15 @@ const ResearchStep: React.FC = () => {
                             <DropdownMenuContent>
                               <DropdownMenuItem>
                                 <Eye className="h-3 w-3 mr-2" />
-                                查看详情
+                                {t('research.results.view_details')}
                               </DropdownMenuItem>
                               <DropdownMenuItem>
                                 <Bookmark className="h-3 w-3 mr-2" />
-                                标记关键
+                                {t('research.results.bookmark')}
                               </DropdownMenuItem>
                               <DropdownMenuItem>
                                 <ExternalLink className="h-3 w-3 mr-2" />
-                                查看原文
+                                {t('research.results.view_original')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1176,17 +1203,17 @@ const ResearchStep: React.FC = () => {
         )}
 
         {/* 文献库 */}
-        <Card className="bg-white border-[#EEF0F4] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
+        <Card className="bg-white border-[#E7EAF3] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3 text-base font-semibold">
                 <div className="w-2 h-2 rounded-full bg-[#6E5BFF]"></div>
                 <Database className="h-5 w-5 text-[#6E5BFF]" />
-                文献库
+                {t('research.library.title')}
               </CardTitle>
               <div className="flex items-center gap-4">
                 <span className="text-sm text-[#5B667A]">
-                  已选 {stats.libraryCount}/建议 3+
+                  {t('research.library.selected_count', { count: stats.libraryCount })}
                 </span>
                 <Button
                   type="button"
@@ -1196,29 +1223,29 @@ const ResearchStep: React.FC = () => {
                   className="rounded-full"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  导出
+                  {t('research.library.export')}
                 </Button>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-6 pt-0">
+          <CardContent className="px-4 md:px-6 xl:px-8 py-6 pt-0">
             {watchedData.library && watchedData.library.length > 0 ? (
               <div className="space-y-4">
                 {/* 统计信息 */}
                 <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl">
                   <div className="text-center">
                     <div className="text-lg font-semibold text-[#6E5BFF]">{stats.libraryCount}</div>
-                    <div className="text-xs text-gray-600">总数量</div>
+                    <div className="text-xs text-gray-600">{t('research.library.stats.total')}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-lg font-semibold text-[#6E5BFF]">{stats.avgQuality}%</div>
-                    <div className="text-xs text-gray-600">平均质量</div>
+                    <div className="text-xs text-gray-600">{t('research.library.stats.average_quality')}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-lg font-semibold text-[#6E5BFF]">
                       {watchedData.library.reduce((sum, item) => sum + (item.expectedCitations || 1), 0)}
                     </div>
-                    <div className="text-xs text-gray-600">预计引用</div>
+                    <div className="text-xs text-gray-600">{t('research.library.stats.expected_citations')}</div>
                   </div>
                 </div>
 
@@ -1254,18 +1281,18 @@ const ResearchStep: React.FC = () => {
                                     
                                     <div className="flex items-center gap-2">
                                       <Badge variant="outline" className="text-xs">
-                                        {item.type === 'paper' ? '论文' : 
-                                         item.type === 'book' ? '书籍' :
-                                         item.type === 'web' ? '网站' :
-                                         item.type === 'dataset' ? '数据集' : '报告'}
+                                        {item.type === 'paper' ? t('research.type.paper') : 
+                                         item.type === 'book' ? t('research.type.book') :
+                                         item.type === 'web' ? t('research.type.web') :
+                                         item.type === 'dataset' ? t('research.type.dataset') : t('research.type.report')}
                                       </Badge>
                                       <Badge variant="secondary" className="text-xs">
-                                        质量: {item.qualityScore}%
+                                        {t('research.results.quality')}: {item.qualityScore}%
                                       </Badge>
                                       {(item.doi || item.isbn || item.url) && (
                                         <Badge variant="default" className="text-xs bg-green-100 text-green-700">
                                           <CheckCircle className="h-3 w-3 mr-1" />
-                                          有标识
+                                          {t('research.library.item.has_identifier')}
                                         </Badge>
                                       )}
                                     </div>
@@ -1277,7 +1304,6 @@ const ResearchStep: React.FC = () => {
                                   
                                   <Button
                                     type="button"
-                                    variant="ghost"
                                     size="sm"
                                     onClick={() => removeFromLibrary(item.id)}
                                     className="text-red-600 hover:text-red-700"
@@ -1298,8 +1324,8 @@ const ResearchStep: React.FC = () => {
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>文献库为空</p>
-                <p className="text-sm">搜索并添加相关文献到您的研究库</p>
+                <p>{t('research.library.empty_title')}</p>
+                <p className="text-sm">{t('research.library.empty_description')}</p>
               </div>
             )}
           </CardContent>
@@ -1314,10 +1340,10 @@ const ResearchStep: React.FC = () => {
               setCurrentStep('topic');
               navigate('/writing-flow/topic');
             }}
-            className="flex items-center gap-2 rounded-full px-6 py-3 border-[#EEF0F4] text-[#5B667A] hover:border-[#6E5BFF] hover:text-[#6E5BFF] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+            className="flex items-center gap-2 rounded-full px-6 py-3 border-[#E7EAF3] text-[#5B667A] hover:border-[#6E5BFF] hover:text-[#6E5BFF] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
           >
             <ArrowLeft className="h-4 w-4" />
-            返回选题
+            {t('research.buttons.back_to_topic')}
           </Button>
           
           <div className="flex gap-2">
@@ -1325,51 +1351,59 @@ const ResearchStep: React.FC = () => {
               type="button"
               variant="outline"
               onClick={saveDraft}
-              className="flex items-center gap-2 rounded-full px-6 py-3 border-[#EEF0F4] text-[#5B667A] hover:border-[#6E5BFF] hover:text-[#6E5BFF] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              className="flex items-center gap-2 rounded-full px-6 py-3 border-[#E7EAF3] text-[#5B667A] hover:border-[#6E5BFF] hover:text-[#6E5BFF] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
             >
               <Save className="h-4 w-4" />
-              保存草稿
+              {t('research.buttons.save_draft')}
             </Button>
             
             <Button
               type="submit"
-              disabled={!qualityThreshold.canProceed}
+              disabled={!demoMode && !qualityThreshold.canProceed}
               className="flex items-center gap-2 rounded-full px-8 py-3 bg-[#6E5BFF] hover:bg-[#5B4FCC] hover:shadow-lg hover:-translate-y-0.5 text-white transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-[#6E5BFF] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
             >
-              继续到策略
+              {t('research.buttons.continue_to_strategy')}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
           </form>
-        </div>
+          </main>
 
-        {/* Right Column - Outcome Panel */}
-        <div className="w-full lg:w-[360px] lg:flex-shrink-0">
-          <OutcomePanel
-            step="research"
-            lockedPrice={pay.lockedPrice}
-            estimate={{
-              priceRange: estimate.priceRange,
-              etaMinutes: estimate.etaMinutes,
-              citesRange: estimate.citesRange,
-              verifyLevel: verificationLevel
-            }}
-            metrics={writingFlow.metrics}
-            addons={writingFlow.addons}
-            autopilot={autopilot.running ? {
-              running: autopilot.running,
-              step: autopilot.step as any,
-              progress: autopilot.progress,
-              message: autopilot.logs[autopilot.logs.length - 1]?.msg
-            } : undefined}
-            error={writingFlow.error}
-            onVerifyChange={handleVerifyLevelChange}
-            onToggleAddon={handleToggleAddon}
-            onPreviewSample={handleShowPreview}
-            onPayAndWrite={handlePayAndWrite}
-            onRetry={handleRetry}
-          />
+          {/* Right Column - Ghost Outcome Panel */}
+          <aside className="hidden xl:block">
+            <div className="sticky top-6 -mr-6 md:-mr-8">
+              <OutcomePanel
+              step="research"
+              lockedPrice={pay.lockedPrice}
+              estimate={{
+                priceRange: estimate.priceRange,
+                etaMinutes: estimate.etaMinutes,
+                citesRange: estimate.citesRange,
+                verifyLevel: verificationLevel
+              }}
+              metrics={{
+                sourcesHit: stats.libraryCount,
+                verifiableRatio: stats.verifiableRatio,
+                recent5yRatio: stats.recent5yRatio
+              }}
+              addons={writingFlow.addons}
+              autopilot={autopilot.running ? {
+                running: autopilot.running,
+                step: autopilot.step as any,
+                progress: autopilot.progress,
+                message: autopilot.logs[autopilot.logs.length - 1]?.msg
+              } : undefined}
+              error={writingFlow.error}
+              onVerifyChange={handleVerifyLevelChange}
+              onToggleAddon={handleToggleAddon}
+              onPreviewSample={handleShowPreview}
+              onPayAndWrite={handlePayAndWrite}
+              onRetry={handleRetry}
+            />
+            </div>
+          </aside>
+          </div>
         </div>
       </div>
 
@@ -1379,14 +1413,17 @@ const ResearchStep: React.FC = () => {
           open={showGate1Modal}
           price={pay.lockedPrice}
           benefits={[
-            '一次完整生成',
-            '2 次局部重写',
-            '全量引用核验'
+            t('topic.gate1.benefit1'),
+            t('topic.gate1.benefit2'),
+            t('topic.gate1.benefit3')
           ]}
           onPreviewOnly={handleGate1PreviewOnly}
           onUnlock={handleGate1Unlock}
         />
       )}
+      
+      {/* Demo Mode Toggle */}
+      <DemoModeToggle />
     </div>
   );
 };

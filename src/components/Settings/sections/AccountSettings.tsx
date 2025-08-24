@@ -11,8 +11,10 @@ import { Upload, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { User, InvoiceProfile } from '@/lib/types';
 import { mockUser, mockInvoiceProfile } from '@/lib/mockData';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const AccountSettings: React.FC = () => {
+  const { t } = useTranslation();
   const [user, setUser] = useState<User>(mockUser);
   const [invoiceProfile, setInvoiceProfile] = useState<InvoiceProfile>(mockInvoiceProfile);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,9 +24,9 @@ const AccountSettings: React.FC = () => {
     try {
       // TODO: API call to update user info
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('基本信息已保存');
+      toast.success(t('settings.toast.basic_saved'));
     } catch (error) {
-      toast.error('保存失败，请重试');
+      toast.error(t('settings.toast.save_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -35,16 +37,16 @@ const AccountSettings: React.FC = () => {
     try {
       // TODO: API call to update invoice profile
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('发票抬头已保存');
+      toast.success(t('settings.toast.invoice_saved'));
     } catch (error) {
-      toast.error('保存失败，请重试');
+      toast.error(t('settings.toast.save_failed'));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleAvatarUpload = () => {
-    toast.info('头像上传功能开发中');
+    toast.info(t('settings.toast.avatar_dev'));
   };
 
   return (
@@ -52,7 +54,7 @@ const AccountSettings: React.FC = () => {
       {/* 基本信息 */}
       <Card className="rounded-2xl border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle className="text-[16px] font-semibold">基本信息</CardTitle>
+          <CardTitle className="text-[16px] font-semibold">{t('settings.account.basic_info')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* 头像上传 */}
@@ -71,10 +73,10 @@ const AccountSettings: React.FC = () => {
                 onClick={handleAvatarUpload}
               >
                 <Upload className="h-4 w-4 mr-2" />
-                更换头像
+                {t('settings.account.change_avatar')}
               </Button>
               <p className="text-xs text-muted-foreground mt-1">
-                支持 JPG、PNG 格式，不超过 2MB
+                {t('settings.account.avatar_format')}
               </p>
             </div>
           </div>
@@ -82,7 +84,7 @@ const AccountSettings: React.FC = () => {
           {/* 基本信息表单 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">姓名</Label>
+              <Label htmlFor="name">{t('settings.account.name')}</Label>
               <Input
                 id="name"
                 value={user.name}
@@ -92,7 +94,7 @@ const AccountSettings: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱</Label>
+              <Label htmlFor="email">{t('settings.account.email')}</Label>
               <div className="flex items-center gap-2">
                 <Input
                   id="email"
@@ -103,18 +105,18 @@ const AccountSettings: React.FC = () => {
                 {user.emailVerified ? (
                   <Badge variant="secondary" className="bg-green-100 text-green-800">
                     <CheckCircle className="h-3 w-3 mr-1" />
-                    已验证
+                    {t('settings.account.verified')}
                   </Badge>
                 ) : (
                   <Badge variant="destructive">
-                    未验证
+                    {t('settings.account.unverified')}
                   </Badge>
                 )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="timezone">时区</Label>
+              <Label htmlFor="timezone">{t('settings.account.timezone')}</Label>
               <Select value={user.timezone} onValueChange={(value) => setUser({...user, timezone: value})}>
                 <SelectTrigger>
                   <SelectValue />
@@ -129,15 +131,15 @@ const AccountSettings: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="language">界面语言</Label>
+              <Label htmlFor="language">{t('settings.account.language')}</Label>
               <Select value={user.language} onValueChange={(value) => setUser({...user, language: value})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="zh-CN">简体中文</SelectItem>
-                  <SelectItem value="zh-TW">繁体中文</SelectItem>
-                  <SelectItem value="en-US">English</SelectItem>
+                  <SelectItem value="zh-CN">{t('settings.account.language.zh_cn')}</SelectItem>
+                  <SelectItem value="zh-TW">{t('settings.account.language.zh_tw')}</SelectItem>
+                  <SelectItem value="en-US">{t('settings.account.language.en_us')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -149,7 +151,7 @@ const AccountSettings: React.FC = () => {
               disabled={isLoading}
               className="rounded-xl"
             >
-              {isLoading ? '保存中...' : '保存更改'}
+              {isLoading ? t('settings.account.saving') : t('settings.account.save_changes')}
             </Button>
           </div>
         </CardContent>
@@ -158,12 +160,12 @@ const AccountSettings: React.FC = () => {
       {/* 发票抬头信息 */}
       <Card className="rounded-2xl border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle className="text-[16px] font-semibold">发票抬头信息</CardTitle>
+          <CardTitle className="text-[16px] font-semibold">{t('settings.account.invoice_title')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* 发票类型 */}
           <div className="space-y-3">
-            <Label>抬头类型</Label>
+            <Label>{t('settings.account.invoice_type')}</Label>
             <RadioGroup
               value={invoiceProfile.type}
               onValueChange={(value: 'personal' | 'company') => 
@@ -173,11 +175,11 @@ const AccountSettings: React.FC = () => {
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="personal" id="personal" />
-                <Label htmlFor="personal">个人</Label>
+                <Label htmlFor="personal">{t('settings.account.invoice_personal')}</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="company" id="company" />
-                <Label htmlFor="company">企业</Label>
+                <Label htmlFor="company">{t('settings.account.invoice_company')}</Label>
               </div>
             </RadioGroup>
           </div>
@@ -186,7 +188,7 @@ const AccountSettings: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="title">
-                {invoiceProfile.type === 'company' ? '企业名称' : '姓名'}
+                {invoiceProfile.type === 'company' ? t('settings.account.company_name') : t('settings.account.personal_name')}
               </Label>
               <Input
                 id="title"
@@ -198,7 +200,7 @@ const AccountSettings: React.FC = () => {
 
             {invoiceProfile.type === 'company' && (
               <div className="space-y-2">
-                <Label htmlFor="taxId">统一社会信用代码</Label>
+                <Label htmlFor="taxId">{t('settings.account.tax_id')}</Label>
                 <Input
                   id="taxId"
                   value={invoiceProfile.taxId || ''}
@@ -209,7 +211,7 @@ const AccountSettings: React.FC = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="address">地址</Label>
+              <Label htmlFor="address">{t('settings.account.address')}</Label>
               <Input
                 id="address"
                 value={invoiceProfile.address || ''}
@@ -218,7 +220,7 @@ const AccountSettings: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="zip">邮政编码</Label>
+              <Label htmlFor="zip">{t('settings.account.zip')}</Label>
               <Input
                 id="zip"
                 value={invoiceProfile.zip || ''}
@@ -227,7 +229,7 @@ const AccountSettings: React.FC = () => {
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="phone">联系电话</Label>
+              <Label htmlFor="phone">{t('settings.account.phone')}</Label>
               <Input
                 id="phone"
                 value={invoiceProfile.phone || ''}
@@ -242,7 +244,7 @@ const AccountSettings: React.FC = () => {
               disabled={isLoading}
               className="rounded-xl"
             >
-              {isLoading ? '保存中...' : '保存发票抬头'}
+              {isLoading ? t('settings.account.saving') : t('settings.account.save_invoice')}
             </Button>
           </div>
         </CardContent>

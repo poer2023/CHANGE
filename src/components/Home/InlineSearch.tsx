@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface InlineSearchProps {
   placeholder?: string;
@@ -12,7 +13,7 @@ interface InlineSearchProps {
 }
 
 const InlineSearch: React.FC<InlineSearchProps> = ({
-  placeholder = "搜索文稿、引用、标签…",
+  placeholder,
   className,
   autoFocus = false
 }) => {
@@ -20,6 +21,7 @@ const InlineSearch: React.FC<InlineSearchProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -74,7 +76,7 @@ const InlineSearch: React.FC<InlineSearchProps> = ({
         <Input
           ref={inputRef}
           type="search"
-          placeholder={placeholder}
+          placeholder={placeholder || t('search.placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -110,7 +112,7 @@ const InlineSearch: React.FC<InlineSearchProps> = ({
               size="sm"
               className="h-6 px-2 text-xs rounded-md"
             >
-              搜索
+              {t('search.button')}
             </Button>
           )}
         </div>
@@ -118,7 +120,7 @@ const InlineSearch: React.FC<InlineSearchProps> = ({
       
       {/* Keyboard hint */}
       <div className="absolute -bottom-5 right-0 text-xs text-muted-foreground">
-        按 <kbd className="px-1 py-0.5 bg-muted rounded text-xs">/</kbd> 聚焦
+        {t('search.keyboard_hint')} <kbd className="px-1 py-0.5 bg-muted rounded text-xs">/</kbd>
       </div>
     </form>
   );

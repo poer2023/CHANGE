@@ -8,12 +8,14 @@ import {
   AlertTriangle 
 } from 'lucide-react';
 import { Activity } from '@/lib/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface RecentActivityProps {
   activities: Activity[];
 }
 
 const RecentActivity: React.FC<RecentActivityProps> = ({ activities }) => {
+  const { t } = useTranslation();
   const getActivityIcon = (type: Activity['type']) => {
     switch (type) {
       case 'create':
@@ -57,19 +59,19 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ activities }) => {
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
     if (diffDays > 0) {
-      return `${diffDays}天前`;
+      return `${diffDays}${t('profile.activity.time.days_ago')}`;
     } else if (diffHours > 0) {
-      return `${diffHours}小时前`;
+      return `${diffHours}${t('profile.activity.time.hours_ago')}`;
     } else if (diffMinutes > 0) {
-      return `${diffMinutes}分钟前`;
+      return `${diffMinutes}${t('profile.activity.time.minutes_ago')}`;
     } else {
-      return '刚刚';
+      return t('profile.activity.time.just_now');
     }
   };
 
   return (
     <Card className="rounded-2xl border bg-card shadow-sm hover:shadow-md transition-shadow p-6">
-      <h2 className="text-[16px] font-semibold text-foreground mb-4">最近活动</h2>
+      <h2 className="text-[16px] font-semibold text-foreground mb-4">{t('profile.activity.title')}</h2>
       
       <div className="space-y-4">
         {activities.map((activity) => {

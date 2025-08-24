@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '@/state/AppContext';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { 
   AgentPanelState, 
@@ -53,6 +54,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
   className = ''
 }) => {
   const { trackTyped } = useApp();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'command' | 'audit'>('command');
   const [state, setState] = useState<AgentPanelState>({
     status: 'idle',
@@ -74,13 +76,13 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
   // 获取状态显示信息
   const getStatusDisplay = (status: ExecutionStatus) => {
     const statusInfo = {
-      idle: { label: '待命中', icon: Target, color: 'bg-slate-100 text-slate-600' },
-      planning: { label: '解析中', icon: Loader2, color: 'bg-blue-100 text-blue-600 animate-pulse' },
-      preview: { label: '预览中', icon: CheckCircle, color: 'bg-green-100 text-green-600' },
-      applying: { label: '执行中', icon: Zap, color: 'bg-purple-100 text-purple-600 animate-pulse' },
-      success: { label: '已完成', icon: CheckCircle, color: 'bg-green-100 text-green-600' },
-      error: { label: '执行失败', icon: AlertCircle, color: 'bg-red-100 text-red-600' },
-      partial: { label: '部分成功', icon: AlertTriangle, color: 'bg-orange-100 text-orange-600' }
+      idle: { label: t('agent.status.idle'), icon: Target, color: 'bg-slate-100 text-slate-600' },
+      planning: { label: t('agent.status.planning'), icon: Loader2, color: 'bg-blue-100 text-blue-600 animate-pulse' },
+      preview: { label: t('agent.status.preview'), icon: CheckCircle, color: 'bg-green-100 text-green-600' },
+      applying: { label: t('agent.status.applying'), icon: Zap, color: 'bg-purple-100 text-purple-600 animate-pulse' },
+      success: { label: t('agent.status.success'), icon: CheckCircle, color: 'bg-green-100 text-green-600' },
+      error: { label: t('agent.status.error'), icon: AlertCircle, color: 'bg-red-100 text-red-600' },
+      partial: { label: t('agent.status.partial'), icon: AlertTriangle, color: 'bg-orange-100 text-orange-600' }
     };
     
     return statusInfo[status];
@@ -136,7 +138,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
       }
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '命令解析失败';
+      const errorMessage = error instanceof Error ? error.message : t('agent.toast.command_failed');
       setState(prev => ({ 
         ...prev, 
         status: 'error',
@@ -207,7 +209,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
           changedFiles: response.result.changedFiles || 0
         }, 'ai_assistant', 'success');
         
-        toast.success(`修改已成功应用！耗时 ${Math.round(response.result.duration / 1000)}s`);
+        toast.success(`${t('agent.toast.success_with_time')} ${Math.round(response.result.duration / 1000)}s`);
       } else if (response.result.status === 'partial') {
         trackTyped('agent_operation_failed', {
           operationId: response.auditEntry.id,
@@ -216,7 +218,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
           failedSteps: response.result.failedSteps.length
         }, 'error', 'agent');
         
-        toast.warning(`部分修改成功，${response.result.failedSteps.length} 个步骤失败`);
+        toast.warning(`${t('agent.toast.partial_success')} ${response.result.failedSteps.length} ${t('agent.plan.steps_count')}`);
       }
 
       // 刷新相关数据（这里应该触发上下文更新）
@@ -224,7 +226,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
 
     } catch (error) {
       clearInterval(progressInterval);
-      const errorMessage = error instanceof Error ? error.message : '执行失败';
+      const errorMessage = error instanceof Error ? error.message : t('agent.command.execution_failed');
       
       setState(prev => ({ 
         ...prev, 
@@ -264,12 +266,12 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
         success: true
       }, 'ai_assistant', 'undo');
       
-      toast.success('操作已成功撤销');
+      toast.success(t('agent.toast.undo_success'));
       
       // TODO: 刷新相关数据
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '撤销失败';
+      const errorMessage = error instanceof Error ? error.message : t('agent.toast.undo_failed');
       
       trackTyped('agent_undo', {
         operationId: lastOperation,
@@ -285,13 +287,13 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
   const handleSaveRecipe = useCallback(() => {
     if (!state.currentCommand || !state.plan) return;
 
-    const recipeName = prompt('请为这个命令配方命名:', '');
+    const recipeName = prompt(t('agent.prompt.recipe_name'), '');
     if (!recipeName) return;
 
     try {
       const recipe = saveRecipe({
         name: recipeName,
-        description: `包含 ${state.plan.steps.length} 个步骤的 Agent 命令`,
+        description: t('agent.recipe.description_template').replace(' ', ` ${state.plan.steps.length} `),
         template: state.currentCommand,
         tags: state.plan.steps.map(step => step.type.split('.')[0]),
         usageCount: 0
@@ -303,16 +305,16 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
         stepsCount: state.plan.steps.length
       }, 'ai_assistant', 'recipe');
 
-      toast.success(`配方 "${recipe.name}" 已保存`);
+      toast.success(`${t('agent.toast.recipe_saved')} "${recipe.name}"`);
     } catch (error) {
       trackTyped('error_occurred', {
         errorType: 'client',
-        errorMessage: '保存配方失败',
+        errorMessage: t('agent.toast.recipe_save_failed'),
         context: 'agent_recipe_save',
         userAgent: navigator.userAgent
       }, 'error', 'agent');
       
-      toast.error('保存配方失败');
+      toast.error(t('agent.toast.recipe_save_failed'));
     }
   }, [state.currentCommand, state.plan, trackTyped]);
 
@@ -354,7 +356,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
           }}
         >
           <Zap className="w-4 h-4 mr-2" />
-          命令执行
+          {t('agent.tabs.command')}
         </Button>
         <Button
           variant={activeTab === 'audit' ? 'default' : 'ghost'}
@@ -371,7 +373,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
           }}
         >
           <Activity className="w-4 h-4 mr-2" />
-          操作审计
+          {t('agent.tabs.audit')}
         </Button>
       </div>
 
@@ -396,13 +398,13 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
                   className="text-xs"
                 >
                   <RefreshCw className="w-3 h-3 mr-1" />
-                  重置
+                  {t('agent.buttons.reset')}
                 </Button>
               )}
             </div>
             
             <p className="text-sm text-slate-600">
-              使用自然语言描述您想要的修改，Agent 将解析并预览变更。
+              {t('agent.messages.description')}
             </p>
           </div>
 
@@ -420,7 +422,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5 animate-pulse" />
                 <div className="flex-1">
-                  <h4 className="text-sm font-medium text-red-800 mb-1">执行出错</h4>
+                  <h4 className="text-sm font-medium text-red-800 mb-1">{t('agent.messages.error_title')}</h4>
                   <p className="text-sm text-red-700">{state.error}</p>
                 </div>
               </div>
@@ -433,7 +435,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-[#6E5BFF] rounded-full animate-pulse" />
-                  <span className="text-slate-600">正在应用修改...</span>
+                  <span className="text-slate-600">{t('agent.messages.applying')}</span>
                 </div>
                 <span className="text-slate-500 font-medium">{Math.round(executionProgress)}%</span>
               </div>
@@ -446,9 +448,9 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
             <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
               <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-medium text-slate-900">执行计划</h4>
+              <h4 className="font-medium text-slate-900">{t('agent.plan.title')}</h4>
               <Badge variant="outline" className="text-xs">
-                {state.plan.steps.length} 个步骤
+                {state.plan.steps.length} {t('agent.plan.steps_count')}
               </Badge>
             </div>
 
@@ -488,7 +490,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
             {/* 预计时间 */}
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <Clock className="w-4 h-4" />
-              <span>预计用时: {state.plan.estimatedTime}</span>
+              <span>{t('agent.plan.estimated_time')}: {state.plan.estimatedTime}</span>
             </div>
 
             {/* 警告信息 */}
@@ -497,7 +499,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h5 className="text-sm font-medium text-orange-800 mb-1">注意事项</h5>
+                    <h5 className="text-sm font-medium text-orange-800 mb-1">{t('agent.plan.warnings_title')}</h5>
                     <ul className="text-sm text-orange-700 space-y-1">
                       {state.plan.warnings.map((warning, index) => (
                         <li key={index}>• {warning}</li>
@@ -514,9 +516,9 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h5 className="text-sm font-medium text-red-800 mb-1">缺少依赖</h5>
+                    <h5 className="text-sm font-medium text-red-800 mb-1">{t('agent.plan.dependencies_title')}</h5>
                     <p className="text-sm text-red-700">
-                      需要解决以下问题才能执行：{state.plan.requires.join('、')}
+                      {t('agent.plan.dependencies_message')}：{state.plan.requires.join('、')}
                     </p>
                   </div>
                 </div>
@@ -527,7 +529,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
           {/* 差异预览 */}
           <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
             <div className="p-4 border-b border-slate-200">
-              <h4 className="font-medium text-slate-900">变更预览</h4>
+              <h4 className="font-medium text-slate-900">{t('agent.diff.title')}</h4>
             </div>
             <div className="p-4">
               <DiffViewer 
@@ -551,7 +553,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
               className="bg-[#6E5BFF] hover:bg-[#5A4ACF] transition-all duration-200 hover:scale-105 hover:shadow-lg"
             >
               <Play className="w-4 h-4 mr-2" />
-              应用修改
+              {t('agent.buttons.apply')}
             </Button>
             
             <Button
@@ -560,7 +562,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
               className="transition-all duration-200 hover:scale-105"
             >
               <Save className="w-4 h-4 mr-2" />
-              保存为配方
+              {t('agent.buttons.save_recipe')}
             </Button>
           </>
         )}
@@ -572,7 +574,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
             className="text-orange-600 border-orange-200 hover:bg-orange-50 transition-all duration-200 hover:scale-105 animate-in fade-in slide-in-from-right-2"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
-            撤销上次操作
+            {t('agent.buttons.undo')}
           </Button>
         )}
       </div>
@@ -583,7 +585,7 @@ const AgentPanel: React.FC<AgentPanelProps> = ({
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-600 animate-in zoom-in duration-300" />
                 <span className="text-sm font-medium text-green-800">
-                  修改已成功应用到文档
+                  {t('agent.success.message')}
                 </span>
               </div>
             </div>

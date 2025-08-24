@@ -2,15 +2,18 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { FileText, CheckCircle, Download } from 'lucide-react';
 import { UserStats } from '@/lib/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ProfileStatsProps {
   stats: UserStats;
 }
 
 const ProfileStats: React.FC<ProfileStatsProps> = ({ stats }) => {
+  const { t } = useTranslation();
+  
   const formatNumber = (num: number): string => {
     if (num >= 10000) {
-      return (num / 10000).toFixed(1) + '万';
+      return (num / 10000).toFixed(1) + t('profile.stats.wan_suffix');
     }
     return num.toLocaleString();
   };
@@ -21,21 +24,21 @@ const ProfileStats: React.FC<ProfileStatsProps> = ({ stats }) => {
 
   const statCards = [
     {
-      title: '累计字数',
+      title: t('profile.stats.total_words'),
       value: formatNumber(stats.totalWords),
       icon: FileText,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     },
     {
-      title: '引用核验通过率',
+      title: t('profile.stats.citation_pass_rate'),
       value: formatPercentage(stats.citationPassRate),
       icon: CheckCircle,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
     },
     {
-      title: '已导出次数',
+      title: t('profile.stats.export_count'),
       value: formatNumber(stats.exportCount),
       icon: Download,
       color: 'text-purple-600',

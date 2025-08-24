@@ -23,8 +23,10 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import OutcomePanel from '@/components/WritingFlow/OutcomePanel';
+import StepNav from '@/components/WritingFlow/StepNav';
 import Gate1Modal from '@/components/Gate1Modal';
-import { useStep1, useEstimate, useAutopilot, useApp, useWritingFlow as useNewWritingFlow, usePayment } from '@/state/AppContext';
+import DemoModeToggle from '@/components/DemoModeToggle';
+import { useStep1, useEstimate, useAutopilot, useApp, useWritingFlow as useNewWritingFlow, usePayment, useDemoMode } from '@/state/AppContext';
 import { lockPrice, createPaymentIntent, confirmPayment, startAutopilot as apiStartAutopilot, streamAutopilotProgress, track } from '@/services/pricing';
 import { useWritingFlow } from '@/contexts/WritingFlowContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +40,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 import { 
   FileText, 
   Plus, 
@@ -109,8 +112,8 @@ const OutlineDocZ = z.object({
   nodes: z.array(OutlineNodeZ).min(3, '至少需要3个顶层章节')
 });
 
-// 模板构建函数
-const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
+// Template building functions
+const buildTemplateV1 = (targetWords: number, t: (key: string) => string): OutlineNode[] => {
   const distribution = {
     introduction: 0.12,
     literature: 0.25,
@@ -126,8 +129,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 1,
       number: '1',
-      title: '引言',
-      summary: '研究背景、问题陈述和研究目标',
+      title: t('outline.templates.intro.title'),
+      summary: t('outline.templates.intro.summary'),
       estWords: Math.round(targetWords * distribution.introduction),
       children: [
         {
@@ -135,8 +138,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 1,
           number: '1.1',
-          title: '研究背景',
-          summary: '领域现状和研究动机',
+          title: t('outline.templates.intro.background.title'),
+          summary: t('outline.templates.intro.background.summary'),
           estWords: Math.round(targetWords * distribution.introduction * 0.4)
         },
         {
@@ -144,8 +147,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 2,
           number: '1.2',
-          title: '问题陈述',
-          summary: '待解决的核心问题',
+          title: t('outline.templates.intro.problem.title'),
+          summary: t('outline.templates.intro.problem.summary'),
           estWords: Math.round(targetWords * distribution.introduction * 0.6)
         }
       ],
@@ -156,8 +159,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 2,
       number: '2',
-      title: '文献综述',
-      summary: '相关研究回顾和理论框架',
+      title: t('outline.templates.literature.title'),
+      summary: t('outline.templates.literature.summary'),
       estWords: Math.round(targetWords * distribution.literature),
       children: [
         {
@@ -165,8 +168,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 1,
           number: '2.1',
-          title: '理论基础',
-          summary: '核心理论和概念框架',
+          title: t('outline.templates.literature.theory.title'),
+          summary: t('outline.templates.literature.theory.summary'),
           estWords: Math.round(targetWords * distribution.literature * 0.5)
         },
         {
@@ -174,8 +177,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 2,
           number: '2.2',
-          title: '相关研究',
-          summary: '现有研究成果分析',
+          title: t('outline.templates.literature.related.title'),
+          summary: t('outline.templates.literature.related.summary'),
           estWords: Math.round(targetWords * distribution.literature * 0.5)
         }
       ],
@@ -186,8 +189,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 3,
       number: '3',
-      title: '研究方法',
-      summary: '研究设计、数据收集和分析方法',
+      title: t('outline.templates.methodology.title'),
+      summary: t('outline.templates.methodology.summary'),
       estWords: Math.round(targetWords * distribution.methodology),
       children: [
         {
@@ -195,8 +198,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 1,
           number: '3.1',
-          title: '研究设计',
-          summary: '整体研究框架和流程',
+          title: t('outline.templates.methodology.design.title'),
+          summary: t('outline.templates.methodology.design.summary'),
           estWords: Math.round(targetWords * distribution.methodology * 0.6)
         },
         {
@@ -204,8 +207,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 2,
           number: '3.2',
-          title: '数据收集',
-          summary: '数据来源和收集方法',
+          title: t('outline.templates.methodology.data.title'),
+          summary: t('outline.templates.methodology.data.summary'),
           estWords: Math.round(targetWords * distribution.methodology * 0.4)
         }
       ],
@@ -216,8 +219,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 4,
       number: '4',
-      title: '结果与分析',
-      summary: '研究发现和数据分析结果',
+      title: t('outline.templates.results.title'),
+      summary: t('outline.templates.results.summary'),
       estWords: Math.round(targetWords * distribution.results),
       children: [
         {
@@ -225,8 +228,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 1,
           number: '4.1',
-          title: '主要发现',
-          summary: '核心研究结果展示',
+          title: t('outline.templates.results.findings.title'),
+          summary: t('outline.templates.results.findings.summary'),
           estWords: Math.round(targetWords * distribution.results * 0.7)
         },
         {
@@ -234,8 +237,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 2,
           number: '4.2',
-          title: '深入分析',
-          summary: '结果的详细解读',
+          title: t('outline.templates.results.analysis.title'),
+          summary: t('outline.templates.results.analysis.summary'),
           estWords: Math.round(targetWords * distribution.results * 0.3)
         }
       ],
@@ -246,8 +249,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 5,
       number: '5',
-      title: '讨论',
-      summary: '结果解释、局限性和影响',
+      title: t('outline.templates.discussion.title'),
+      summary: t('outline.templates.discussion.summary'),
       estWords: Math.round(targetWords * distribution.discussion),
       children: [
         {
@@ -255,8 +258,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 1,
           number: '5.1',
-          title: '结果解释',
-          summary: '发现的意义和影响',
+          title: t('outline.templates.discussion.interpret.title'),
+          summary: t('outline.templates.discussion.interpret.summary'),
           estWords: Math.round(targetWords * distribution.discussion * 0.7)
         },
         {
@@ -264,8 +267,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 2,
           number: '5.2',
-          title: '研究局限',
-          summary: '方法和结果的局限性',
+          title: t('outline.templates.discussion.limits.title'),
+          summary: t('outline.templates.discussion.limits.summary'),
           estWords: Math.round(targetWords * distribution.discussion * 0.3)
         }
       ],
@@ -276,8 +279,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 6,
       number: '6',
-      title: '结论',
-      summary: '研究总结和未来展望',
+      title: t('outline.templates.conclusion.title'),
+      summary: t('outline.templates.conclusion.summary'),
       estWords: Math.round(targetWords * distribution.conclusion),
       children: [
         {
@@ -285,8 +288,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 1,
           number: '6.1',
-          title: '研究总结',
-          summary: '主要贡献和发现',
+          title: t('outline.templates.conclusion.summary_content.title'),
+          summary: t('outline.templates.conclusion.summary_content.summary'),
           estWords: Math.round(targetWords * distribution.conclusion * 0.7)
         },
         {
@@ -294,8 +297,8 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 2,
           number: '6.2',
-          title: '未来研究',
-          summary: '后续研究方向',
+          title: t('outline.templates.conclusion.future.title'),
+          summary: t('outline.templates.conclusion.future.summary'),
           estWords: Math.round(targetWords * distribution.conclusion * 0.3)
         }
       ],
@@ -304,7 +307,7 @@ const buildTemplateV1 = (targetWords: number): OutlineNode[] => {
   ];
 };
 
-const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
+const buildTemplateV2 = (targetWords: number, t: (key: string) => string): OutlineNode[] => {
   const distribution = {
     abstract: 0.05,
     introduction: 0.15,
@@ -321,8 +324,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 1,
       number: '1',
-      title: '摘要',
-      summary: '研究概要和主要发现',
+      title: t('outline.templates.v2.abstract.title'),
+      summary: t('outline.templates.v2.abstract.summary'),
       estWords: Math.round(targetWords * distribution.abstract),
       children: []
     },
@@ -331,8 +334,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 2,
       number: '2',
-      title: '引言',
-      summary: '研究背景和目标',
+      title: t('outline.templates.v2.intro.title'),
+      summary: t('outline.templates.v2.intro.summary'),
       estWords: Math.round(targetWords * distribution.introduction),
       children: [
         {
@@ -340,8 +343,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 1,
           number: '2.1',
-          title: '研究背景',
-          summary: '问题的重要性和现实意义',
+          title: t('outline.templates.v2.intro.context.title'),
+          summary: t('outline.templates.v2.intro.context.summary'),
           estWords: Math.round(targetWords * distribution.introduction * 0.6)
         },
         {
@@ -349,8 +352,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 2,
           number: '2.2',
-          title: '研究目标',
-          summary: '具体的研究问题和假设',
+          title: t('outline.templates.v2.intro.objectives.title'),
+          summary: t('outline.templates.v2.intro.objectives.summary'),
           estWords: Math.round(targetWords * distribution.introduction * 0.4)
         }
       ],
@@ -361,8 +364,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 3,
       number: '3',
-      title: '理论背景',
-      summary: '相关理论和前期研究',
+      title: t('outline.templates.v2.background.title'),
+      summary: t('outline.templates.v2.background.summary'),
       estWords: Math.round(targetWords * distribution.background),
       children: [
         {
@@ -370,8 +373,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 1,
           number: '3.1',
-          title: '理论框架',
-          summary: '支撑研究的核心理论',
+          title: t('outline.templates.v2.background.theory.title'),
+          summary: t('outline.templates.v2.background.theory.summary'),
           estWords: Math.round(targetWords * distribution.background * 0.5)
         },
         {
@@ -379,8 +382,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 2,
           number: '3.2',
-          title: '前期研究',
-          summary: '相关领域的研究进展',
+          title: t('outline.templates.v2.background.prior.title'),
+          summary: t('outline.templates.v2.background.prior.summary'),
           estWords: Math.round(targetWords * distribution.background * 0.5)
         }
       ],
@@ -391,8 +394,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 4,
       number: '4',
-      title: '研究方法',
-      summary: '研究设计和实施过程',
+      title: t('outline.templates.v2.methods.title'),
+      summary: t('outline.templates.v2.methods.summary'),
       estWords: Math.round(targetWords * distribution.methods),
       children: [
         {
@@ -400,8 +403,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 1,
           number: '4.1',
-          title: '研究路径',
-          summary: '总体研究策略和方法选择',
+          title: t('outline.templates.v2.methods.approach.title'),
+          summary: t('outline.templates.v2.methods.approach.summary'),
           estWords: Math.round(targetWords * distribution.methods * 0.4)
         },
         {
@@ -409,8 +412,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 2,
           number: '4.2',
-          title: '实施程序',
-          summary: '具体的操作步骤和流程',
+          title: t('outline.templates.v2.methods.procedure.title'),
+          summary: t('outline.templates.v2.methods.procedure.summary'),
           estWords: Math.round(targetWords * distribution.methods * 0.6)
         }
       ],
@@ -421,8 +424,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 5,
       number: '5',
-      title: '研究发现',
-      summary: '主要结果和关键发现',
+      title: t('outline.templates.v2.findings.title'),
+      summary: t('outline.templates.v2.findings.summary'),
       estWords: Math.round(targetWords * distribution.findings),
       children: [
         {
@@ -430,8 +433,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 1,
           number: '5.1',
-          title: '核心发现',
-          summary: '最重要的研究结果',
+          title: t('outline.templates.v2.findings.primary.title'),
+          summary: t('outline.templates.v2.findings.primary.summary'),
           estWords: Math.round(targetWords * distribution.findings * 0.7)
         },
         {
@@ -439,8 +442,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 2,
           number: '5.2',
-          title: '补充发现',
-          summary: '其他有价值的观察',
+          title: t('outline.templates.v2.findings.secondary.title'),
+          summary: t('outline.templates.v2.findings.secondary.summary'),
           estWords: Math.round(targetWords * distribution.findings * 0.3)
         }
       ],
@@ -451,8 +454,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 6,
       number: '6',
-      title: '影响与启示',
-      summary: '研究意义和实践价值',
+      title: t('outline.templates.v2.implications.title'),
+      summary: t('outline.templates.v2.implications.summary'),
       estWords: Math.round(targetWords * distribution.implications),
       children: [
         {
@@ -460,8 +463,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 1,
           number: '6.1',
-          title: '理论贡献',
-          summary: '对学术理论的推进',
+          title: t('outline.templates.v2.implications.theoretical.title'),
+          summary: t('outline.templates.v2.implications.theoretical.summary'),
           estWords: Math.round(targetWords * distribution.implications * 0.5)
         },
         {
@@ -469,8 +472,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
           level: 2 as const,
           order: 2,
           number: '6.2',
-          title: '实践启示',
-          summary: '对现实问题的指导意义',
+          title: t('outline.templates.v2.implications.practical.title'),
+          summary: t('outline.templates.v2.implications.practical.summary'),
           estWords: Math.round(targetWords * distribution.implications * 0.5)
         }
       ],
@@ -481,8 +484,8 @@ const buildTemplateV2 = (targetWords: number): OutlineNode[] => {
       level: 1 as const,
       order: 7,
       number: '7',
-      title: '结论与展望',
-      summary: '研究总结和后续方向',
+      title: t('outline.templates.v2.conclusion.title'),
+      summary: t('outline.templates.v2.conclusion.summary'),
       estWords: Math.round(targetWords * distribution.conclusion),
       children: []
     }
@@ -508,11 +511,11 @@ const renumber = (nodes: OutlineNode[]): OutlineNode[] => {
   });
 };
 
-// 大纲质量评估
-const calculateOutlineQuality = (outline: OutlineDoc) => {
+// Outline quality assessment
+const calculateOutlineQuality = (outline: OutlineDoc, t: (key: string) => string) => {
   const { nodes } = outline;
   
-  // 覆盖度 - 检查必要章节的覆盖
+  // Coverage - check coverage of required sections
   const requiredSections = ['引言', '文献', '方法', '结果', '讨论', '结论'];
   const presentSections = nodes.map(n => n.title.toLowerCase());
   const coverage = requiredSections.filter(req => 
@@ -562,40 +565,40 @@ const calculateOutlineQuality = (outline: OutlineDoc) => {
   const writabilityScore = allNodes.length > 0 ? Math.round((completeNodes / allNodes.length) * 100) : 0;
   
   return {
-    覆盖度: coverageScore,
-    层级深度: depthScore,
-    平衡度: balanceScore,
-    可写性: writabilityScore
+    [t('outline.quality.coverage')]: coverageScore,
+    [t('outline.quality.depth')]: depthScore,
+    [t('outline.quality.balance')]: balanceScore,
+    [t('outline.quality.writability')]: writabilityScore
   };
 };
 
-// 验证规则 - 保留建议但不阻止操作
-const validateOutline = (outline: OutlineDoc) => {
+// Validation rules - keep suggestions but don't block operations
+const validateOutline = (outline: OutlineDoc, t: (key: string) => string) => {
   const errors: string[] = [];
   const warnings: string[] = [];
   
-  // 基本检查：至少要有章节 - 这个仍然是必须的
+  // Basic check: at least have sections - this is still required
   if (outline.nodes.length === 0) {
-    errors.push('请添加至少1个章节');
+    errors.push(t('outline.validation.add_chapter'));
   }
   
-  // 基本标题检查 - 这个仍然是必须的
+  // Basic title check - this is still required
   const emptyTitles = outline.nodes.filter(node => !node.title.trim());
   if (emptyTitles.length > 0) {
-    errors.push('请填写所有章节标题');
+    errors.push(t('outline.validation.fill_titles'));
   }
   
   // 以下都改为建议（warnings），不会阻止用户继续
   
   // 检查顶层章节数量
   if (outline.nodes.length < 3) {
-    warnings.push('建议至少添加3个顶层章节');
+    warnings.push(t('outline.validation.suggest_min_chapters'));
   }
   
   // 检查每个顶层章节的子章节
   outline.nodes.forEach((node, index) => {
     if (!node.children || node.children.length < 2) {
-      warnings.push(`建议第${index + 1}章添加至少2个二级小节`);
+      warnings.push(t('outline.validation.suggest_subsections').replace('{index}', (index + 1).toString()));
     }
   });
   
@@ -604,7 +607,7 @@ const validateOutline = (outline: OutlineDoc) => {
   const checkTitles = (nodes: OutlineNode[]) => {
     nodes.forEach(node => {
       if (titles.has(node.title)) {
-        warnings.push(`标题"${node.title}"重复，建议修改`);
+        warnings.push(t('outline.validation.suggest_modify_duplicate').replace('{title}', node.title));
       }
       titles.add(node.title);
       if (node.children) {
@@ -622,7 +625,7 @@ const validateOutline = (outline: OutlineDoc) => {
   
   const variance = Math.abs(totalWords - outline.targetWords) / outline.targetWords;
   if (variance > 0.1) {
-    warnings.push(`总字数偏离目标较多（当前：${totalWords}，目标：${outline.targetWords}），建议调整`);
+    warnings.push(t('outline.validation.word_target_deviation').replace('{current}', totalWords.toString()).replace('{target}', outline.targetWords.toString()));
   }
   
   // 检查结构完整性
@@ -633,7 +636,7 @@ const validateOutline = (outline: OutlineDoc) => {
   );
   
   if (missingSections.length > 2) {
-    warnings.push(`建议补充章节：${missingSections.join('、')}`);
+    warnings.push(t('outline.validation.suggest_add_sections').replace('{sections}', missingSections.join('、')));
   }
   
   return {
@@ -664,6 +667,7 @@ const SortableOutlineNode: React.FC<{
   selectedId, 
   onSelect 
 }) => {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(node.title);
   
@@ -712,15 +716,14 @@ const SortableOutlineNode: React.FC<{
         onClick={() => onSelect(node.id)}
       >
         {/* 序号 */}
-        <div className="text-[#6E5BFF] font-medium w-10 shrink-0">
+        <div className="text-[#6A5AF9] font-medium w-10 shrink-0">
           <span className="text-sm">{node.number}</span>
         </div>
         
         {/* 折叠按钮（仅一级节点） */}
         {node.level === 1 && node.children && node.children.length > 0 && (
           <Button
-            variant="ghost"
-            size="sm"
+                        size="sm"
             onClick={(e) => {
               e.stopPropagation();
               onToggleExpand(node.id);
@@ -753,9 +756,9 @@ const SortableOutlineNode: React.FC<{
                 <p className="text-[#5B667A] text-sm line-clamp-1">{node.summary}</p>
               )}
               <div className="text-xs text-[#5B667A]">
-                <span>~{node.estWords} words</span>
+                <span>~{node.estWords} {t('outline.words')}</span>
                 {node.children && node.children.length > 0 && (
-                  <span> · {node.children.length} subsections</span>
+                  <span> · {node.children.length} {t('outline.subsections')}</span>
                 )}
               </div>
             </div>
@@ -765,8 +768,7 @@ const SortableOutlineNode: React.FC<{
         {/* 操作按钮 */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
-            variant="ghost"
-            size="sm"
+                        size="sm"
             onClick={(e) => {
               e.stopPropagation();
               setIsEditing(true);
@@ -778,8 +780,7 @@ const SortableOutlineNode: React.FC<{
           
           {node.level === 1 && (
             <Button
-              variant="ghost"
-              size="sm"
+                            size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onAddChild(node.id);
@@ -794,8 +795,7 @@ const SortableOutlineNode: React.FC<{
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="ghost"
-                size="sm"
+                                size="sm"
                 onClick={(e) => e.stopPropagation()}
                 className="h-6 w-6 p-0"
               >
@@ -818,7 +818,7 @@ const SortableOutlineNode: React.FC<{
                   }}
                 >
                   <Zap className="h-4 w-4 mr-2" />
-                  用 Agent 重构此章
+                  {t('outline.ai_assist.restructure_chapter')}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
@@ -829,7 +829,7 @@ const SortableOutlineNode: React.FC<{
                 className="text-red-600"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                删除
+                {t('outline.actions.delete')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -864,6 +864,7 @@ const SortableOutlineNode: React.FC<{
 };
 
 const OutlineStep: React.FC = () => {
+  const { t } = useTranslation();
   const { project, setOutline: setProjectOutline, setCurrentStep, completeStep } = useWritingFlow();
   const { track: trackEvent } = useApp();
   const { step1 } = useStep1();
@@ -871,6 +872,7 @@ const OutlineStep: React.FC = () => {
   const { autopilot, startAutopilot, minimizeAutopilot, pauseAutopilot, resumeAutopilot, stopAutopilot } = useAutopilot();
   const { writingFlow, updateMetrics, toggleAddon, setError } = useNewWritingFlow();
   const { pay, lockPrice: lockPriceState } = usePayment();
+  const { demoMode } = useDemoMode();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -914,7 +916,7 @@ const OutlineStep: React.FC = () => {
       setOutline({
         version: 'v1',
         targetWords,
-        nodes: buildTemplateV1(targetWords)
+        nodes: buildTemplateV1(targetWords, t)
       });
     }
   }, [targetWords]);
@@ -927,10 +929,10 @@ const OutlineStep: React.FC = () => {
   }, [outline]);
   
   // 验证结果
-  const validation = useMemo(() => validateOutline(outline), [outline]);
+  const validation = useMemo(() => validateOutline(outline, t), [outline, t]);
   
   // 质量评分
-  const qualityScores = useMemo(() => calculateOutlineQuality(outline), [outline]);
+  const qualityScores = useMemo(() => calculateOutlineQuality(outline, t), [outline, t]);
   const averageScore = Object.values(qualityScores).reduce((a, b) => a + b, 0) / 4;
   
   // 总字数计算
@@ -941,15 +943,35 @@ const OutlineStep: React.FC = () => {
     }, 0);
   }, [outline.nodes]);
   
+  // 处理核验等级变更
+  const handleVerifyLevelChange = (level: 'Basic' | 'Standard' | 'Pro') => {
+    setVerificationLevel(level);
+    track('outcome_verify_change', { level, step: 'outline' });
+    
+    // Show confirmation feedback
+    toast({
+      title: t('outline.toast.verification_updated').replace('{level}', level),
+      description: t('outline.toast.verification_rate').replace('{rate}', level === 'Pro' ? '100%' : level === 'Standard' ? '95%' : '85%'),
+      duration: 2000
+    });
+    
+    // Update estimate with new verification level
+    setEstimate({
+      ...estimate,
+      verifyLevel: level,
+      updatedAt: Date.now()
+    });
+  };
+  
   // 处理版本切换
   const handleVersionChange = (version: 'v1' | 'v2' | 'custom') => {
     if (version === 'custom') return;
     
     let newNodes: OutlineNode[];
     if (version === 'v1') {
-      newNodes = buildTemplateV1(targetWords);
+      newNodes = buildTemplateV1(targetWords, t);
     } else {
-      newNodes = buildTemplateV2(targetWords);
+      newNodes = buildTemplateV2(targetWords, t);
     }
     
     setOutline({
@@ -959,8 +981,8 @@ const OutlineStep: React.FC = () => {
     });
     
     toast({
-      title: "模板已应用",
-      description: `已切换到${version === 'v1' ? '标准学术' : '研究报告'}模板`
+      title: t('outline.template.applied'),
+      description: `${t('outline.template.switched')}${version === 'v1' ? t('outline.template.standard') : t('outline.template.research')}${t('outline.template.template')}`
     });
   };
   
@@ -1022,7 +1044,7 @@ const OutlineStep: React.FC = () => {
             level: 2,
             order: childOrder,
             number: `${node.number}.${childOrder}`,
-            title: `新建小节 ${childOrder}`,
+            title: `${t('outline.new_section')} ${childOrder}`,
             summary: '',
             estWords: 400
           };
@@ -1054,7 +1076,7 @@ const OutlineStep: React.FC = () => {
       level: 1,
       order: outline.nodes.length + 1,
       number: (outline.nodes.length + 1).toString(),
-      title: `新建章节 ${outline.nodes.length + 1}`,
+      title: `${t('outline.new_chapter')} ${outline.nodes.length + 1}`,
       summary: '',
       estWords: 800,
       children: [
@@ -1063,7 +1085,7 @@ const OutlineStep: React.FC = () => {
           level: 2,
           order: 1,
           number: `${outline.nodes.length + 1}.1`,
-          title: '小节1',
+          title: `${t('outline.section')} 1`,
           summary: '',
           estWords: 400
         },
@@ -1072,7 +1094,7 @@ const OutlineStep: React.FC = () => {
           level: 2,
           order: 2,
           number: `${outline.nodes.length + 1}.2`,
-          title: '小节2',
+          title: `${t('outline.section')} 2`,
           summary: '',
           estWords: 400
         }
@@ -1098,8 +1120,8 @@ const OutlineStep: React.FC = () => {
           level: 1,
           order: 1,
           number: '1',
-          title: '引言',
-          summary: '研究背景和目标',
+          title: t('outline.templates.quick.intro.title'),
+          summary: t('outline.templates.quick.intro.summary'),
           estWords: Math.round(targetWords * 0.15),
           children: [
             {
@@ -1107,8 +1129,8 @@ const OutlineStep: React.FC = () => {
               level: 2,
               order: 1,
               number: '1.1',
-              title: '研究背景',
-              summary: '问题的重要性',
+              title: t('outline.templates.quick.intro.background.title'),
+              summary: t('outline.templates.quick.intro.background.summary'),
               estWords: Math.round(targetWords * 0.08)
             },
             {
@@ -1116,8 +1138,8 @@ const OutlineStep: React.FC = () => {
               level: 2,
               order: 2,
               number: '1.2',
-              title: '研究目标',
-              summary: '具体目标和假设',
+              title: t('outline.templates.quick.intro.objectives.title'),
+              summary: t('outline.templates.quick.intro.objectives.summary'),
               estWords: Math.round(targetWords * 0.07)
             }
           ],
@@ -1128,8 +1150,8 @@ const OutlineStep: React.FC = () => {
           level: 1,
           order: 2,
           number: '2',
-          title: '主要内容',
-          summary: '核心研究内容',
+          title: t('outline.templates.quick.main.title'),
+          summary: t('outline.templates.quick.main.summary'),
           estWords: Math.round(targetWords * 0.70),
           children: [
             {
@@ -1137,8 +1159,8 @@ const OutlineStep: React.FC = () => {
               level: 2,
               order: 1,
               number: '2.1',
-              title: '第一部分',
-              summary: '主要观点和论证',
+              title: t('outline.templates.quick.main.part1.title'),
+              summary: t('outline.templates.quick.main.part1.summary'),
               estWords: Math.round(targetWords * 0.35)
             },
             {
@@ -1146,8 +1168,8 @@ const OutlineStep: React.FC = () => {
               level: 2,
               order: 2,
               number: '2.2',
-              title: '第二部分',
-              summary: '支撑论据和分析',
+              title: t('outline.templates.quick.main.part2.title'),
+              summary: t('outline.templates.quick.main.part2.summary'),
               estWords: Math.round(targetWords * 0.35)
             }
           ],
@@ -1158,8 +1180,8 @@ const OutlineStep: React.FC = () => {
           level: 1,
           order: 3,
           number: '3',
-          title: '结论',
-          summary: '研究总结和展望',
+          title: t('outline.templates.quick.conclusion.title'),
+          summary: t('outline.templates.quick.conclusion.summary'),
           estWords: Math.round(targetWords * 0.15),
           children: [
             {
@@ -1167,8 +1189,8 @@ const OutlineStep: React.FC = () => {
               level: 2,
               order: 1,
               number: '3.1',
-              title: '主要发现',
-              summary: '研究的核心贡献',
+              title: t('outline.templates.quick.conclusion.findings.title'),
+              summary: t('outline.templates.quick.conclusion.findings.summary'),
               estWords: Math.round(targetWords * 0.10)
             },
             {
@@ -1176,8 +1198,8 @@ const OutlineStep: React.FC = () => {
               level: 2,
               order: 2,
               number: '3.2',
-              title: '未来展望',
-              summary: '后续研究方向',
+              title: t('outline.templates.quick.conclusion.future.title'),
+              summary: t('outline.templates.quick.conclusion.future.summary'),
               estWords: Math.round(targetWords * 0.05)
             }
           ],
@@ -1189,23 +1211,23 @@ const OutlineStep: React.FC = () => {
     setOutline(quickOutline);
     
     toast({
-      title: "大纲自动完成！",
-      description: "已生成基础大纲结构，您可以直接进入下一步或继续编辑"
+      title: t('outline.ai_assist.completed'),
+      description: t('outline.ai_assist.completed_desc')
     });
   };
 
   // AI助手功能
   const handleStructureHelp = () => {
     toast({
-      title: "结构建议",
-      description: "基于您的主题和研究方向，建议采用经典的学术论文结构..."
+      title: t('outline.toast.structure_suggestion'),
+      description: "Based on your topic and research direction, we recommend adopting the classic academic paper structure..."
     });
   };
   
   const handleAddSections = () => {
     toast({
-      title: "智能补充",
-      description: "正在分析您的大纲，为缺失的部分添加建议章节..."
+      title: t('outline.toast.smart_supplement'),
+      description: t('outline.toast.analyzing_outline')
     });
   };
   
@@ -1255,8 +1277,8 @@ const OutlineStep: React.FC = () => {
     }));
     
     toast({
-      title: "内容已平衡",
-      description: "已根据目标字数重新分配各章节字数"
+      title: t('outline.ai_assist.balanced'),
+      description: t('outline.ai_assist.balanced_desc')
     });
   };
   
@@ -1273,8 +1295,8 @@ const OutlineStep: React.FC = () => {
       linkElement.click();
     } else {
       toast({
-        title: "导出功能",
-        description: `${format.toUpperCase()} 导出功能开发中...`
+        title: t('outline.export.feature'),
+        description: `${format.toUpperCase()} ${t('outline.export.in_development')}`
       });
     }
   };
@@ -1307,7 +1329,7 @@ const OutlineStep: React.FC = () => {
   const handleContinue = () => {
     if (!validation.isValid) {
       toast({
-        title: "大纲验证失败",
+        title: t('outline.validation.failed'),
         description: validation.errors[0],
         variant: "destructive"
       });
@@ -1320,12 +1342,12 @@ const OutlineStep: React.FC = () => {
     // 标记步骤完成
     completeStep('outline');
     
-    // 导航到内容页
-    navigate('/writing-flow/content');
+    // 导航到结果页
+    navigate('/result');
     
     toast({
-      title: "大纲已完成",
-      description: "正在进入内容编写阶段..."
+      title: t('outline.completed'),
+      description: t('outline.completed_desc')
     });
   };
 
@@ -1337,175 +1359,37 @@ const OutlineStep: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F7F8FB]">
-      <div className="max-w-[1120px] mx-auto px-4 md:px-6 space-y-6 py-8">
-        
-        {/* 页面标题 */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-[#6E5BFF] text-white">
-              <FileText className="h-6 w-6" />
+    <div className="min-h-screen bg-[#F7F8FB] pt-6">
+      <div className="container max-w-[1660px] mx-auto px-6 md:px-8">
+        {/* Grid Layout */}
+        <div className="max-w-[1660px] mx-auto px-6 md:px-8">
+          <div className="grid gap-6 grid-cols-1 xl:grid-cols-[280px_minmax(900px,1fr)_360px] xl:gap-8">
+          {/* Left Column - Step Navigation */}
+          <aside className="hidden xl:block">
+            <div className="sticky top-6 -ml-6 md:-ml-8">
+              <StepNav />
             </div>
-            <div>
-              <h1 className="text-4xl font-semibold text-gray-900">论文大纲</h1>
-              <p className="text-[#5B667A]">构建清晰的文章结构框架</p>
-            </div>
-          </div>
-        </div>
-
-        {/* 顶部信息条 */}
-        <Card className="bg-white border-[#EEF0F4] rounded-2xl shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
-          <CardContent className="p-6 md:p-8">
-            <div className="flex items-start gap-3">
-              <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="space-y-4 flex-1">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">大纲优化建议</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-[#5B667A]">
-                    <div>
-                      <span className="font-medium">总字数：</span>
-                      <span>目标 {targetWords} · 当前 {totalWords}</span>
-                      {Math.abs(totalWords - targetWords) > targetWords * 0.1 && (
-                        <span className="text-yellow-600 ml-2">
-                          ({totalWords > targetWords ? '超出' : '不足'} {Math.abs(totalWords - targetWords)})
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">建议模块：</span>
-                      <div className="flex items-center gap-1">
-                        {requiredSections.map(section => {
-                          const isPresent = presentSections.some(present => present.includes(section.toLowerCase()));
-                          return (
-                            <div key={section} className="flex items-center gap-1">
-                              <span className={isPresent ? 'text-green-600' : 'text-gray-400'}>{section}</span>
-                              {!isPresent && <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 错误提示 - 阻止继续 */}
-        {!validation.isValid && (
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-medium text-red-800 mb-2">必须完成以下项目</h3>
-                  <ul className="space-y-1 text-sm text-red-700">
-                    {validation.errors.map((error, index) => (
-                      <li key={index}>• {error}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {/* 建议提示 - 不阻止继续 */}
-        {validation.hasWarnings && (
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-3">
-                <HelpCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-medium text-blue-800 mb-2">大纲优化建议</h3>
-                  <ul className="space-y-1 text-sm text-blue-700">
-                    {validation.warnings.map((warning, index) => (
-                      <li key={index}>• {warning}</li>
-                    ))}
-                  </ul>
-                  <p className="text-xs text-blue-600 mt-2 font-medium">
-                    💡 以上为优化建议，您可以直接进入下一步
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 指标卡 */}
-        <Card className="bg-white border-[#EEF0F4] rounded-2xl shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <BarChart3 className="h-5 w-5 text-[#6E5BFF]" />
-              <div>
-                <CardTitle className="text-base font-semibold">质量评分</CardTitle>
-                <CardDescription className="text-sm text-[#5B667A]">
-                  评估大纲结构的四个核心维度
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6 pt-0">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              {Object.entries(qualityScores).map(([key, score]) => (
-                <div key={key} className="text-center">
-                  <div className={cn(
-                    "relative w-16 h-16 mx-auto mb-2 rounded-full flex items-center justify-center text-sm font-medium",
-                    score >= 80 ? "bg-green-100 text-green-700" :
-                    score >= 60 ? "bg-yellow-100 text-yellow-700" :
-                    "bg-red-100 text-red-700"
-                  )}>
-                    {score}
-                    {score < 60 && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-                    )}
-                  </div>
-                  <p className="text-xs font-medium text-gray-900">{key}</p>
-                </div>
-              ))}
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="flex-1">
-                  <Progress value={averageScore} className="h-2" />
-                </div>
-                <span className="text-sm font-medium">{averageScore.toFixed(0)}%</span>
-              </div>
-              <p className="text-xs text-[#5B667A] text-center">
-                目标 {targetWords} · 当前 {totalWords} · 
-                {totalWords !== targetWords && (
-                  <span className={totalWords > targetWords ? 'text-yellow-600' : 'text-blue-600'}>
-                    预计差额 {totalWords > targetWords ? '+' : ''}{totalWords - targetWords}
-                  </span>
-                )}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 布局容器 */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          </aside>
           
-          {/* 主内容区 - 大纲卡 */}
-          <div className="lg:col-span-3">
-            <Card className="bg-white border-[#EEF0F4] rounded-2xl shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+          {/* Main Column - Outline Content */}
+          <main className="max-w-none mx-auto">
+            <Card className="bg-white border-[#E7EAF3] rounded-[20px] shadow-[0_6px_18px_rgba(17,24,39,0.06)] hover:shadow-[0_10px_24px_rgba(17,24,39,0.10)] transition-shadow duration-200">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-[#6E5BFF]" />
+                    <FileText className="h-5 w-5 text-[#6A5AF9]" />
                     <div>
-                      <CardTitle className="text-base font-semibold">论文大纲</CardTitle>
+                      <CardTitle className="text-base font-semibold">{t('outline.cards.document_outline')}</CardTitle>
                       <div className="flex items-center gap-2 mt-1">
-                        <Label className="text-sm font-medium">大纲模板</Label>
+                        <Label className="text-sm font-medium">{t('outline.template.label')}</Label>
                         <Select value={outline.version} onValueChange={handleVersionChange}>
                           <SelectTrigger className="w-32 h-8">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="v1">标准学术</SelectItem>
-                            <SelectItem value="v2">研究报告</SelectItem>
-                            <SelectItem value="custom">自定义</SelectItem>
+                            <SelectItem value="v1">{t('outline.template.standard')}</SelectItem>
+                            <SelectItem value="v2">{t('outline.template.research')}</SelectItem>
+                            <SelectItem value="custom">{t('outline.template.custom')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1518,18 +1402,18 @@ const OutlineStep: React.FC = () => {
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="rounded-full gap-2">
                           <Download className="h-4 w-4" />
-                          导出
+                          {t('outline.buttons.export')}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem onClick={() => handleExport('markdown')}>
-                          Markdown
+                          {t('outline.export.markdown')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleExport('docx')}>
-                          Word 文档
+                          {t('outline.export.docx')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleExport('json')}>
-                          JSON 格式
+                          {t('outline.export.json')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1539,25 +1423,25 @@ const OutlineStep: React.FC = () => {
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="rounded-full gap-2">
                           <Zap className="h-4 w-4" />
-                          AI助手
+                          {t('outline.buttons.ai_assist')}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuItem onClick={handleQuickComplete}>
                           <Zap className="h-4 w-4 mr-2" />
-                          一键完成大纲
+                          {t('outline.ai_assist.quick_complete')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleStructureHelp}>
                           <HelpCircle className="h-4 w-4 mr-2" />
-                          结构建议
+                          {t('outline.ai_assist.structure_help')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleAddSections}>
                           <Plus className="h-4 w-4 mr-2" />
-                          智能补充
+                          {t('outline.ai_assist.add_sections')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleBalanceContent}>
                           <BarChart3 className="h-4 w-4 mr-2" />
-                          平衡内容
+                          {t('outline.ai_assist.balance_content')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1570,7 +1454,7 @@ const OutlineStep: React.FC = () => {
                       className="rounded-full gap-2"
                     >
                       <Plus className="h-4 w-4" />
-                      添加章节
+                      {t('outline.buttons.add_section')}
                     </Button>
                     
                     {/* 设置按钮 */}
@@ -1581,7 +1465,72 @@ const OutlineStep: React.FC = () => {
                 </div>
               </CardHeader>
               
-              <CardContent className="p-6 pt-0">
+              <CardContent className="px-4 md:px-6 xl:px-8 py-6 pt-0">
+                {/* 综合建议信息条 */}
+                <div className="mb-6 space-y-4">
+                  {/* 基本信息条 */}
+                  <div className="bg-[#F6F7FB] rounded-xl px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900 mb-2">{t('outline.overview.title')}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-[#5B667A]">
+                          <div>
+                            <span className="font-medium">{t('outline.overview.total_words')}：</span>
+                            <span>{t('outline.overview.target')} {targetWords} · {t('outline.overview.current')} {totalWords}</span>
+                            {Math.abs(totalWords - targetWords) > targetWords * 0.1 && (
+                              <span className="text-yellow-600 ml-2">
+                                ({totalWords > targetWords ? t('outline.word_count.exceeded') : t('outline.word_count.insufficient')} {Math.abs(totalWords - targetWords)})
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-medium">{t('outline.overview.sections')}：</span>
+                            <span>{outline.nodes.length} {t('outline.word_count.chapters')} · {t('outline.word_count.quality_score')} {averageScore.toFixed(0)}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 错误提示 - 阻止继续 */}
+                  {!validation.isValid && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h3 className="font-medium text-red-800 mb-2">{t('outline.validation.required')}</h3>
+                          <ul className="space-y-1 text-sm text-red-700">
+                            {validation.errors.map((error, index) => (
+                              <li key={index}>• {error}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 建议提示 - 不阻止继续 */}
+                  {validation.hasWarnings && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                      <div className="flex items-start gap-3">
+                        <HelpCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h3 className="font-medium text-blue-800 mb-2">{t('outline.suggestions.title')}</h3>
+                          <ul className="space-y-1 text-sm text-blue-700">
+                            {validation.warnings.map((warning, index) => (
+                              <li key={index}>• {warning}</li>
+                            ))}
+                          </ul>
+                          <p className="text-xs text-blue-600 mt-2 font-medium">
+                            {t('outline.validation.optimization_tip')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -1624,100 +1573,266 @@ const OutlineStep: React.FC = () => {
                 {outline.nodes.length === 0 && (
                   <div className="text-center py-12">
                     <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">开始构建大纲</h3>
-                    <p className="text-gray-500 mb-6">选择一个选项来快速开始</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">{t('outline.empty.title')}</h3>
+                    <p className="text-gray-500 mb-6">{t('outline.empty.description')}</p>
                     <div className="space-x-3 mb-4">
                       <Button 
                         onClick={handleQuickComplete}
                         className="rounded-full bg-[#6E5BFF] hover:bg-[#5B4FCC] text-white gap-2"
                       >
                         <Zap className="h-4 w-4" />
-                        一键完成大纲
+                        {t('outline.ai_assist.quick_complete')}
                       </Button>
                     </div>
                     <div className="space-x-3">
                       <Button variant="outline" onClick={() => handleVersionChange('v1')} className="rounded-full">
-                        标准学术模板
+                        {t('outline.empty.standard_template')}
                       </Button>
                       <Button variant="outline" onClick={() => handleVersionChange('v2')} className="rounded-full">
-                        研究报告模板
+                        {t('outline.empty.research_template')}
                       </Button>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
-          </div>
-          
-          {/* 右栏 - 帮助卡 */}
-          <div className="space-y-6">
-            <Card className="bg-white border-[#EEF0F4] rounded-2xl shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <BookOpen className="h-5 w-5 text-[#6E5BFF]" />
-                  大纲编辑帮助
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm text-[#5B667A]">
-                <div className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#6E5BFF] flex-shrink-0 mt-2"></div>
-                  <p>点击章节标题可直接编辑，按Enter保存，Esc取消</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#6E5BFF] flex-shrink-0 mt-2"></div>
-                  <p>拖拽章节右侧的把手可调整顺序，系统会自动重新编号</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#6E5BFF] flex-shrink-0 mt-2"></div>
-                  <p>使用+按钮为一级章节添加二级小节，完善大纲层次</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#6E5BFF] flex-shrink-0 mt-2"></div>
-                  <p>AI助手可帮您一键完成、智能补充或平衡字数分配</p>
+            
+            {/* 底部操作条 */}
+            <Card className="bg-white border-[#E7EAF3] rounded-[20px] shadow-[0_6px_18px_rgba(17,24,39,0.06)] hover:shadow-[0_10px_24px_rgba(17,24,39,0.10)] transition-shadow duration-200 mt-6">
+              <CardContent className="px-4 md:px-6 xl:px-8 py-6 md:py-8">
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/writing-flow/strategy')}
+                    className="rounded-full gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    {t('outline.back_to_strategy')}
+                  </Button>
+                  
+                  <div className="flex items-center gap-4">
+                    {validation.isValid && (
+                      <div className="flex items-center gap-2 text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="text-sm">{t('outline.validation.passed')}</span>
+                      </div>
+                    )}
+                    
+                    <Button
+                      onClick={handleContinue}
+                      disabled={!demoMode && !validation.isValid}
+                      className="rounded-full px-8 py-3 bg-[#6E5BFF] hover:bg-[#5B4FCC] hover:shadow-lg hover:-translate-y-0.5 text-white transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-[#6E5BFF] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none gap-2"
+                    >
+                      {t('outline.continue_to_writing')}
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </main>
           
+          {/* Right Column - Ghost Outcome Panel */}
+          <aside className="hidden xl:block">
+            <div className="sticky top-6 -mr-6 md:-mr-8">
+              <OutcomePanel
+            step="outline"
+            lockedPrice={lockPriceState.lockedPrice}
+            estimate={{
+              priceRange: estimate.priceRange,
+              etaMinutes: estimate.etaMinutes,
+              citesRange: estimate.citesRange,
+              verifyLevel: verificationLevel
+            }}
+            metrics={{
+              outlineDepth: outline.nodes.length > 0 ? Math.max(...outline.nodes.map(node => 
+                node.children && node.children.length > 0 ? 2 : 1
+              )) : 1,
+              sections: outline.nodes.length,
+              perSectionCiteBalance: totalWords > 0 ? Math.round((outline.nodes.reduce((sum, node) => {
+                const nodeWords = node.estWords + (node.children?.reduce((childSum, child) => childSum + child.estWords, 0) || 0);
+                return sum + nodeWords;
+              }, 0) / totalWords) * 100) : 0,
+              ...writingFlow.metrics
+            }}
+            addons={writingFlow.addons}
+            autopilot={autopilot.running ? {
+              running: autopilot.running,
+              step: autopilot.step as any,
+              progress: autopilot.progress,
+              message: autopilot.message
+            } : undefined}
+            error={writingFlow.error}
+            onVerifyChange={handleVerifyLevelChange}
+            onToggleAddon={toggleAddon}
+            onPreviewSample={() => {
+              toast({
+                title: t('outline.toast.development'),
+                description: t('outline.toast.sample_preview_coming')
+              });
+            }}
+            onPayAndWrite={async () => {
+              try {
+                track('outcome_pay_and_write_click', { step: 'outline' });
+                
+                let finalPrice = lockPriceState.lockedPrice;
+                
+                // Step 1: Lock price if not already locked
+                if (!finalPrice) {
+                  const priceLockResponse = await lockPrice({
+                    title: step1.title,
+                    wordCount: step1.wordCount,
+                    verifyLevel: verificationLevel
+                  });
+                  
+                  lockPriceState.lockPrice(priceLockResponse.value, priceLockResponse.expiresAt);
+                  finalPrice = priceLockResponse;
+                }
+                
+                // Step 2: Show Gate1 modal for payment
+                setShowGate1Modal(true);
+                
+              } catch (error) {
+                console.error('Error in pay and write:', error);
+                setError(error instanceof Error ? error.message : t('outline.toast.price_lock_failed'));
+                
+                toast({
+                  title: t('outline.toast.error'),
+                  description: t('outline.toast.price_lock_failed'),
+                  variant: 'destructive'
+                });
+              }
+            }}
+            onRetry={() => setError(undefined)}
+            />
+            </div>
+          </aside>
+          </div>
         </div>
         
-        {/* 底部操作条 */}
-        <Card className="bg-white border-[#EEF0F4] rounded-2xl shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
-          <CardContent className="p-6 md:p-8">
-            <div className="flex items-center justify-between">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/writing-flow/strategy')}
-                className="rounded-full gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                返回策略
-              </Button>
-              
-              <div className="flex items-center gap-4">
-                {validation.isValid && (
-                  <div className="flex items-center gap-2 text-green-600">
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="text-sm">大纲验证通过</span>
-                  </div>
-                )}
-                
-                <Button
-                  onClick={handleContinue}
-                  disabled={!validation.isValid}
-                  className="rounded-full px-8 py-3 bg-[#6E5BFF] hover:bg-[#5B4FCC] hover:shadow-lg hover:-translate-y-0.5 text-white transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-[#6E5BFF] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none gap-2"
-                >
-                  进入内容编写
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
       </div>
+      
+      {/* Gate1 Modal */}
+      {lockPriceState.lockedPrice && (
+        <Gate1Modal
+          open={showGate1Modal}
+          price={lockPriceState.lockedPrice}
+          benefits={[
+            t('outline.gate1.benefits.complete_generation'),
+            t('outline.gate1.benefits.local_rewrites'),
+            t('outline.gate1.benefits.full_verification')
+          ]}
+          onPreviewOnly={async () => {
+            setShowGate1Modal(false);
+            toast({
+              title: t('outline.toast.preview_mode'),
+              description: t('outline.toast.continue_editing')
+            });
+          }}
+          onUnlock={async () => {
+            try {
+              setIsProcessingPayment(true);
+              
+              if (!lockPriceState.lockedPrice) {
+                throw new Error('No locked price available');
+              }
+              
+              // Create payment intent
+              const paymentIntent = await createPaymentIntent({
+                price: lockPriceState.lockedPrice.value
+              });
+              
+              track('gate1_payment_intent_created', {
+                paymentIntentId: paymentIntent.paymentIntentId,
+                price: lockPriceState.lockedPrice.value
+              });
+              
+              // Simulate payment confirmation
+              const confirmResponse = await confirmPayment(paymentIntent.paymentIntentId);
+              
+              if (confirmResponse.status === 'succeeded') {
+                track('gate1_payment_success', {
+                  paymentIntentId: paymentIntent.paymentIntentId,
+                  price: lockPriceState.lockedPrice.value
+                });
+                
+                setShowGate1Modal(false);
+                
+                // Start autopilot after successful payment
+                await startAutopilotFlow();
+                
+                toast({
+                  title: t('outline.toast.payment_success'),
+                  description: t('outline.toast.starting_autopilot')
+                });
+              } else {
+                throw new Error('Payment failed');
+              }
+              
+            } catch (error) {
+              console.error('Payment error:', error);
+              toast({
+                title: t('outline.toast.payment_failed'),
+                description: error instanceof Error ? error.message : t('outline.toast.payment_error'),
+                variant: 'destructive'
+              });
+            } finally {
+              setIsProcessingPayment(false);
+            }
+          }}
+        />
+      )}
+      
+      {/* Demo Mode Toggle */}
+      <DemoModeToggle />
     </div>
   );
+
+  // Helper function for autopilot flow
+  async function startAutopilotFlow() {
+    try {
+      // Start autopilot for remaining steps
+      const autopilotResponse = await apiStartAutopilot({
+        fromStep: 'outline', // From current step
+        docId: project.id || 'default'
+      });
+      
+      track('autopilot_started', {
+        fromStep: 'outline',
+        autopilotId: autopilotResponse.autopilotId
+      });
+      
+      // Start the autopilot in the UI
+      startAutopilot('outline', autopilotResponse.autopilotId);
+      
+      // Stream progress updates
+      const progressStream = streamAutopilotProgress(autopilotResponse.autopilotId);
+      
+      for await (const update of progressStream) {
+        // Update autopilot state through the context
+        // This will trigger UI updates in the OutcomePanel
+        if (update.step === 'done') {
+          // Autopilot completed, navigate to results
+          navigate('/result?from=autopilot');
+          break;
+        } else if (update.step === 'error') {
+          // Handle autopilot error
+          setError(`${t('outline.toast.autopilot_failed')}: ${update.message}`);
+          break;
+        }
+      }
+      
+    } catch (error) {
+      console.error('Autopilot error:', error);
+      setError(error instanceof Error ? error.message : t('outline.toast.autopilot_failed'));
+      
+      toast({
+        title: t('outline.toast.autopilot_failed'),
+        description: t('outline.toast.manual_steps'),
+        variant: 'destructive'
+      });
+    }
+  }
 };
 
 export default OutlineStep;

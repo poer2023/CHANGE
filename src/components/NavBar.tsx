@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Menu, FileCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from '@/hooks/useTranslation';
 import MobileMenu from './MobileMenu';
 import LoginDialog from './LoginDialog';
+import LanguageToggle from './LanguageToggle';
 
 const navigationItems = [
-  { label: "价格", href: "#pricing" },
-  { label: "关于", href: "#about" },
-  { label: "实际案例", href: "#cases" },
-  { label: "博客", href: "#blog" }
+  { labelKey: "nav.pricing" as const, href: "#pricing" },
+  { labelKey: "nav.about" as const, href: "#about" },
+  { labelKey: "nav.cases" as const, href: "#cases" },
+  { labelKey: "nav.blog" as const, href: "#blog" }
 ];
 
 const NavBar: React.FC = () => {
@@ -20,6 +22,7 @@ const NavBar: React.FC = () => {
   
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -109,7 +112,7 @@ const NavBar: React.FC = () => {
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-indigo-600 text-white px-4 py-2 rounded-md z-50"
         >
-          跳到主内容
+          {t('navbar.skipToMain')}
         </a>
 
         <div className="max-w-6xl mx-auto px-4 h-full">
@@ -119,7 +122,7 @@ const NavBar: React.FC = () => {
               <a
                 href="/"
                 className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded-md p-1"
-                aria-label="EssayPass home"
+                aria-label={t('navbar.logoAriaLabel')}
                 data-event="nav_click"
                 data-label="logo"
               >
@@ -136,7 +139,7 @@ const NavBar: React.FC = () => {
                 
                 return (
                   <button
-                    key={item.label}
+                    key={item.labelKey}
                     onClick={() => handleNavClick(item.href)}
                     className={`relative text-sm font-medium transition-colors duration-120 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded-md px-2 py-1 ${
                       isActive 
@@ -144,9 +147,9 @@ const NavBar: React.FC = () => {
                         : 'text-slate-700 hover:text-indigo-700'
                     }`}
                     data-event="nav_click"
-                    data-label={item.label.toLowerCase()}
+                    data-label={item.labelKey}
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                     {isActive && (
                       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full" />
                     )}
@@ -157,13 +160,16 @@ const NavBar: React.FC = () => {
 
             {/* Desktop Action Buttons */}
             <div className="hidden lg:flex items-center space-x-3">
+              {/* Language Toggle */}
+              <LanguageToggle />
+              
               <button
                 onClick={handleLoginClick}
                 className="px-6 py-2.5 text-indigo-700 border border-indigo-600 rounded-full hover:text-indigo-900 hover:border-indigo-700 transition-colors duration-120 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 data-event="cta_click"
                 data-label="login"
               >
-                登录
+                {t('nav.login')}
               </button>
               <button
                 onClick={handleTrialClick}
@@ -171,7 +177,7 @@ const NavBar: React.FC = () => {
                 data-event="cta_click"
                 data-label="start"
               >
-                无风险体验
+                {t('landing.cta.trial')}
               </button>
             </div>
 
@@ -179,7 +185,7 @@ const NavBar: React.FC = () => {
             <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="lg:hidden p-2 text-slate-600 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-300 rounded-md"
-              aria-label="打开菜单"
+              aria-label={t('navbar.openMenu')}
               data-event="menu_toggle"
               data-label="open"
             >

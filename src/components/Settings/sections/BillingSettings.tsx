@@ -17,8 +17,10 @@ import {
 import { toast } from 'sonner';
 import { Order, Invoice } from '@/lib/types';
 import { generateMockOrders, generateMockInvoices } from '@/lib/mockData';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const BillingSettings: React.FC = () => {
+  const { t } = useTranslation();
   const [orders] = useState<Order[]>(generateMockOrders(12));
   const [invoices] = useState<Invoice[]>(generateMockInvoices(8));
   const [showWordPackageDialog, setShowWordPackageDialog] = useState(false);
@@ -28,20 +30,20 @@ const BillingSettings: React.FC = () => {
   const [hasWordPackage] = useState(true);
 
   const handleViewOrder = (orderId: string) => {
-    toast.info(`查看订单详情：${orderId}`);
+    toast.info(`${t('settings.billing.toast_view_order')}：${orderId}`);
   };
 
   const handleDownloadInvoice = (invoice: Invoice) => {
     if (invoice.url) {
-      toast.success(`开始下载发票：${invoice.id}`);
+      toast.success(`${t('settings.billing.toast_download_invoice')}：${invoice.id}`);
       // TODO: 实际下载逻辑
     } else {
-      toast.error('发票尚未生成');
+      toast.error(t('settings.billing.toast_invoice_not_ready'));
     }
   };
 
   const handleRequestInvoice = () => {
-    toast.success('补开发票申请已提交，我们将在3个工作日内处理');
+    toast.success(t('settings.billing.toast_invoice_request_sent'));
   };
 
   const handleBuyWordPackage = () => {
@@ -58,9 +60,9 @@ const BillingSettings: React.FC = () => {
 
   const getStatusBadge = (status: Order['status']) => {
     const statusMap = {
-      paid: { label: '已付费', className: 'bg-green-100 text-green-800' },
-      refunded: { label: '已退款', className: 'bg-gray-100 text-gray-800' },
-      failed: { label: '支付失败', className: 'bg-red-100 text-red-800' }
+      paid: { label: t('settings.billing.status_paid'), className: 'bg-green-100 text-green-800' },
+      refunded: { label: t('settings.billing.status_refunded'), className: 'bg-gray-100 text-gray-800' },
+      failed: { label: t('settings.billing.status_failed'), className: 'bg-red-100 text-red-800' }
     };
 
     const config = statusMap[status];
@@ -73,8 +75,8 @@ const BillingSettings: React.FC = () => {
 
   const getInvoiceStatusBadge = (status: Invoice['status']) => {
     const statusMap = {
-      issued: { label: '已开具', className: 'bg-green-100 text-green-800' },
-      pending: { label: '处理中', className: 'bg-amber-100 text-amber-800' }
+      issued: { label: t('settings.billing.invoice_status_issued'), className: 'bg-green-100 text-green-800' },
+      pending: { label: t('settings.billing.invoice_status_pending'), className: 'bg-amber-100 text-amber-800' }
     };
 
     const config = statusMap[status];
@@ -102,7 +104,7 @@ const BillingSettings: React.FC = () => {
           <CardHeader>
             <CardTitle className="text-[16px] font-semibold flex items-center gap-2">
               <Package className="h-4 w-4" />
-              字数包余额
+              {t('settings.billing.word_package_balance')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -111,7 +113,7 @@ const BillingSettings: React.FC = () => {
                 <p className="text-2xl font-semibold text-foreground">
                   {wordPackageBalance.toLocaleString()}
                 </p>
-                <p className="text-sm text-muted-foreground">剩余字数</p>
+                <p className="text-sm text-muted-foreground">{t('settings.billing.remaining_words')}</p>
               </div>
               <Button 
                 variant="outline"
@@ -119,7 +121,7 @@ const BillingSettings: React.FC = () => {
                 onClick={handleBuyWordPackage}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                购买字数包
+                {t('settings.billing.buy_word_package')}
               </Button>
             </div>
           </CardContent>
@@ -131,19 +133,19 @@ const BillingSettings: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-[16px] font-semibold flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
-            订单记录
+            {t('settings.billing.order_history')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>订单时间</TableHead>
-                <TableHead>类型</TableHead>
-                <TableHead>标题</TableHead>
-                <TableHead>金额</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>操作</TableHead>
+                <TableHead>{t('settings.billing.order_time')}</TableHead>
+                <TableHead>{t('settings.billing.type')}</TableHead>
+                <TableHead>{t('settings.billing.title')}</TableHead>
+                <TableHead>{t('settings.billing.amount')}</TableHead>
+                <TableHead>{t('settings.billing.status')}</TableHead>
+                <TableHead>{t('settings.billing.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -154,7 +156,7 @@ const BillingSettings: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-xs">
-                      {order.type === 'gate1' ? '基础解锁' : '附加服务'}
+                      {order.type === 'gate1' ? t('settings.billing.basic_unlock') : t('settings.billing.additional_service')}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium">
@@ -175,7 +177,7 @@ const BillingSettings: React.FC = () => {
                         onClick={() => handleViewOrder(order.id)}
                       >
                         <Eye className="h-3 w-3 mr-1" />
-                        详情
+                        {t('settings.billing.details')}
                       </Button>
                       {order.invoiceId && (
                         <Button
@@ -188,7 +190,7 @@ const BillingSettings: React.FC = () => {
                           }}
                         >
                           <Download className="h-3 w-3 mr-1" />
-                          发票
+                          {t('settings.billing.invoice')}
                         </Button>
                       )}
                     </div>
@@ -206,7 +208,7 @@ const BillingSettings: React.FC = () => {
           <CardTitle className="text-[16px] font-semibold flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Receipt className="h-4 w-4" />
-              发票管理
+              {t('settings.billing.invoice_management')}
             </div>
             <Button
               variant="outline"
@@ -215,7 +217,7 @@ const BillingSettings: React.FC = () => {
               onClick={handleRequestInvoice}
             >
               <FileText className="h-3 w-3 mr-1" />
-              申请补开
+              {t('settings.billing.request_invoice')}
             </Button>
           </CardTitle>
         </CardHeader>
@@ -235,12 +237,12 @@ const BillingSettings: React.FC = () => {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">
-                            发票 #{invoice.id.slice(-8)}
+                            {t('settings.billing.invoice')} #{invoice.id.slice(-8)}
                           </span>
                           {getInvoiceStatusBadge(invoice.status)}
                         </div>
                         <div className="text-xs text-muted-foreground space-x-4">
-                          <span>金额: {formatCurrency(invoice.amount)}</span>
+                          <span>{t('settings.billing.amount')}: {formatCurrency(invoice.amount)}</span>
                           <span>税额: {formatCurrency(invoice.tax)}</span>
                         </div>
                       </div>
@@ -253,7 +255,7 @@ const BillingSettings: React.FC = () => {
                         disabled={invoice.status === 'pending'}
                       >
                         <Download className="h-3 w-3 mr-1" />
-                        下载 PDF
+                        {t('settings.billing.download_pdf')}
                       </Button>
                     </div>
                   ))}
@@ -269,10 +271,10 @@ const BillingSettings: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              购买字数包
+              {t('settings.billing.dialog_title')}
             </DialogTitle>
             <DialogDescription>
-              选择适合您需求的字数包，一次购买，多次使用
+              {t('settings.billing.dialog_description')}
             </DialogDescription>
           </DialogHeader>
           
@@ -281,8 +283,8 @@ const BillingSettings: React.FC = () => {
               <div className="border rounded-xl p-4 cursor-pointer hover:border-primary">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">基础包</p>
-                    <p className="text-sm text-muted-foreground">50,000 字</p>
+                    <p className="font-medium">{t('settings.billing.basic_package')}</p>
+                    <p className="text-sm text-muted-foreground">50,000 {t('settings.billing.words_unit')}</p>
                   </div>
                   <p className="text-lg font-semibold">¥99</p>
                 </div>
@@ -291,12 +293,12 @@ const BillingSettings: React.FC = () => {
               <div className="border rounded-xl p-4 cursor-pointer hover:border-primary">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">标准包</p>
-                    <p className="text-sm text-muted-foreground">150,000 字</p>
+                    <p className="font-medium">{t('settings.billing.standard_package')}</p>
+                    <p className="text-sm text-muted-foreground">150,000 {t('settings.billing.words_unit')}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-semibold">¥269</p>
-                    <p className="text-xs text-green-600">节省 ¥28</p>
+                    <p className="text-xs text-green-600">{t('settings.billing.save_amount')} ¥28</p>
                   </div>
                 </div>
               </div>
@@ -304,19 +306,19 @@ const BillingSettings: React.FC = () => {
               <div className="border rounded-xl p-4 cursor-pointer hover:border-primary">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">专业包</p>
-                    <p className="text-sm text-muted-foreground">500,000 字</p>
+                    <p className="font-medium">{t('settings.billing.professional_package')}</p>
+                    <p className="text-sm text-muted-foreground">500,000 {t('settings.billing.words_unit')}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-semibold">¥799</p>
-                    <p className="text-xs text-green-600">节省 ¥191</p>
+                    <p className="text-xs text-green-600">{t('settings.billing.save_amount')} ¥191</p>
                   </div>
                 </div>
               </div>
             </div>
             
             <div className="text-xs text-muted-foreground text-center">
-              字数包永不过期，可用于任何写作项目
+              {t('settings.billing.package_desc')}
             </div>
             
             <div className="flex gap-2">
@@ -325,16 +327,16 @@ const BillingSettings: React.FC = () => {
                 className="flex-1 rounded-xl"
                 onClick={() => setShowWordPackageDialog(false)}
               >
-                取消
+                {t('common.cancel')}
               </Button>
               <Button 
                 className="flex-1 rounded-xl"
                 onClick={() => {
-                  toast.success('字数包购买功能开发中');
+                  toast.success(t('settings.billing.toast_package_dev'));
                   setShowWordPackageDialog(false);
                 }}
               >
-                立即购买
+                {t('settings.billing.buy_now')}
               </Button>
             </div>
           </div>

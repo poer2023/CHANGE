@@ -97,6 +97,14 @@ export interface WritingFlowState {
   error?: string;
 }
 
+export interface UIState {
+  gate1ModalOpen: boolean;
+  gate1ModalData?: {
+    price: { value: number; currency: 'CNY'; expiresAt: number };
+    benefits: string[];
+  };
+}
+
 export interface AppState {
   step1: Step1Inputs;
   estimate: Estimate;
@@ -104,6 +112,8 @@ export interface AppState {
   pay: PayLocks;
   result: ResultState;
   writingFlow: WritingFlowState;
+  ui: UIState;
+  demoMode: boolean;
 }
 
 export type Action =
@@ -127,6 +137,9 @@ export type Action =
   | { type: 'WRITING_FLOW_UPDATE_METRICS'; payload: Partial<QualityMetrics> }
   | { type: 'WRITING_FLOW_TOGGLE_ADDON'; payload: { addon: string; enabled: boolean } }
   | { type: 'WRITING_FLOW_SET_ERROR'; payload: string | undefined }
+  | { type: 'SHOW_GATE1_MODAL'; payload: { price: { value: number; currency: 'CNY'; expiresAt: number }; benefits: string[] } }
+  | { type: 'HIDE_GATE1_MODAL' }
+  | { type: 'DEMO_MODE_TOGGLE'; payload: boolean }
   | { type: 'RESET_STATE' }
   | { type: 'LOAD_PERSISTED_STATE'; payload: Partial<AppState> };
 
@@ -201,7 +214,7 @@ export interface AutopilotBannerProps {
 
 export interface Gate1ModalProps {
   open: boolean;
-  price: { value: number; currency: 'CNY'; expiresAt: number };
+  price?: { value: number; currency: 'CNY'; expiresAt: number };
   benefits: string[];
   onPreviewOnly: () => void;
   onUnlock: () => Promise<void>;

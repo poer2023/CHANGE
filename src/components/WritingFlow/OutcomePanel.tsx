@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Segmented } from '@/components/ui/segmented';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import AutopilotInline from './AutopilotInline';
 import Countdown from '@/components/shared/Countdown';
+import CardWrapper from '@/components/shared/CardWrapper';
 import { 
   Calculator, 
   Clock, 
@@ -14,15 +15,31 @@ import {
   TrendingUp, 
   Eye,
   Zap,
-  ArrowRight,
   Loader2,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Target,
+  CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type WritingStep = 'topic' | 'research' | 'strategy' | 'outline';
 type VerifyLevel = 'Basic' | 'Standard' | 'Pro';
+type Addon = 'evidencePack' | 'defenseCard' | 'latex' | 'aiCheck' | 'plagiarism' | 'shareLink';
+
+interface OutcomeMetrics {
+  // Step-specific metrics
+  sourcesHit?: number;
+  verifiableRatio?: number; 
+  recent5yRatio?: number;
+  thesisCandidates?: number;
+  pickedStructure?: number;
+  claimCount?: number;
+  outlineDepth?: number;
+  sections?: number;
+  perSectionCiteBalance?: number;
+  styleSamples?: number;
+}
 
 interface OutcomePanelProps {
   step: WritingStep;
@@ -37,26 +54,8 @@ interface OutcomePanelProps {
     citesRange: [number, number];
     verifyLevel: VerifyLevel;
   };
-  metrics: {
-    // Step1 (topic) - always available
-    styleSamples?: number;
-    
-    // Step2 (research)
-    sourcesHit?: number;
-    verifiableRatio?: number;
-    recent5yRatio?: number;
-    
-    // Step3 (strategy)
-    thesisCandidates?: number;
-    pickedStructure?: number;
-    claimCount?: number;
-    
-    // Step4 (outline)
-    outlineDepth?: number;
-    sections?: number;
-    perSectionCiteBalance?: number; // 0-100
-  };
-  addons: Array<'evidencePack' | 'defenseCard' | 'latex' | 'aiCheck' | 'plagiarism' | 'shareLink'>;
+  metrics?: OutcomeMetrics;
+  addons: Addon[];
   autopilot?: {
     running: boolean;
     step: 'search' | 'strategy' | 'outline' | 'done' | 'error';
@@ -65,7 +64,7 @@ interface OutcomePanelProps {
   };
   error?: string;
   onVerifyChange: (level: VerifyLevel) => void;
-  onToggleAddon: (key: string, enabled: boolean) => void;
+  onToggleAddon: (key: Addon, enabled: boolean) => void;
   onPreviewSample: () => void;
   onPayAndWrite: () => Promise<void>;
   onRetry?: () => void;
@@ -85,36 +84,27 @@ const OutcomePanel: React.FC<OutcomePanelProps> = ({
   onPayAndWrite,
   onRetry
 }) => {
+  const { t } = useTranslation();
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const formatPrice = (price: number): string => `¥${price}`;
-  const formatPriceRange = (range: [number, number]): string => 
-    `${formatPrice(range[0])}-${formatPrice(range[1])}`;
 
   const formatTimeRange = (minutes: [number, number]): string => {
     const [min, max] = minutes;
     if (max < 60) {
-      return `${min}-${max}分钟`;
+      return t('outcome.time.minutes', { min, max });
     } else {
       const minHours = Math.round(min / 60 * 10) / 10;
       const maxHours = Math.round(max / 60 * 10) / 10;
-      return `${minHours}-${maxHours}小时`;
+      return t('outcome.time.hours', { min: minHours, max: maxHours });
     }
   };
 
-  const verifyOptions = [
-    { value: 'Basic', label: 'Basic' },
-    { value: 'Standard', label: 'Standard' },
-    { value: 'Pro', label: 'Pro' }
-  ];
-
   const addonConfig = {
-    evidencePack: { label: '证据包', price: 15 },
-    defenseCard: { label: '答辩卡', price: 25 },
-    latex: { label: 'LaTeX导出', price: 10 },
-    aiCheck: { label: 'AI检查', price: 20 },
-    plagiarism: { label: '查重报告', price: 30 },
-    shareLink: { label: '分享链接', price: 5 }
+    evidencePack: { label: t('outcome.addons.evidence_pack'), price: 15 },
+    defenseCard: { label: t('outcome.addons.defense_card'), price: 25 },
+    latex: { label: t('outcome.addons.latex'), price: 10 },
+    aiCheck: { label: t('outcome.addons.ai_check'), price: 20 },
+    plagiarism: { label: t('outcome.addons.plagiarism'), price: 30 },
+    shareLink: { label: t('outcome.addons.share_link'), price: 5 }
   };
 
   const handlePayAndWrite = async () => {
@@ -130,144 +120,188 @@ const OutcomePanel: React.FC<OutcomePanelProps> = ({
     const metricCards = [];
 
     // Step-specific metrics
-    if (step === 'topic' && metrics.styleSamples !== undefined) {
+    if (step === 'topic' && metrics?.styleSamples !== undefined) {
       metricCards.push(
-        <div key="styleSamples" className="bg-gray-50 rounded-xl p-3">
+        <div key="styleSamples" className="bg-transparent p-2">
           <div className="flex items-center gap-2 mb-1">
-            <FileCheck className="h-4 w-4 text-[#6E5BFF]" />
-            <span className="text-xs font-medium text-gray-700">风格样本</span>
+            <FileCheck className="h-4 w-4 text-[#6A5AF9]" />
+            <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.style_samples')}</span>
           </div>
-          <p className="text-sm font-semibold text-gray-900">
-            {metrics.styleSamples} 个文件
+          <p className="text-lg font-semibold text-slate-900">
+            {metrics.styleSamples}
           </p>
-          <p className="text-xs text-gray-600">已上传</p>
+          <p className="text-xs text-slate-600">{metrics.styleSamples}{t('outcome.metrics.style_samples_desc')}</p>
         </div>
       );
     }
 
     if (step === 'research') {
-      if (metrics.sourcesHit !== undefined) {
+      if (metrics?.sourcesHit !== undefined) {
         metricCards.push(
-          <div key="sourcesHit" className="bg-gray-50 rounded-xl p-3">
+          <div key="sourcesHit" className="bg-transparent p-2">
             <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="h-4 w-4 text-[#6E5BFF]" />
-              <span className="text-xs font-medium text-gray-700">命中文献</span>
+              <TrendingUp className="h-4 w-4 text-[#6A5AF9]" />
+              <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.sources_hit')}</span>
             </div>
-            <p className="text-sm font-semibold text-gray-900">
-              {metrics.sourcesHit} 条
+            <p className="text-lg font-semibold text-slate-900">
+              {metrics.sourcesHit}
             </p>
-            <p className="text-xs text-gray-600">相关度高</p>
+            <p className="text-xs text-slate-600">{metrics.sourcesHit}{t('outcome.metrics.sources_hit_desc')}</p>
           </div>
         );
       }
       
-      if (metrics.verifiableRatio !== undefined) {
+      if (metrics?.verifiableRatio !== undefined) {
         metricCards.push(
-          <div key="verifiableRatio" className="bg-gray-50 rounded-xl p-3">
+          <div key="verifiableRatio" className="bg-transparent p-2">
             <div className="flex items-center gap-2 mb-1">
-              <FileCheck className="h-4 w-4 text-[#6E5BFF]" />
-              <span className="text-xs font-medium text-gray-700">可核验率</span>
+              <FileCheck className="h-4 w-4 text-[#6A5AF9]" />
+              <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.verifiable')}</span>
             </div>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-lg font-semibold text-slate-900">
               {Math.round(metrics.verifiableRatio)}%
             </p>
-            <p className="text-xs text-gray-600">可溯源</p>
+            <p className="text-xs text-slate-600">{Math.round(metrics.verifiableRatio)}%{t('outcome.metrics.verifiable_desc')}</p>
+          </div>
+        );
+      }
+      
+      if (metrics?.recent5yRatio !== undefined) {
+        metricCards.push(
+          <div key="recent5yRatio" className="bg-transparent p-2">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="h-4 w-4 text-[#6A5AF9]" />
+              <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.recent_5y')}</span>
+            </div>
+            <p className="text-lg font-semibold text-slate-900">
+              {Math.round(metrics.recent5yRatio)}%
+            </p>
+            <p className="text-xs text-slate-600">{Math.round(metrics.recent5yRatio)}%{t('outcome.metrics.recent_5y_desc')}</p>
           </div>
         );
       }
     }
 
     if (step === 'strategy') {
-      if (metrics.thesisCandidates !== undefined) {
+      if (metrics?.thesisCandidates !== undefined) {
         metricCards.push(
-          <div key="thesisCandidates" className="bg-gray-50 rounded-xl p-3">
+          <div key="thesisCandidates" className="bg-transparent p-2">
             <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="h-4 w-4 text-[#6E5BFF]" />
-              <span className="text-xs font-medium text-gray-700">论点候选</span>
+              <TrendingUp className="h-4 w-4 text-[#6A5AF9]" />
+              <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.thesis_candidates')}</span>
             </div>
-            <p className="text-sm font-semibold text-gray-900">
-              {metrics.thesisCandidates} 个
+            <p className="text-lg font-semibold text-slate-900">
+              {metrics.thesisCandidates}
             </p>
-            <p className="text-xs text-gray-600">待筛选</p>
+            <p className="text-xs text-slate-600">{metrics.thesisCandidates}{t('outcome.metrics.thesis_candidates_desc')}</p>
           </div>
         );
       }
       
-      if (metrics.claimCount !== undefined) {
+      if (metrics?.pickedStructure !== undefined) {
         metricCards.push(
-          <div key="claimCount" className="bg-gray-50 rounded-xl p-3">
+          <div key="pickedStructure" className="bg-transparent p-2">
             <div className="flex items-center gap-2 mb-1">
-              <FileCheck className="h-4 w-4 text-[#6E5BFF]" />
-              <span className="text-xs font-medium text-gray-700">核心论证</span>
+              <CheckCircle className="h-4 w-4 text-[#6A5AF9]" />
+              <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.picked_structure')}</span>
             </div>
-            <p className="text-sm font-semibold text-gray-900">
-              {metrics.claimCount} 条
+            <p className="text-lg font-semibold text-slate-900">
+              {metrics.pickedStructure}
             </p>
-            <p className="text-xs text-gray-600">已确定</p>
+            <p className="text-xs text-slate-600">{metrics.pickedStructure}{t('outcome.metrics.picked_structure_desc')}</p>
+          </div>
+        );
+      }
+      
+      if (metrics?.claimCount !== undefined) {
+        metricCards.push(
+          <div key="claimCount" className="bg-transparent p-2">
+            <div className="flex items-center gap-2 mb-1">
+              <Target className="h-4 w-4 text-[#6A5AF9]" />
+              <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.claim_count')}</span>
+            </div>
+            <p className="text-lg font-semibold text-slate-900">
+              {metrics.claimCount}
+            </p>
+            <p className="text-xs text-slate-600">{metrics.claimCount}{t('outcome.metrics.claim_count_desc')}</p>
           </div>
         );
       }
     }
 
     if (step === 'outline') {
-      if (metrics.sections !== undefined) {
+      if (metrics?.outlineDepth !== undefined) {
         metricCards.push(
-          <div key="sections" className="bg-gray-50 rounded-xl p-3">
+          <div key="outlineDepth" className="bg-transparent p-2">
             <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="h-4 w-4 text-[#6E5BFF]" />
-              <span className="text-xs font-medium text-gray-700">章节数量</span>
+              <TrendingUp className="h-4 w-4 text-[#6A5AF9]" />
+              <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.outline_depth')}</span>
             </div>
-            <p className="text-sm font-semibold text-gray-900">
-              {metrics.sections} 个
+            <p className="text-lg font-semibold text-slate-900">
+              {metrics.outlineDepth}
             </p>
-            <p className="text-xs text-gray-600">结构化</p>
+            <p className="text-xs text-slate-600">{metrics.outlineDepth}{t('outcome.metrics.outline_depth_desc')}</p>
           </div>
         );
       }
       
-      if (metrics.perSectionCiteBalance !== undefined) {
+      if (metrics?.sections !== undefined) {
         metricCards.push(
-          <div key="citeBalance" className="bg-gray-50 rounded-xl p-3">
+          <div key="sections" className="bg-transparent p-2">
             <div className="flex items-center gap-2 mb-1">
-              <FileCheck className="h-4 w-4 text-[#6E5BFF]" />
-              <span className="text-xs font-medium text-gray-700">引用均衡</span>
+              <FileCheck className="h-4 w-4 text-[#6A5AF9]" />
+              <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.sections')}</span>
             </div>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-lg font-semibold text-slate-900">
+              {metrics.sections}
+            </p>
+            <p className="text-xs text-slate-600">{metrics.sections}{t('outcome.metrics.sections_desc')}</p>
+          </div>
+        );
+      }
+      
+      if (metrics?.perSectionCiteBalance !== undefined) {
+        metricCards.push(
+          <div key="citeBalance" className="bg-transparent p-2">
+            <div className="flex items-center gap-2 mb-1">
+              <Calculator className="h-4 w-4 text-[#6A5AF9]" />
+              <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.citation_balance')}</span>
+            </div>
+            <p className="text-lg font-semibold text-slate-900">
               {Math.round(metrics.perSectionCiteBalance)}%
             </p>
-            <p className="text-xs text-gray-600">分布度</p>
+            <p className="text-xs text-slate-600">{Math.round(metrics.perSectionCiteBalance)}%{t('outcome.metrics.citation_balance_desc')}</p>
           </div>
         );
       }
     }
 
-    // Always show citation range
+    // Always show citation range and ETA
     metricCards.push(
-      <div key="citations" className="bg-gray-50 rounded-xl p-3">
+      <div key="citations" className="bg-transparent p-2">
         <div className="flex items-center gap-2 mb-1">
-          <FileCheck className="h-4 w-4 text-[#6E5BFF]" />
-          <span className="text-xs font-medium text-gray-700">预计引用</span>
+          <FileCheck className="h-4 w-4 text-[#6A5AF9]" />
+          <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.expected_citations')}</span>
         </div>
-        <p className="text-sm font-semibold text-gray-900">
-          {estimate.citesRange[0]}–{estimate.citesRange[1]} 条
+        <p className="text-lg font-semibold text-slate-900">
+          {estimate.citesRange[0]}–{estimate.citesRange[1]}
         </p>
-        <p className="text-xs text-gray-600">
-          核验 {estimate.verifyLevel === 'Pro' ? '100' : estimate.verifyLevel === 'Standard' ? '95' : '85'}%
+        <p className="text-xs text-slate-600">
+          {t('outcome.metrics.expected_citations_desc', { rate: estimate.verifyLevel === 'Pro' ? '100' : estimate.verifyLevel === 'Standard' ? '95' : '85' })}
         </p>
       </div>
     );
 
-    // Always show ETA
     metricCards.push(
-      <div key="eta" className="bg-gray-50 rounded-xl p-3">
+      <div key="eta" className="bg-transparent p-2">
         <div className="flex items-center gap-2 mb-1">
-          <Clock className="h-4 w-4 text-[#6E5BFF]" />
-          <span className="text-xs font-medium text-gray-700">预计时长</span>
+          <Clock className="h-4 w-4 text-[#6A5AF9]" />
+          <span className="text-xs font-medium text-slate-700">{t('outcome.metrics.estimated_time')}</span>
         </div>
-        <p className="text-sm font-semibold text-gray-900">
+        <p className="text-lg font-semibold text-slate-900">
           {formatTimeRange(estimate.etaMinutes)}
         </p>
-        <p className="text-xs text-gray-600">到可导出</p>
+        <p className="text-xs text-slate-600">{t('outcome.metrics.eta')}</p>
       </div>
     );
 
@@ -279,180 +313,182 @@ const OutcomePanel: React.FC<OutcomePanelProps> = ({
   };
 
   return (
-    <Card className="rounded-2xl border bg-white shadow-sm hover:shadow-md transition-shadow duration-200 sticky top-6">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-          <div className="w-2 h-2 rounded-full bg-[#6E5BFF]"></div>
-          <Calculator className="h-5 w-5 text-[#6E5BFF]" />
-          预计价值与价格
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="p-4 md:p-5 space-y-6">
-        {/* Error Alert */}
-        {error && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-700">
-              {error}
-              {onRetry && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onRetry}
-                  className="ml-2 h-6 text-xs"
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  重试
-                </Button>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
+    <CardWrapper className="space-y-4 md:space-y-5">
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive" className="border-red-200 bg-red-50">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+            {onRetry && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onRetry}
+                className="ml-2 h-6 text-xs"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                {t('outcome.buttons.retry')}
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
-        {/* Autopilot Progress */}
-        {autopilot?.running && (
+      {/* Autopilot Progress */}
+      {autopilot?.running && (
+        <div className="pb-4">
           <AutopilotInline
             currentStep={autopilot.step}
             progress={autopilot.progress}
             message={autopilot.message}
+            variant="ghost"
           />
-        )}
+        </div>
+      )}
 
-        {/* A. 价格与锁价 */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              {lockedPrice ? (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-[#6E5BFF]">
-                      {formatPrice(lockedPrice.value)}
-                    </span>
-                    <Badge className="bg-[#6E5BFF] text-white text-xs">锁定价格</Badge>
-                  </div>
+      {/* A. 价格与锁价 */}
+      <div className="border-t border-slate-200/70 pt-4 first:border-t-0 first:pt-0">
+        <div className="flex items-start justify-between">
+          <div>
+            {lockedPrice ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[15px] font-semibold text-slate-900">
+                    {t('outcome.price.locked', { price: lockedPrice.value })}
+                  </span>
+                  <Badge className="bg-slate-100 text-slate-700 text-xs">{t('outcome.price.locked_badge')}</Badge>
+                </div>
+                <div className="flex items-center gap-2">
                   <Countdown 
                     expiresAt={new Date(lockedPrice.expiresAt).toISOString()} 
-                    className="text-xs text-gray-600"
+                    className="text-sm text-slate-600"
                   />
+                  <button className="text-xs text-[#6A5AF9] underline hover:text-[#5A4ACF]">
+                    {t('outcome.price.relock')}
+                  </button>
                 </div>
-              ) : (
-                <div className="space-y-1">
-                  <span className="text-2xl font-bold text-[#6E5BFF]">
-                    {formatPriceRange(estimate.priceRange)}
-                  </span>
-                  <p className="text-xs text-gray-600">预估价格区间</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-gray-700">核验等级</label>
-              <Segmented
-                options={verifyOptions}
-                value={estimate.verifyLevel}
-                onChange={(value) => onVerifyChange(value as VerifyLevel)}
-                size="sm"
-                className="w-fit"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* B. 交付物清单 */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-gray-900 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-[#6E5BFF]" />
-            交付物清单
-          </h4>
-          
-          {/* 基础项目 */}
-          <div className="space-y-2">
-            <div className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#6E5BFF] mt-2 flex-shrink-0"></div>
-              <span className="text-sm text-gray-700">完整初稿 + 结构化大纲</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#6E5BFF] mt-2 flex-shrink-0"></div>
-              <span className="text-sm text-gray-700">
-                {estimate.verifyLevel === 'Pro' ? '深度' : 
-                 estimate.verifyLevel === 'Standard' ? '标准' : '基础'}引用核验
-              </span>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#6E5BFF] mt-2 flex-shrink-0"></div>
-              <span className="text-sm text-gray-700">个性化风格对齐</span>
-            </div>
-          </div>
-
-          {/* 附加项目 */}
-          <div className="space-y-2 pt-2 border-t border-gray-100">
-            <span className="text-xs font-medium text-gray-700">附加项目</span>
-            {Object.entries(addonConfig).map(([key, config]) => (
-              <div key={key} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={addons.includes(key as any)}
-                    onCheckedChange={(enabled) => onToggleAddon(key, enabled)}
-                    size="sm"
-                  />
-                  <span className="text-sm text-gray-700">{config.label}</span>
-                </div>
-                <span className="text-xs text-gray-500">+¥{config.price}</span>
               </div>
-            ))}
+            ) : (
+              <div className="space-y-1">
+                <span className="text-[15px] font-semibold text-slate-900">
+                  {t('outcome.price.estimated', { min: estimate.priceRange[0], max: estimate.priceRange[1] })}
+                </span>
+                <p className="text-sm text-slate-600">
+                  {t('outcome.price.eta', { time: formatTimeRange(estimate.etaMinutes) })}
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <div className="space-y-1">
+            <label className="text-xs text-slate-600">{t('outcome.verification.level')}</label>
+            {lockedPrice ? (
+              <div className="text-sm font-medium text-slate-700">{estimate.verifyLevel}</div>
+            ) : (
+              <ToggleGroup
+                type="single"
+                value={estimate.verifyLevel}
+                onValueChange={(value) => value && onVerifyChange(value as VerifyLevel)}
+                className="bg-transparent border border-slate-200 rounded-xl p-1"
+              >
+                <ToggleGroupItem value="Basic" className="text-xs">{t('outcome.verification.basic')}</ToggleGroupItem>
+                <ToggleGroupItem value="Standard" className="text-xs">{t('outcome.verification.standard')}</ToggleGroupItem>
+                <ToggleGroupItem value="Pro" className="text-xs">{t('outcome.verification.pro')}</ToggleGroupItem>
+              </ToggleGroup>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* C. 质量预测指标 */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-gray-900 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-[#6E5BFF]" />
-            质量预测指标
-          </h4>
-          {renderMetrics()}
+      {/* B. 交付物清单 */}
+      <div className="border-t border-slate-200/70 pt-4">
+        <div className="space-y-0 divide-y divide-slate-200/70">
+          {/* 固定包含 */}
+          <div className="flex items-center justify-between py-2 first:pt-0">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm text-slate-700">{t('outcome.deliverables.draft')}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm text-slate-700">{t('outcome.deliverables.citation_verification')}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm text-slate-700">{t('outcome.deliverables.style_alignment')}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm text-slate-700">{t('outcome.deliverables.process_tracking')}</span>
+            </div>
+          </div>
+          
+          {/* 附加项 */}
+          {Object.entries(addonConfig).map(([key, config]) => (
+            <div key={key} className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={addons.includes(key as Addon)}
+                  onCheckedChange={(enabled) => onToggleAddon(key as Addon, enabled)}
+                  size="sm"
+                />
+                <span className="text-sm text-slate-700">{config.label}</span>
+              </div>
+              <span className="text-xs text-slate-600">+¥{config.price}</span>
+            </div>
+          ))}
         </div>
+      </div>
 
-        {/* D. 操作区 */}
-        <div className="space-y-3 pt-4 border-t border-gray-100">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onPreviewSample}
-            className="w-full rounded-full border-[#6E5BFF] text-[#6E5BFF] hover:bg-[#6E5BFF] hover:text-white transition-all duration-200"
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            预览样例片段
-          </Button>
+      {/* C. 质量预测指标 */}
+      <div className="border-t border-slate-200/70 pt-4">
+        {renderMetrics()}
+      </div>
 
-          <Button
-            type="button"
-            onClick={handlePayAndWrite}
-            disabled={isProcessing || autopilot?.running}
-            className="w-full rounded-full bg-gradient-to-r from-[#6E5BFF] to-[#8B7FFF] hover:from-[#5B4FCC] hover:to-[#7A6FCC] text-white transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                处理中...
-              </>
-            ) : (
-              <>
-                <Zap className="h-4 w-4 mr-2" />
-                立即写作
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </>
-            )}
-          </Button>
+      {/* D. 操作区 */}
+      <div className="border-t border-slate-200/70 pt-4 space-y-2">
+        <Button
+          type="button"
+          onClick={handlePayAndWrite}
+          disabled={isProcessing || autopilot?.running}
+          className="w-full rounded-xl h-10 bg-[#6A5AF9] hover:bg-[#5A4ACF] text-white"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              {t('outcome.buttons.processing')}
+            </>
+          ) : (
+            <>
+              <Zap className="h-4 w-4 mr-2" />
+              {t('outcome.buttons.pay_and_write')}
+            </>
+          )}
+        </Button>
 
-          <p className="text-xs text-gray-500 text-center leading-relaxed">
-            此过程不收费。完成后进入结果页，<br />
-            正文生成前需付费解锁。
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onPreviewSample}
+          className="w-full rounded-xl h-10"
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          {t('outcome.buttons.preview_sample')}
+        </Button>
+
+        <p className="text-xs text-slate-600 text-center leading-relaxed">
+          {t('outcome.disclaimer')}
+        </p>
+      </div>
+    </CardWrapper>
   );
 };
 

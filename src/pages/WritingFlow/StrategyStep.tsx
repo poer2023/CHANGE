@@ -5,8 +5,10 @@ import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import OutcomePanel from '@/components/WritingFlow/OutcomePanel';
+import StepNav from '@/components/WritingFlow/StepNav';
 import Gate1Modal from '@/components/Gate1Modal';
-import { useStep1, useEstimate, useAutopilot, useApp, useWritingFlow as useNewWritingFlow, usePayment } from '@/state/AppContext';
+import DemoModeToggle from '@/components/DemoModeToggle';
+import { useStep1, useEstimate, useAutopilot, useApp, useWritingFlow as useNewWritingFlow, usePayment, useDemoMode } from '@/state/AppContext';
 import { lockPrice, createPaymentIntent, confirmPayment, startAutopilot as apiStartAutopilot, streamAutopilotProgress, track } from '@/services/pricing';
 import { useWritingFlow } from '@/contexts/WritingFlowContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 import { 
   Target, 
   Plus, 
@@ -100,28 +103,28 @@ interface Strategy {
 
 const strategySchema = z.object({
   thesis: z.string()
-    .min(1, '请填写主题句')
-    .max(500, '主题句不能超过500个字符'),
+    .min(1, t('strategy.validation.thesis_required'))
+    .max(500, t('strategy.validation.thesis_max_length')),
   essayType: z.enum(['argument', 'analysis', 'expository', 'compare', 'review']),
   audience: z.enum(['academic', 'general', 'decision']),
   register: z.enum(['formal', 'neutral', 'explanatory']),
   claims: z.array(z.object({
     id: z.string(),
-    title: z.string().min(1, '请填写论点'),
+    title: z.string().min(1, t('strategy.validation.claim_required')),
     strength: z.number().min(0).max(100),
     evidence: z.array(z.object({
       id: z.string(),
       sourceType: z.enum(['paper', 'book', 'web', 'dataset', 'report']),
-      keywords: z.string().min(1, '关键词不能为空'),
+      keywords: z.string().min(1, t('strategy.validation.keywords_required')),
       expectedCitations: z.number().int().min(1).max(10),
       needFigure: z.boolean().optional()
     })).optional().default([]),
     risks: z.array(z.string()).optional()
-  })).min(1, '至少需要1个论点').max(10, '最多10个论点'),
+  })).min(1, t('strategy.validation.min_claims')).max(10, t('strategy.validation.max_claims')),
   counters: z.array(z.object({
     id: z.string(),
-    viewpoint: z.string().min(1, '请填写反方观点'),
-    rebuttal: z.string().min(1, '请填写反驳'),
+    viewpoint: z.string().min(1, t('strategy.validation.viewpoint_required')),
+    rebuttal: z.string().min(1, t('strategy.validation.rebuttal_required')),
     asParagraph: z.boolean()
   })).optional().default([]), // 改为可选
   structure: z.object({
@@ -195,38 +198,42 @@ const calculateQualityScores = (data: Partial<Strategy>) => {
   return scores;
 };
 
-// 结构模板配置
-const structureTemplates = {
-  PEEL: {
-    name: 'PEEL (论点-证据-解释-链接)',
-    description: '每段包含论点、证据、解释和链接到下一段',
-    example: '首先提出论点，然后提供证据支持，解释证据如何支持论点，最后链接到下一个论点。'
-  },
-  TOULMIN: {
-    name: 'Toulmin (主张-数据-担保)',
-    description: '基于逻辑推理的论证结构',
-    example: '提出主张，提供数据支持，说明担保（数据如何支持主张），考虑限定条件。'
-  },
-  CONCEDE: {
-    name: '让步-反驳 (承认-但是-因为)',
-    description: '先承认对方观点的合理性，然后反驳',
-    example: '虽然X观点有一定道理，但是基于Y证据，Z结论更加合理。'
-  },
-  PROBLEM: {
-    name: '问题-分析-建议',
-    description: '识别问题，分析原因，提出解决方案',
-    example: '首先识别核心问题，分析问题的成因和影响，最后提出具体的解决建议。'
-  }
-};
+// 结构模板配置 - moved inside component to access t() function
 
 const StrategyStep: React.FC = () => {
+  const { t } = useTranslation();
   const { project, updateStrategy, setCurrentStep, completeStep } = useWritingFlow();
+
+  // 结构模板配置
+  const structureTemplates = {
+    PEEL: {
+      name: t('strategy.structure.templates.peel.name'),
+      description: t('strategy.structure.templates.peel.description'),
+      example: t('strategy.structure.templates.peel.example')
+    },
+    TOULMIN: {
+      name: t('strategy.structure.templates.toulmin.name'),
+      description: t('strategy.structure.templates.toulmin.description'),
+      example: t('strategy.structure.templates.toulmin.example')
+    },
+    CONCEDE: {
+      name: t('strategy.structure.templates.concede.name'),
+      description: t('strategy.structure.templates.concede.description'),
+      example: t('strategy.structure.templates.concede.example')
+    },
+    PROBLEM: {
+      name: t('strategy.structure.templates.problem.name'),
+      description: t('strategy.structure.templates.problem.description'),
+      example: t('strategy.structure.templates.problem.example')
+    }
+  };
   const { track: trackEvent } = useApp();
   const { step1 } = useStep1();
   const { estimate, setEstimate } = useEstimate();
   const { autopilot, startAutopilot, minimizeAutopilot, pauseAutopilot, resumeAutopilot, stopAutopilot } = useAutopilot();
   const { writingFlow, updateMetrics, toggleAddon, setError } = useNewWritingFlow();
   const { pay, lockPrice: lockPriceState } = usePayment();
+  const { demoMode } = useDemoMode();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -304,7 +311,7 @@ const StrategyStep: React.FC = () => {
     blueprint.push({
       idx: 1,
       role: 'intro' as const,
-      summary: '介绍主题背景，提出论题，预告主要论点',
+      summary: t('strategy.structure.blueprint.intro_summary'),
       expectedCitations: 2
     });
 
@@ -313,7 +320,7 @@ const StrategyStep: React.FC = () => {
       blueprint.push({
         idx: index + 2,
         role: 'body' as const,
-        summary: `论述${claim.title}，提供证据支持`,
+        summary: `${t('strategy.structure.blueprint.body_summary')} - ${claim.title}`,
         claimRef: claim.id,
         expectedCitations: claim.evidence.reduce((sum, e) => sum + e.expectedCitations, 0)
       });
@@ -323,7 +330,7 @@ const StrategyStep: React.FC = () => {
     blueprint.push({
       idx: claims.length + 2,
       role: 'conclusion' as const,
-      summary: '总结主要论点，重申论题，展望未来',
+      summary: t('strategy.structure.blueprint.conclusion_summary'),
       expectedCitations: 1
     });
 
@@ -360,8 +367,8 @@ const StrategyStep: React.FC = () => {
     
     setIsGeneratingEvidence(null);
     toast({
-      title: '证据计划生成完成',
-      description: '已为该论点生成2个证据计划'
+      title: t('strategy.toast.evidence_generated'),
+      description: t('strategy.toast.evidence_generated_desc')
     });
   };
 
@@ -514,6 +521,20 @@ const StrategyStep: React.FC = () => {
   const handleVerifyLevelChange = (level: 'Basic' | 'Standard' | 'Pro') => {
     setVerificationLevel(level);
     track('outcome_verify_change', { level, step: 'strategy' });
+    
+    // Show confirmation feedback
+    toast({
+      title: `核验等级已更新为 ${level}`,
+      description: `引用核验率：${level === 'Pro' ? '100%' : level === 'Standard' ? '95%' : '85%'}`,
+      duration: 2000
+    });
+    
+    // Update estimate with new verification level
+    setEstimate({
+      ...estimate,
+      verifyLevel: level,
+      updatedAt: Date.now()
+    });
   };
 
   const handleToggleAddon = (key: string, enabled: boolean) => {
@@ -555,13 +576,13 @@ const StrategyStep: React.FC = () => {
       navigate('/writing-flow/outline');
       
       toast({
-        title: '写作策略完成',
-        description: '已保存策略设置，正在进入大纲编辑...'
+        title: t('strategy.toast.strategy_saved'),
+        description: t('strategy.toast.strategy_saved_desc')
       });
     } catch (error) {
       toast({
-        title: '保存失败',
-        description: '请稍后重试',
+        title: t('strategy.toast.save_failed'),
+        description: t('strategy.toast.save_failed_desc'),
         variant: 'destructive'
       });
     }
@@ -571,8 +592,8 @@ const StrategyStep: React.FC = () => {
     const currentData = watch();
     localStorage.setItem('writing-flow:strategy', JSON.stringify(currentData));
     toast({
-      title: '草稿已保存',
-      description: '您的策略已保存到本地'
+      title: t('strategy.toast.draft_saved'),
+      description: t('strategy.toast.draft_saved_desc')
     });
   };
 
@@ -620,24 +641,20 @@ const StrategyStep: React.FC = () => {
   const firstError = Object.entries(qualityScores).find(([_, score]) => score < 60);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-[#6E5BFF] text-white">
-            <Target className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-semibold leading-tight text-gray-900">写作策略</h1>
-            <p className="text-[#5B667A] text-sm leading-6 mt-1">制定论文的核心论点和论证策略</p>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#F7F8FB] pt-6">
+      <div className="container max-w-[1660px] mx-auto px-6 md:px-8">
+        {/* Grid Layout */}
+        <div className="max-w-[1660px] mx-auto px-6 md:px-8">
+          <div className="grid gap-6 grid-cols-1 xl:grid-cols-[280px_minmax(900px,1fr)_360px] xl:gap-8">
+          {/* Left Column - Step Navigation */}
+          <aside className="hidden xl:block">
+            <div className="sticky top-6 -ml-6 md:-ml-8">
+              <StepNav />
+            </div>
+          </aside>
 
-      {/* Two Column Layout */}
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left Column - Main Form */}
-        <div className="flex-1 lg:max-w-[680px]">
+          {/* Main Column - Form Content */}
+          <main className="max-w-none mx-auto">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* 质量建议提示 */}
         {averageScore < 60 && (
@@ -646,12 +663,12 @@ const StrategyStep: React.FC = () => {
               <div className="flex items-start gap-3">
                 <Lightbulb className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="space-y-2">
-                  <h3 className="font-medium text-blue-800">建议优化策略质量</h3>
+                  <h3 className="font-medium text-blue-800">{t('strategy.suggestions.title')}</h3>
                   <div className="space-y-1 text-sm text-blue-700">
-                    <p>• 可进一步完善论题表达（当前：{qualityScores.具体度.toFixed(0)}%）</p>
-                    <p>• 建议添加更多论点支撑（当前：{watchedData.claims?.length || 0}个）</p>
-                    <p>• 可补充证据来源规划（当前：{qualityScores.可证据化.toFixed(0)}%）</p>
-                    <p className="text-xs opacity-75">💡 以上为可选建议，您可以直接进入下一步</p>
+                    <p>• {t('strategy.suggestions.improve_thesis')}（当前：{qualityScores.具体度.toFixed(0)}%）</p>
+                    <p>• {t('strategy.suggestions.add_claims')}（当前：{watchedData.claims?.length || 0}个）</p>
+                    <p>• {t('strategy.suggestions.add_evidence')}（当前：{qualityScores.可证据化.toFixed(0)}%）</p>
+                    <p className="text-xs opacity-75">💡 {t('strategy.suggestions.optional_note')}</p>
                   </div>
                 </div>
               </div>
@@ -660,20 +677,31 @@ const StrategyStep: React.FC = () => {
         )}
 
         {/* 质量评分仪表 */}
-        <Card className="bg-white border-[#EEF0F4] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
+        <Card className="bg-white border-[#E7EAF3] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-base font-semibold">
               <div className="w-2 h-2 rounded-full bg-[#6E5BFF]"></div>
               <BarChart3 className="h-5 w-5 text-[#6E5BFF]" />
-              质量评分
+              {t('strategy.quality.title')}
             </CardTitle>
             <CardDescription className="text-sm text-[#5B667A]">
-              评估写作策略的四个核心维度
+              {t('strategy.quality.description')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6 pt-0">
+          <CardContent className="px-4 md:px-6 xl:px-8 py-6 pt-0">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(qualityScores).map(([key, score]) => (
+              {Object.entries(qualityScores).map(([key, score]) => {
+                const getQualityKeyLabel = (key: string) => {
+                  switch(key) {
+                    case '可辩驳性': return t('strategy.quality.feasibility');
+                    case '具体度': return t('strategy.quality.specificity');  
+                    case '一致性': return t('strategy.quality.consistency');
+                    case '可证据化': return t('strategy.quality.provability');
+                    default: return key;
+                  }
+                };
+                
+                return (
                 <div key={key} className="text-center">
                   <div className={cn(
                     "relative w-16 h-16 mx-auto mb-2 rounded-full flex items-center justify-center text-sm font-medium",
@@ -684,9 +712,10 @@ const StrategyStep: React.FC = () => {
                       <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
                     )}
                   </div>
-                  <p className="text-xs text-[#5B667A]">{key}</p>
+                  <p className="text-xs text-[#5B667A]">{getQualityKeyLabel(key)}</p>
                 </div>
-              ))}
+                );
+              })}
             </div>
             <div className="mt-4 flex items-center gap-2">
               <div className="flex-1">
@@ -698,23 +727,23 @@ const StrategyStep: React.FC = () => {
         </Card>
 
         {/* 主题句 */}
-        <Card className="bg-white border-[#EEF0F4] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
+        <Card className="bg-white border-[#E7EAF3] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-base font-semibold">
               <div className="w-2 h-2 rounded-full bg-[#6E5BFF]"></div>
               <Lightbulb className="h-5 w-5 text-[#6E5BFF]" />
-              主题句 Thesis
+              {t('strategy.thesis.title')}
               {qualityScores.可辩驳性 < 60 && (
                 <div className="w-2 h-2 bg-red-500 rounded-full"></div>
               )}
             </CardTitle>
             <CardDescription className="text-sm text-[#5B667A] leading-6">
-              明确、具有争议性的核心观点，包含因果或对立结构
+              {t('strategy.thesis.required')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6 pt-0">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-3 space-y-2">
+          <CardContent className="px-4 md:px-6 xl:px-8 py-6 pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="md:col-span-4 space-y-2">
                 <Label htmlFor="thesis" className="text-sm font-medium text-gray-900">
                   论文主题句 <span className="text-red-500">*</span>
                 </Label>
@@ -725,10 +754,10 @@ const StrategyStep: React.FC = () => {
                     <Textarea
                       {...field}
                       id="thesis"
-                      placeholder="输入您的论文主题句。建议包含让步或对立结构，如：虽然...但是...，尽管...然而..."
+                      placeholder={t('strategy.thesis.placeholder')}
                       rows={4}
                       className={cn(
-                        "rounded-xl border-[#EEF0F4] focus:border-[#6E5BFF] focus:ring-2 focus:ring-[#6E5BFF] focus:ring-opacity-20 transition-all duration-200",
+                        "rounded-xl border-[#E7EAF3] focus:border-[#6E5BFF] focus:ring-2 focus:ring-[#6E5BFF] focus:ring-opacity-20 transition-all duration-200",
                         errors.thesis && "border-red-500 focus:border-red-500 focus:ring-red-200"
                       )}
                     />
@@ -743,21 +772,21 @@ const StrategyStep: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-900">论文类型</Label>
+                <Label className="text-sm font-medium text-gray-900">{t('strategy.form.essay_type')}</Label>
                 <Controller
                   name="essayType"
                   control={control}
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="rounded-xl border-[#EEF0F4]">
+                      <SelectTrigger className="rounded-xl border-[#E7EAF3]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="argument">论证性</SelectItem>
-                        <SelectItem value="analysis">分析性</SelectItem>
-                        <SelectItem value="expository">说明性</SelectItem>
-                        <SelectItem value="compare">比较性</SelectItem>
-                        <SelectItem value="review">评论性</SelectItem>
+                        <SelectItem value="argument">{t('strategy.options.essay_type.argument')}</SelectItem>
+                        <SelectItem value="analysis">{t('strategy.options.essay_type.analysis')}</SelectItem>
+                        <SelectItem value="expository">{t('strategy.options.essay_type.expository')}</SelectItem>
+                        <SelectItem value="compare">{t('strategy.options.essay_type.compare')}</SelectItem>
+                        <SelectItem value="review">{t('strategy.options.essay_type.review')}</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -765,19 +794,19 @@ const StrategyStep: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-900">目标读者</Label>
+                <Label className="text-sm font-medium text-gray-900">{t('strategy.form.audience')}</Label>
                 <Controller
                   name="audience"
                   control={control}
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="rounded-xl border-[#EEF0F4]">
+                      <SelectTrigger className="rounded-xl border-[#E7EAF3]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="academic">学术界</SelectItem>
-                        <SelectItem value="general">普通大众</SelectItem>
-                        <SelectItem value="decision">决策者</SelectItem>
+                        <SelectItem value="academic">{t('strategy.options.audience.academic')}</SelectItem>
+                        <SelectItem value="general">{t('strategy.options.audience.general')}</SelectItem>
+                        <SelectItem value="decision">{t('strategy.options.audience.decision')}</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -785,19 +814,19 @@ const StrategyStep: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-900">语言风格</Label>
+                <Label className="text-sm font-medium text-gray-900">{t('strategy.form.register')}</Label>
                 <Controller
                   name="register"
                   control={control}
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="rounded-xl border-[#EEF0F4]">
+                      <SelectTrigger className="rounded-xl border-[#E7EAF3]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="formal">正式</SelectItem>
-                        <SelectItem value="neutral">中性</SelectItem>
-                        <SelectItem value="explanatory">解释性</SelectItem>
+                        <SelectItem value="formal">{t('strategy.options.register.formal')}</SelectItem>
+                        <SelectItem value="neutral">{t('strategy.options.register.neutral')}</SelectItem>
+                        <SelectItem value="explanatory">{t('strategy.options.register.explanatory')}</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -808,20 +837,20 @@ const StrategyStep: React.FC = () => {
         </Card>
 
         {/* 论点清单 */}
-        <Card className="bg-white border-[#EEF0F4] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
+        <Card className="bg-white border-[#E7EAF3] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-3 text-base font-semibold">
                   <div className="w-2 h-2 rounded-full bg-[#6E5BFF]"></div>
                   <Zap className="h-5 w-5 text-[#6E5BFF]" />
-                  论点清单
+                  {t('strategy.claims.title')}
                   {qualityScores.一致性 < 60 && (
                     <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                   )}
                 </CardTitle>
                 <CardDescription className="text-sm text-[#5B667A] leading-6">
-                  支持主题句的具体论点，可拖拽排序
+                  {t('strategy.claims.description')}
                 </CardDescription>
               </div>
               <Button
@@ -831,11 +860,11 @@ const StrategyStep: React.FC = () => {
                 size="sm"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                添加论点
+                {t('strategy.claims.add_button')}
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-6 pt-0">
+          <CardContent className="px-4 md:px-6 xl:px-8 py-6 pt-0">
             <DragDropContext onDragEnd={onDragEnd}>
               <Droppable droppableId="claims">
                 {(provided) => (
@@ -867,8 +896,7 @@ const StrategyStep: React.FC = () => {
                                   <div className="flex items-center gap-2">
                                     <Button
                                       type="button"
-                                      variant="ghost"
-                                      size="sm"
+                                                                            size="sm"
                                       onClick={() => toggleClaimExpanded(claim.id)}
                                     >
                                       {expandedClaims.has(claim.id) ? (
@@ -879,8 +907,7 @@ const StrategyStep: React.FC = () => {
                                     </Button>
                                     <Button
                                       type="button"
-                                      variant="ghost"
-                                      size="sm"
+                                                                            size="sm"
                                       onClick={() => removeClaim(index)}
                                       className="text-red-600 hover:text-red-700"
                                     >
@@ -895,9 +922,9 @@ const StrategyStep: React.FC = () => {
                                   render={({ field }) => (
                                     <Textarea
                                       {...field}
-                                      placeholder="输入具体论点..."
+                                      placeholder={t('strategy.claims.placeholder')}
                                       rows={2}
-                                      className="rounded-xl border-[#EEF0F4]"
+                                      className="rounded-xl border-[#E7EAF3]"
                                     />
                                   )}
                                 />
@@ -905,7 +932,7 @@ const StrategyStep: React.FC = () => {
                                 {expandedClaims.has(claim.id) && (
                                   <div className="space-y-4 pt-4 border-t">
                                     <div className="flex items-center justify-between">
-                                      <Label className="text-sm font-medium">证据计划</Label>
+                                      <Label className="text-sm font-medium">{t('strategy.claims.evidence.title')}</Label>
                                       <div className="flex gap-2">
                                         <Button
                                           type="button"
@@ -916,11 +943,11 @@ const StrategyStep: React.FC = () => {
                                           className="text-xs"
                                         >
                                           {isGeneratingEvidence === `claim-${index}` ? (
-                                            'AI生成中...'
+                                            t('strategy.claims.evidence.ai_generating')
                                           ) : (
                                             <>
                                               <Sparkles className="h-3 w-3 mr-1" />
-                                              AI生成
+                                              {t('strategy.claims.evidence.ai_generate')}
                                             </>
                                           )}
                                         </Button>
@@ -935,7 +962,7 @@ const StrategyStep: React.FC = () => {
                                             <div className="flex-1 space-y-2">
                                               <div className="grid grid-cols-2 gap-2">
                                                 <div className="space-y-1">
-                                                  <Label className="text-xs text-gray-600">来源类型</Label>
+                                                  <Label className="text-xs text-gray-600">{t('strategy.claims.evidence.source_type')}</Label>
                                                   <Select
                                                     value={evidence.sourceType}
                                                     onValueChange={(value) => {
@@ -948,17 +975,17 @@ const StrategyStep: React.FC = () => {
                                                       <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                      <SelectItem value="paper">学术论文</SelectItem>
-                                                      <SelectItem value="book">书籍</SelectItem>
-                                                      <SelectItem value="web">网站</SelectItem>
-                                                      <SelectItem value="dataset">数据集</SelectItem>
-                                                      <SelectItem value="report">报告</SelectItem>
+                                                      <SelectItem value="paper">{t('strategy.claims.evidence.types.paper')}</SelectItem>
+                                                      <SelectItem value="book">{t('strategy.claims.evidence.types.book')}</SelectItem>
+                                                      <SelectItem value="web">{t('strategy.claims.evidence.types.web')}</SelectItem>
+                                                      <SelectItem value="dataset">{t('strategy.claims.evidence.types.dataset')}</SelectItem>
+                                                      <SelectItem value="report">{t('strategy.claims.evidence.types.report')}</SelectItem>
                                                     </SelectContent>
                                                   </Select>
                                                 </div>
                                                 
                                                 <div className="space-y-1">
-                                                  <Label className="text-xs text-gray-600">预估引用数</Label>
+                                                  <Label className="text-xs text-gray-600">{t('strategy.claims.evidence.expected_citations')}</Label>
                                                   <Input
                                                     type="number"
                                                     min="1"
@@ -975,7 +1002,7 @@ const StrategyStep: React.FC = () => {
                                               </div>
                                               
                                               <div className="space-y-1">
-                                                <Label className="text-xs text-gray-600">检索关键词</Label>
+                                                <Label className="text-xs text-gray-600">{t('strategy.claims.evidence.keywords')}</Label>
                                                 <Input
                                                   value={evidence.keywords}
                                                   onChange={(e) => {
@@ -983,7 +1010,7 @@ const StrategyStep: React.FC = () => {
                                                     claims[index].evidence[evidenceIndex].keywords = e.target.value;
                                                     setValue('claims', claims);
                                                   }}
-                                                  placeholder="关键词"
+                                                  placeholder={t('strategy.claims.evidence.keywords_placeholder')}
                                                   className="h-8 text-xs"
                                                 />
                                               </div>
@@ -999,15 +1026,14 @@ const StrategyStep: React.FC = () => {
                                                   id={`evidence-figure-${evidence.id}`}
                                                 />
                                                 <Label htmlFor={`evidence-figure-${evidence.id}`} className="text-xs">
-                                                  需要图/表
+                                                  {t('strategy.claims.evidence.need_figure')}
                                                 </Label>
                                               </div>
                                             </div>
                                             
                                             <Button
                                               type="button"
-                                              variant="ghost"
-                                              size="sm"
+                                                                                            size="sm"
                                               onClick={() => {
                                                 const claims = [...watchedData.claims];
                                                 claims[index].evidence = claims[index].evidence.filter((_, i) => i !== evidenceIndex);
@@ -1023,7 +1049,7 @@ const StrategyStep: React.FC = () => {
                                       
                                       {(!watchedData.claims?.[index]?.evidence?.length) && (
                                         <div className="text-center py-4 text-gray-400 text-sm">
-                                          暂无证据计划，点击上方AI生成按钮添加
+                                          {t('strategy.claims.evidence.empty')}
                                         </div>
                                       )}
                                       
@@ -1047,7 +1073,7 @@ const StrategyStep: React.FC = () => {
                                         className="w-full text-xs"
                                       >
                                         <Plus className="h-3 w-3 mr-1" />
-                                        手动添加证据计划
+                                        {t('strategy.claims.evidence.add_manual')}
                                       </Button>
                                     </div>
                                   </div>
@@ -1067,25 +1093,25 @@ const StrategyStep: React.FC = () => {
             {claimFields.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <Zap className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>还没有添加任何论点</p>
-                <p className="text-sm">点击上方按钮添加支持主题句的论点</p>
+                <p>{t('strategy.claims.empty.title')}</p>
+                <p className="text-sm">{t('strategy.claims.empty.description')}</p>
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* 反方与反驳 */}
-        <Card className="bg-white border-[#EEF0F4] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
+        <Card className="bg-white border-[#E7EAF3] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-3 text-base font-semibold">
                   <div className="w-2 h-2 rounded-full bg-[#6E5BFF]"></div>
                   <TrendingUp className="h-5 w-5 text-[#6E5BFF]" />
-                  反方与反驳
+                  {t('strategy.counters.title')}
                 </CardTitle>
                 <CardDescription className="text-sm text-[#5B667A] leading-6">
-                  考虑可能的反对观点并准备反驳
+                  {t('strategy.counters.description')}
                 </CardDescription>
               </div>
               <Button
@@ -1095,11 +1121,11 @@ const StrategyStep: React.FC = () => {
                 size="sm"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                添加反方
+                {t('strategy.counters.add_button')}
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-6 pt-0">
+          <CardContent className="px-4 md:px-6 xl:px-8 py-6 pt-0">
             <div className="space-y-4">
               {counterFields.map((counter, index) => (
                 <div key={counter.id} className="border rounded-xl p-4">
@@ -1109,8 +1135,7 @@ const StrategyStep: React.FC = () => {
                     </Badge>
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="sm"
+                                            size="sm"
                       onClick={() => removeCounter(index)}
                       className="text-red-600 hover:text-red-700"
                     >
@@ -1120,32 +1145,32 @@ const StrategyStep: React.FC = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">反方观点</Label>
+                      <Label className="text-sm font-medium">{t('strategy.counters.viewpoint')}</Label>
                       <Controller
                         name={`counters.${index}.viewpoint`}
                         control={control}
                         render={({ field }) => (
                           <Textarea
                             {...field}
-                            placeholder="可能的反对观点..."
+                            placeholder={t('strategy.counters.viewpoint_placeholder')}
                             rows={3}
-                            className="rounded-xl border-[#EEF0F4]"
+                            className="rounded-xl border-[#E7EAF3]"
                           />
                         )}
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">你的反驳</Label>
+                      <Label className="text-sm font-medium">{t('strategy.counters.rebuttal')}</Label>
                       <Controller
                         name={`counters.${index}.rebuttal`}
                         control={control}
                         render={({ field }) => (
                           <Textarea
                             {...field}
-                            placeholder="对反方观点的反驳..."
+                            placeholder={t('strategy.counters.rebuttal_placeholder')}
                             rows={3}
-                            className="rounded-xl border-[#EEF0F4]"
+                            className="rounded-xl border-[#E7EAF3]"
                           />
                         )}
                       />
@@ -1164,7 +1189,7 @@ const StrategyStep: React.FC = () => {
                             id={`counter-paragraph-${index}`}
                           />
                           <Label htmlFor={`counter-paragraph-${index}`} className="text-sm">
-                            作为独立段落处理
+                            {t('strategy.counters.as_paragraph')}
                           </Label>
                         </div>
                       )}
@@ -1177,27 +1202,27 @@ const StrategyStep: React.FC = () => {
         </Card>
 
         {/* 结构策略 */}
-        <Card className="bg-white border-[#EEF0F4] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
+        <Card className="bg-white border-[#E7EAF3] rounded-2xl" style={{ boxShadow: '0 6px 24px rgba(15,23,42,0.06)' }}>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-base font-semibold">
               <div className="w-2 h-2 rounded-full bg-[#6E5BFF]"></div>
               <FileText className="h-5 w-5 text-[#6E5BFF]" />
-              结构策略
+              {t('strategy.structure.title')}
             </CardTitle>
             <CardDescription className="text-sm text-[#5B667A] leading-6">
-              选择论证模板和段落结构
+              {t('strategy.structure.description')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6 pt-0">
+          <CardContent className="px-4 md:px-6 xl:px-8 py-6 pt-0">
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-900">结构模板</Label>
+                <Label className="text-sm font-medium text-gray-900">{t('strategy.structure.template')}</Label>
                 <Controller
                   name="structure.template"
                   control={control}
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="rounded-xl border-[#EEF0F4]">
+                      <SelectTrigger className="rounded-xl border-[#E7EAF3]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1223,10 +1248,10 @@ const StrategyStep: React.FC = () => {
 
               {/* 字数分配 */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium text-gray-900">字数分配</Label>
+                <Label className="text-sm font-medium text-gray-900">{t('strategy.structure.allocation')}</Label>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs text-gray-600">引言</Label>
+                    <Label className="text-xs text-gray-600">{t('strategy.structure.intro')}</Label>
                     <Controller
                       name="structure.allocation.intro"
                       control={control}
@@ -1238,7 +1263,7 @@ const StrategyStep: React.FC = () => {
                             max="20"
                             {...field}
                             onChange={e => field.onChange(parseInt(e.target.value))}
-                            className="rounded-xl border-[#EEF0F4]"
+                            className="rounded-xl border-[#E7EAF3]"
                           />
                           <span className="text-xs text-gray-500">%</span>
                         </div>
@@ -1247,14 +1272,14 @@ const StrategyStep: React.FC = () => {
                   </div>
                   
                   <div className="md:col-span-2 space-y-2">
-                    <Label className="text-xs text-gray-600">主体段落</Label>
+                    <Label className="text-xs text-gray-600">{t('strategy.structure.body')}</Label>
                     <div className="text-xs text-gray-500">
                       自动均分给 {watchedData.claims?.length || 3} 个论点
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label className="text-xs text-gray-600">结论</Label>
+                    <Label className="text-xs text-gray-600">{t('strategy.structure.conclusion')}</Label>
                     <Controller
                       name="structure.allocation.conclusion"
                       control={control}
@@ -1266,7 +1291,7 @@ const StrategyStep: React.FC = () => {
                             max="20"
                             {...field}
                             onChange={e => field.onChange(parseInt(e.target.value))}
-                            className="rounded-xl border-[#EEF0F4]"
+                            className="rounded-xl border-[#E7EAF3]"
                           />
                           <span className="text-xs text-gray-500">%</span>
                         </div>
@@ -1279,16 +1304,16 @@ const StrategyStep: React.FC = () => {
               {/* 段落蓝图预览 */}
               {watchedData.claims && watchedData.claims.length > 0 && (
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-900">段落蓝图预览</Label>
+                  <Label className="text-sm font-medium text-gray-900">{t('strategy.structure.blueprint.title')}</Label>
                   <div className="border rounded-xl overflow-hidden">
                     <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">段号</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">段功能</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">建议内容要点</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">对应论点</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">预计引用</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">{t('strategy.structure.blueprint.paragraph')}</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">{t('strategy.structure.blueprint.function')}</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">{t('strategy.structure.blueprint.content')}</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">{t('strategy.structure.blueprint.claim')}</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">{t('strategy.structure.blueprint.citations')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1296,9 +1321,9 @@ const StrategyStep: React.FC = () => {
                         <tr className="border-t">
                           <td className="px-4 py-2 text-sm">1</td>
                           <td className="px-4 py-2 text-sm">
-                            <Badge variant="outline" className="text-xs">引言</Badge>
+                            <Badge variant="outline" className="text-xs">{t('strategy.structure.intro')}</Badge>
                           </td>
-                          <td className="px-4 py-2 text-sm">介绍主题背景，提出论题，预告主要论点</td>
+                          <td className="px-4 py-2 text-sm">{t('strategy.structure.blueprint.intro_summary')}</td>
                           <td className="px-4 py-2 text-sm text-gray-500">-</td>
                           <td className="px-4 py-2 text-sm">2</td>
                         </tr>
@@ -1308,10 +1333,10 @@ const StrategyStep: React.FC = () => {
                           <tr key={claim.id} className="border-t">
                             <td className="px-4 py-2 text-sm">{index + 2}</td>
                             <td className="px-4 py-2 text-sm">
-                              <Badge variant="default" className="text-xs bg-[#6E5BFF] text-white">主体</Badge>
+                              <Badge variant="default" className="text-xs bg-[#6E5BFF] text-white">{t('strategy.structure.body')}</Badge>
                             </td>
                             <td className="px-4 py-2 text-sm">
-                              {structureTemplates[watchedData.structure?.template || 'PEEL'].name.split('(')[0]} - 论述并支持论点
+                              {structureTemplates[watchedData.structure?.template || 'PEEL'].name.split('(')[0]} - {t('strategy.structure.blueprint.body_summary')}
                             </td>
                             <td className="px-4 py-2 text-sm">
                               <div className="truncate max-w-[120px]" title={claim.title}>
@@ -1328,9 +1353,9 @@ const StrategyStep: React.FC = () => {
                         <tr className="border-t">
                           <td className="px-4 py-2 text-sm">{watchedData.claims.length + 2}</td>
                           <td className="px-4 py-2 text-sm">
-                            <Badge variant="secondary" className="text-xs">结论</Badge>
+                            <Badge variant="secondary" className="text-xs">{t('strategy.structure.conclusion')}</Badge>
                           </td>
-                          <td className="px-4 py-2 text-sm">总结主要论点，重申论题，展望未来</td>
+                          <td className="px-4 py-2 text-sm">{t('strategy.structure.blueprint.conclusion_summary')}</td>
                           <td className="px-4 py-2 text-sm text-gray-500">-</td>
                           <td className="px-4 py-2 text-sm">1</td>
                         </tr>
@@ -1339,7 +1364,7 @@ const StrategyStep: React.FC = () => {
                   </div>
                   
                   <div className="text-xs text-gray-500">
-                    总计：{watchedData.claims.length + 2} 个段落，预估引用 {
+                    {t('strategy.structure.blueprint.total_info')}：{watchedData.claims.length + 2} 个段落，预估引用 {
                       2 + 1 + (watchedData.claims?.reduce((sum, claim) => 
                         sum + (claim.evidence?.reduce((eSum, e) => eSum + e.expectedCitations, 0) || 1), 0
                       ) || 0)
@@ -1352,38 +1377,38 @@ const StrategyStep: React.FC = () => {
         </Card>
 
         {/* 引用与规范 */}
-        <Card className="bg-gray-50 border-[#EEF0F4] rounded-2xl">
+        <Card className="bg-gray-50 border-[#E7EAF3] rounded-2xl">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-base font-semibold">
               <div className="w-2 h-2 rounded-full bg-gray-400"></div>
               <BookOpen className="h-5 w-5 text-gray-600" />
-              引用与规范
-              <Badge variant="secondary" className="text-xs">只读</Badge>
+              {t('strategy.citation.title')}
+              <Badge variant="secondary" className="text-xs">{t('strategy.citation.readonly')}</Badge>
             </CardTitle>
             <CardDescription className="text-sm text-[#5B667A] leading-6">
-              从选题阶段继承的设置，可微调引用数量
+              {t('strategy.citation.description')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6 pt-0">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="px-4 md:px-6 xl:px-8 py-6 pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs text-gray-600">引用格式</Label>
+                <Label className="text-xs text-gray-600">{t('strategy.citation.format')}</Label>
                 <div className="p-2 bg-white rounded border text-sm">
                   {watchedData.citationStyle}
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label className="text-xs text-gray-600">语言水平</Label>
+                <Label className="text-xs text-gray-600">{t('strategy.citation.level')}</Label>
                 <div className="p-2 bg-white rounded border text-sm">
-                  {watchedData.level === 'undergrad' ? '本科' : 
-                   watchedData.level === 'postgrad' ? '研究生' : 
-                   watchedData.level === 'esl' ? '非母语' : '专业级'}
+                  {watchedData.level === 'undergrad' ? t('strategy.levels.undergrad') : 
+                   watchedData.level === 'postgrad' ? t('strategy.levels.postgrad') : 
+                   watchedData.level === 'esl' ? t('strategy.levels.esl') : t('strategy.levels.pro')}
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label className="text-xs text-gray-600">预期引用数量</Label>
+                <Label className="text-xs text-gray-600">{t('strategy.citation.expected_range')}</Label>
                 <Controller
                   name="expectedCitationRange"
                   control={control}
@@ -1393,7 +1418,7 @@ const StrategyStep: React.FC = () => {
                         type="number"
                         value={field.value?.[0] || 10}
                         onChange={e => field.onChange([parseInt(e.target.value), field.value?.[1] || 20])}
-                        className="rounded-xl border-[#EEF0F4]"
+                        className="rounded-xl border-[#E7EAF3]"
                         min="1"
                       />
                       <span className="text-xs">-</span>
@@ -1401,7 +1426,7 @@ const StrategyStep: React.FC = () => {
                         type="number"
                         value={field.value?.[1] || 20}
                         onChange={e => field.onChange([field.value?.[0] || 10, parseInt(e.target.value)])}
-                        className="rounded-xl border-[#EEF0F4]"
+                        className="rounded-xl border-[#E7EAF3]"
                         min="1"
                       />
                     </div>
@@ -1418,50 +1443,58 @@ const StrategyStep: React.FC = () => {
             type="button"
             variant="outline"
             onClick={saveDraft}
-            className="flex items-center gap-2 rounded-full px-6 py-3 border-[#EEF0F4] text-[#5B667A] hover:border-[#6E5BFF] hover:text-[#6E5BFF] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-[#6E5BFF]"
+            className="flex items-center gap-2 rounded-full px-6 py-3 border-[#E7EAF3] text-[#5B667A] hover:border-[#6E5BFF] hover:text-[#6E5BFF] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-[#6E5BFF]"
           >
             <Save className="h-4 w-4" />
-            保存草稿
+            {t('strategy.buttons.save_draft')}
           </Button>
           
           <Button
             type="submit"
-            disabled={!hasMinimumRequirements}
+            disabled={!demoMode && !hasMinimumRequirements}
             className="flex items-center gap-2 rounded-full px-8 py-3 bg-[#6E5BFF] hover:bg-[#5B4FCC] hover:shadow-lg hover:-translate-y-0.5 text-white transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-[#6E5BFF] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
           >
-            生成大纲/下一步
+            {t('strategy.buttons.continue')}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
           </form>
-        </div>
+          </main>
 
-        {/* Right Column - Outcome Panel */}
-        <div className="w-full lg:w-[360px] lg:flex-shrink-0">
-          <OutcomePanel
-            step="strategy"
-            lockedPrice={pay.lockedPrice}
-            estimate={{
-              priceRange: estimate.priceRange,
-              etaMinutes: estimate.etaMinutes,
-              citesRange: estimate.citesRange,
-              verifyLevel: verificationLevel
-            }}
-            metrics={writingFlow.metrics}
-            addons={writingFlow.addons}
-            autopilot={autopilot.running ? {
-              running: autopilot.running,
-              step: autopilot.step as any,
-              progress: autopilot.progress,
-              message: autopilot.logs[autopilot.logs.length - 1]?.msg
-            } : undefined}
-            error={writingFlow.error}
-            onVerifyChange={handleVerifyLevelChange}
-            onToggleAddon={handleToggleAddon}
-            onPreviewSample={handleShowPreview}
-            onPayAndWrite={handlePayAndWrite}
-            onRetry={handleRetry}
-          />
+          {/* Right Column - Ghost Outcome Panel */}
+          <aside className="hidden xl:block">
+            <div className="sticky top-6 -mr-6 md:-mr-8">
+              <OutcomePanel
+              step="strategy"
+              lockedPrice={pay.lockedPrice}
+              estimate={{
+                priceRange: estimate.priceRange,
+                etaMinutes: estimate.etaMinutes,
+                citesRange: estimate.citesRange,
+                verifyLevel: verificationLevel
+              }}
+              metrics={{
+                thesisCandidates: watchedData.claims?.length || 0,
+                pickedStructure: watchedData.structure?.template ? 1 : 0,
+                claimCount: watchedData.claims?.length || 0
+              }}
+              addons={writingFlow.addons}
+              autopilot={autopilot.running ? {
+                running: autopilot.running,
+                step: autopilot.step as any,
+                progress: autopilot.progress,
+                message: autopilot.logs[autopilot.logs.length - 1]?.msg
+              } : undefined}
+              error={writingFlow.error}
+              onVerifyChange={handleVerifyLevelChange}
+              onToggleAddon={handleToggleAddon}
+              onPreviewSample={handleShowPreview}
+              onPayAndWrite={handlePayAndWrite}
+              onRetry={handleRetry}
+            />
+            </div>
+          </aside>
+          </div>
         </div>
       </div>
 
@@ -1479,6 +1512,9 @@ const StrategyStep: React.FC = () => {
           onUnlock={handleGate1Unlock}
         />
       )}
+      
+      {/* Demo Mode Toggle */}
+      <DemoModeToggle />
     </div>
   );
 };

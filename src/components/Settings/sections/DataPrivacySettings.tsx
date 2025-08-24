@@ -14,8 +14,10 @@ import {
   Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const DataPrivacySettings: React.FC = () => {
+  const { t } = useTranslation();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCloseAccountDialog, setShowCloseAccountDialog] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState('');
@@ -29,9 +31,9 @@ const DataPrivacySettings: React.FC = () => {
     try {
       // TODO: API call to export data
       await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success('数据打包已开始，完成后将发送下载链接到您的邮箱');
+      toast.success(t('settings.data_privacy.toast.export_start'));
     } catch (error) {
-      toast.error('数据导出失败，请重试');
+      toast.error(t('settings.data_privacy.toast.export_failed'));
     } finally {
       setIsExporting(false);
     }
@@ -48,10 +50,10 @@ const DataPrivacySettings: React.FC = () => {
       localStorage.removeItem('drafts');
       sessionStorage.clear();
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('草稿数据已清除');
+      toast.success(t('settings.data_privacy.toast.drafts_cleared'));
       setShowDeleteDialog(false);
     } catch (error) {
-      toast.error('清除失败，请重试');
+      toast.error(t('settings.data_privacy.toast.clear_failed'));
     } finally {
       setIsDeleting(false);
     }
@@ -63,18 +65,18 @@ const DataPrivacySettings: React.FC = () => {
 
   const handleConfirmCloseAccount = async () => {
     if (confirmEmail !== userEmail) {
-      toast.error('邮箱地址不正确');
+      toast.error(t('settings.data_privacy.toast.email_incorrect'));
       return;
     }
 
     try {
       // TODO: API call to close account
       await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success('账户关闭请求已提交，我们将在7个工作日内处理');
+      toast.success(t('settings.data_privacy.toast.account_close_submitted'));
       setShowCloseAccountDialog(false);
       setConfirmEmail('');
     } catch (error) {
-      toast.error('账户关闭失败，请联系客服');
+      toast.error(t('settings.data_privacy.toast.account_close_failed'));
     }
   };
 

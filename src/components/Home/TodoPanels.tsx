@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { DocItem } from '@/types/home';
 import { getAddonName } from '@/lib/mockHomeData';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface TodoPanelsProps {
   todoItems: {
@@ -35,6 +36,7 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
   onGate1Preview,
   onGate2Export
 }) => {
+  const { t } = useTranslation();
   const [gate1ModalOpen, setGate1ModalOpen] = useState(false);
   const [gate2DialogOpen, setGate2DialogOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<DocItem | null>(null);
@@ -54,7 +56,7 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
     const remaining = expiry - currentTime;
     
     if (remaining <= 0) {
-      return { text: '已过期', isExpired: true };
+      return { text: t('todos.expired'), isExpired: true };
     }
 
     const minutes = Math.floor(remaining / 60000);
@@ -136,10 +138,10 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
       <section className="space-y-4">
         <div>
           <h2 className="text-h2 text-text">
-            需要你处理
+            {t('todos.title')}
           </h2>
           <p className="text-body text-text-muted mt-1">
-            {todoItems.gate1.length + todoItems.gate2.length + todoItems.retry.length} 项待办事项
+            {todoItems.gate1.length + todoItems.gate2.length + todoItems.retry.length} {t('todos.count')}
           </p>
         </div>
 
@@ -147,8 +149,6 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
           {/* Gate1 Panel - 待解锁生成 */}
           {todoItems.gate1.length > 0 && (
             <Card className="relative bg-surface border-[hsl(var(--border))] hover:border-[color-mix(in_oklab,hsl(var(--brand-500))_25%,hsl(var(--border)))]">
-              {/* Left gradient accent bar */}
-              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-brand-gradient rounded-l-card" />
               
               <CardHeader className="pb-4 pl-6">
                 <div className="flex items-center gap-3">
@@ -158,10 +158,10 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
                   </div>
                   <div>
                     <CardTitle className="text-base font-semibold text-text">
-                      待解锁生成
+                      {t('todos.gate1.title')}
                     </CardTitle>
                     <CardDescription className="text-body text-text-muted">
-                      一次性付费
+                      {t('todos.gate1.subtitle')}
                     </CardDescription>
                   </div>
                 </div>
@@ -176,10 +176,10 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium text-sm text-text">{doc.title}</p>
                         <p className="text-body text-text-muted">
-                          {doc.words.toLocaleString()} 字 · {doc.cites} 引用
+                          {doc.words.toLocaleString()} {t('todos.words')} · {doc.cites} {t('todos.citations')}
                           {timeInfo && (
                             <span className={timeInfo.isExpired ? 'text-red-600' : 'text-amber-600'}>
-                              {' · '}报价锁定剩余 {timeInfo.text}
+                              {' · '}{t('todos.gate1.price_locked')} {timeInfo.text}
                             </span>
                           )}
                         </p>
@@ -191,7 +191,7 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
                           className="rounded-xl h-8 text-xs"
                           disabled={timeInfo?.isExpired}
                         >
-                          {timeInfo?.isExpired ? '重新锁价' : '解锁生成'}
+                          {timeInfo?.isExpired ? t('todos.gate1.reprice') : t('todos.gate1.unlock')}
                         </Button>
                         <Button
                           onClick={() => handleGate1Preview(doc)}
@@ -199,7 +199,7 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
                           size="sm"
                           className="rounded-xl h-8 text-xs"
                         >
-                          预览
+                          {t('todos.gate1.preview')}
                         </Button>
                       </div>
                     </div>
@@ -212,8 +212,6 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
           {/* Gate2 Panel - 待导出/分享 */}
           {todoItems.gate2.length > 0 && (
             <Card className="relative bg-surface border-[hsl(var(--border))] hover:border-[color-mix(in_oklab,hsl(var(--brand-500))_25%,hsl(var(--border)))]">
-              {/* Left gradient accent bar */}
-              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-brand-gradient rounded-l-card" />
               
               <CardHeader className="pb-4 pl-6">
                 <div className="flex items-center gap-3">
@@ -223,10 +221,10 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
                   </div>
                   <div>
                     <CardTitle className="text-base font-semibold text-text">
-                      待导出/分享
+                      {t('todos.gate2.title')}
                     </CardTitle>
                     <CardDescription className="text-body text-text-muted">
-                      单项补购
+                      {t('todos.gate2.subtitle')}
                     </CardDescription>
                   </div>
                 </div>
@@ -238,7 +236,7 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-sm text-foreground">{doc.title}</p>
                       <p className="text-sm text-muted-foreground leading-[1.4]">
-                        {doc.words.toLocaleString()} 字 · {doc.cites} 引用 · 未包含: {doc.missingAddons?.map(addon => getAddonName(addon)).join(', ')}
+                        {doc.words.toLocaleString()} {t('todos.words')} · {doc.cites} {t('todos.citations')} · {t('todos.gate2.missing')}: {doc.missingAddons?.map(addon => getAddonName(addon)).join(', ')}
                       </p>
                     </div>
                     <div className="flex gap-2 ml-3">
@@ -247,7 +245,7 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
                         size="sm"
                         className="rounded-xl h-8 text-xs"
                       >
-                        追加并导出
+                        {t('todos.gate2.buy_export')}
                       </Button>
                     </div>
                   </div>
@@ -266,10 +264,10 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
                   </div>
                   <div>
                     <CardTitle className="text-base font-semibold text-foreground">
-                      失败重试
+                      {t('todos.retry.title')}
                     </CardTitle>
                     <CardDescription className="text-sm text-muted-foreground leading-[1.4]">
-                      需要重新处理
+                      {t('todos.retry.subtitle')}
                     </CardDescription>
                   </div>
                 </div>
@@ -281,7 +279,7 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-sm text-foreground">{doc.title}</p>
                       <p className="text-sm text-muted-foreground leading-[1.4]">
-                        自动推进失败，请重试
+                        {t('todos.retry.failed_message')}
                       </p>
                     </div>
                     <div className="flex gap-2 ml-3">
@@ -289,14 +287,14 @@ const TodoPanels: React.FC<TodoPanelsProps> = ({
                         size="sm"
                         className="rounded-xl h-8 text-xs"
                       >
-                        重试
+                        {t('todos.retry.retry_button')}
                       </Button>
                       <Button
                         variant="secondary"
                         size="sm"
                         className="rounded-xl h-8 text-xs"
                       >
-                        查看详情
+                        {t('todos.retry.view_details')}
                       </Button>
                     </div>
                   </div>

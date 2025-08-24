@@ -382,7 +382,7 @@ const writingFlowReducer = (state: WritingProject, action: WritingFlowAction): W
       return {
         ...updatedState,
         currentStep: 'outline',
-        completedSteps: ['topic', 'research', 'strategy'],
+        completedSteps: ['topic', 'research', 'strategy', 'outline'],
         metadata: {
           ...state.metadata,
           autoProgressState: state.metadata.autoProgressState 
@@ -668,21 +668,6 @@ export const WritingFlowProvider: React.FC<WritingFlowProviderProps> = ({ childr
         isValid = errors.length === 0;
         break;
 
-      case 'content':
-        if (!project.content?.body) errors.push('论文内容不能为空');
-        if (project.content && project.content.wordCount < project.topic.wordLimit * 0.8) {
-          warnings.push(`当前字数 ${project.content.wordCount} 可能不足，建议至少达到 ${Math.round(project.topic.wordLimit * 0.8)} 字`);
-        }
-        if (project.content && project.content.citations.length === 0) {
-          warnings.push('建议添加引用文献');
-        }
-        
-        completionPercentage = project.content?.body 
-          ? Math.min((project.content.wordCount / project.topic.wordLimit) * 100, 100)
-          : 0;
-        isValid = errors.length === 0;
-        break;
-
       default:
         isValid = false;
     }
@@ -697,13 +682,13 @@ export const WritingFlowProvider: React.FC<WritingFlowProviderProps> = ({ childr
   };
 
   const getProgressPercentage = (): number => {
-    const totalSteps = 5; // topic, research, strategy, outline, content
+    const totalSteps = 4; // topic, research, strategy, outline
     const completedCount = project.completedSteps.length;
     return Math.round((completedCount / totalSteps) * 100);
   };
 
   const canProceedToStep = (step: WritingStep): boolean => {
-    const stepOrder: WritingStep[] = ['topic', 'research', 'strategy', 'outline', 'content'];
+    const stepOrder: WritingStep[] = ['topic', 'research', 'strategy', 'outline'];
     const targetIndex = stepOrder.indexOf(step);
     const currentIndex = stepOrder.indexOf(project.currentStep);
     

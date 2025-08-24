@@ -11,8 +11,10 @@ import { QrCode, Shield, Smartphone, AlertTriangle, LogOut, Copy } from 'lucide-
 import { toast } from 'sonner';
 import { Session } from '@/lib/types';
 import { generateMockSessions } from '@/lib/mockData';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const SecuritySettings: React.FC = () => {
+  const { t } = useTranslation();
   const [sessions, setSessions] = useState<Session[]>(generateMockSessions(5));
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [showTwoFactorDialog, setShowTwoFactorDialog] = useState(false);
@@ -25,17 +27,17 @@ const SecuritySettings: React.FC = () => {
 
   const handlePasswordChange = async () => {
     if (!passwordForm.current || !passwordForm.new || !passwordForm.confirm) {
-      toast.error('请填写所有密码字段');
+      toast.error(t('settings.toast.password_required'));
       return;
     }
 
     if (passwordForm.new !== passwordForm.confirm) {
-      toast.error('新密码和确认密码不匹配');
+      toast.error(t('settings.toast.password_mismatch'));
       return;
     }
 
     if (passwordForm.new.length < 8) {
-      toast.error('新密码长度至少8位');
+      toast.error(t('settings.toast.password_length'));
       return;
     }
 
@@ -43,10 +45,10 @@ const SecuritySettings: React.FC = () => {
     try {
       // TODO: API call to change password
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('密码修改成功');
+      toast.success(t('settings.toast.password_changed'));
       setPasswordForm({ current: '', new: '', confirm: '' });
     } catch (error) {
-      toast.error('密码修改失败，请重试');
+      toast.error(t('settings.toast.password_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -55,9 +57,9 @@ const SecuritySettings: React.FC = () => {
   const handleToggleTwoFactor = () => {
     if (twoFactorEnabled) {
       // 关闭2FA需要确认
-      if (window.confirm('确定要关闭双重验证吗？这会降低您的账户安全性。')) {
+      if (window.confirm(t('settings.toast.disable_2fa_confirm'))) {
         setTwoFactorEnabled(false);
-        toast.success('双重验证已关闭');
+        toast.success(t('settings.toast.2fa_disabled'));
       }
     } else {
       // 开启2FA显示对话框
@@ -68,18 +70,18 @@ const SecuritySettings: React.FC = () => {
   const handleEnable2FA = () => {
     setTwoFactorEnabled(true);
     setShowTwoFactorDialog(false);
-    toast.success('双重验证已开启');
+    toast.success(t('settings.toast.2fa_enabled'));
   };
 
   const handleLogoutDevice = (sessionId: string) => {
     setSessions(sessions.filter(s => s.id !== sessionId));
-    toast.success('设备已退出登录');
+    toast.success(t('settings.toast.device_logout'));
   };
 
   const handleLogoutAll = () => {
-    if (window.confirm('确定要退出所有设备的登录吗？（当前设备除外）')) {
+    if (window.confirm(t('settings.toast.logout_all_confirm'))) {
       setSessions(sessions.filter(s => s.current));
-      toast.success('已退出所有其他设备');
+      toast.success(t('settings.toast.logout_all_success'));
     }
   };
 
@@ -89,7 +91,7 @@ const SecuritySettings: React.FC = () => {
       '7q8r9s0t', '1u2v3w4x', '5y6z7a8b', '9c0d1e2f'
     ];
     navigator.clipboard.writeText(codes.join('\n'));
-    toast.success('恢复码已复制到剪贴板');
+    toast.success(t('settings.toast.codes_copied'));
   };
 
   const formatTime = (timestamp: string): string => {
@@ -101,12 +103,12 @@ const SecuritySettings: React.FC = () => {
       {/* 修改密码 */}
       <Card className="rounded-2xl border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle className="text-[16px] font-semibold">修改密码</CardTitle>
+          <CardTitle className="text-[16px] font-semibold">{t('settings.security.change_password')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="current-password">当前密码</Label>
+              <Label htmlFor="current-password">{t('settings.security.current_password')}</Label>
               <Input
                 id="current-password"
                 type="password"
@@ -116,7 +118,7 @@ const SecuritySettings: React.FC = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="new-password">新密码</Label>
+              <Label htmlFor="new-password">{t('settings.security.new_password')}</Label>
               <Input
                 id="new-password"
                 type="password"
@@ -126,7 +128,7 @@ const SecuritySettings: React.FC = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">确认新密码</Label>
+              <Label htmlFor="confirm-password">{t('settings.security.confirm_password')}</Label>
               <Input
                 id="confirm-password"
                 type="password"
@@ -142,7 +144,7 @@ const SecuritySettings: React.FC = () => {
               disabled={isLoading}
               className="rounded-xl"
             >
-              {isLoading ? '修改中...' : '修改密码'}
+              {isLoading ? t('settings.security.changing') : t('settings.security.change_password')}
             </Button>
           </div>
         </CardContent>
@@ -153,17 +155,17 @@ const SecuritySettings: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-[16px] font-semibold flex items-center gap-2">
             <Shield className="h-4 w-4" />
-            双重验证 (2FA)
+            {t('settings.security.two_factor')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-sm font-medium">
-                {twoFactorEnabled ? '双重验证已开启' : '双重验证已关闭'}
+                {twoFactorEnabled ? t('settings.security.two_factor_enabled') : t('settings.security.two_factor_disabled')}
               </p>
               <p className="text-xs text-muted-foreground">
-                通过手机应用程序增强您的账户安全性
+                {t('settings.security.two_factor_desc')}
               </p>
             </div>
             
@@ -179,7 +181,7 @@ const SecuritySettings: React.FC = () => {
       <Card className="rounded-2xl border bg-card shadow-sm">
         <CardHeader>
           <CardTitle className="text-[16px] font-semibold flex items-center justify-between">
-            登录设备与会话
+            {t('settings.security.sessions_title')}
             <Button 
               variant="outline" 
               size="sm"
@@ -187,7 +189,7 @@ const SecuritySettings: React.FC = () => {
               onClick={handleLogoutAll}
             >
               <LogOut className="h-3 w-3 mr-1" />
-              退出所有设备
+              {t('settings.security.logout_all')}
             </Button>
           </CardTitle>
         </CardHeader>
@@ -195,11 +197,11 @@ const SecuritySettings: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>设备</TableHead>
-                <TableHead>浏览器</TableHead>
-                <TableHead>位置</TableHead>
-                <TableHead>最后活跃</TableHead>
-                <TableHead>操作</TableHead>
+                <TableHead>{t('settings.security.device')}</TableHead>
+                <TableHead>{t('settings.security.browser')}</TableHead>
+                <TableHead>{t('settings.security.location')}</TableHead>
+                <TableHead>{t('settings.security.last_active')}</TableHead>
+                <TableHead>{t('settings.security.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -210,7 +212,7 @@ const SecuritySettings: React.FC = () => {
                       <span className="font-medium">{session.device}</span>
                       {session.current && (
                         <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
-                          当前设备
+                          {t('settings.security.current_device')}
                         </Badge>
                       )}
                     </div>
@@ -233,7 +235,7 @@ const SecuritySettings: React.FC = () => {
                         onClick={() => handleLogoutDevice(session.id)}
                       >
                         <LogOut className="h-3 w-3 mr-1" />
-                        退出
+                        {t('settings.security.logout')}
                       </Button>
                     )}
                   </TableCell>
@@ -250,10 +252,10 @@ const SecuritySettings: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Smartphone className="h-5 w-5" />
-              开启双重验证
+              {t('settings.security.enable_2fa_title')}
             </DialogTitle>
             <DialogDescription>
-              使用认证应用扫描二维码来设置双重验证
+              {t('settings.security.enable_2fa_desc')}
             </DialogDescription>
           </DialogHeader>
           
@@ -267,7 +269,7 @@ const SecuritySettings: React.FC = () => {
             
             {/* 恢复码 */}
             <div className="space-y-2">
-              <Label>恢复码 (请安全保存)</Label>
+              <Label>{t('settings.security.recovery_codes')}</Label>
               <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-muted p-3 rounded-xl">
                 <div>1a2b3c4d</div>
                 <div>5e6f7g8h</div>
@@ -285,7 +287,7 @@ const SecuritySettings: React.FC = () => {
                 onClick={copyCodes}
               >
                 <Copy className="h-3 w-3 mr-1" />
-                复制恢复码
+                {t('settings.security.copy_codes')}
               </Button>
             </div>
             
@@ -293,8 +295,8 @@ const SecuritySettings: React.FC = () => {
             <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-xl border border-amber-200">
               <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <div className="text-xs text-amber-800">
-                <p className="font-medium">请妥善保存恢复码</p>
-                <p>如果您丢失了认证设备，恢复码是找回账户的唯一方式。</p>
+                <p className="font-medium">{t('settings.security.warning_title')}</p>
+                <p>{t('settings.security.warning_desc')}</p>
               </div>
             </div>
             
@@ -304,13 +306,13 @@ const SecuritySettings: React.FC = () => {
                 className="flex-1 rounded-xl"
                 onClick={() => setShowTwoFactorDialog(false)}
               >
-                取消
+                {t('common.cancel')}
               </Button>
               <Button 
                 className="flex-1 rounded-xl"
                 onClick={handleEnable2FA}
               >
-                开启验证
+                {t('settings.security.enable_auth')}
               </Button>
             </div>
           </div>

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Import existing images
 import heroImage from '@/assets/hero-proof-of-authorship-dashboard.webp';
@@ -25,6 +26,7 @@ import LoginDialog from '@/components/LoginDialog';
 const AcademicProofWriting = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const [visibleSections, setVisibleSections] = useState(new Set());
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
 
@@ -80,15 +82,15 @@ const AcademicProofWriting = () => {
   return (
     <>
       <Helmet>
-        <title>真引用，像你写，留痕可证 - 可校验学术写作工具</title>
-        <meta name="description" content="DOI/ISBN实时校验，个人文风基线对齐，全流程留痕证据包。避免AI误判与假引用翻车，支持APA/MLA/GB/T格式，提交更稳。" />
-        <meta name="keywords" content="学术写作, AI检测, 引用校验, DOI验证, 文风分析, 学术诚信, 写作证明" />
+        <title>{t('seo.title')}</title>
+        <meta name="description" content={t('seo.description')} />
+        <meta name="keywords" content={t('seo.keywords')} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="canonical" href="https://yoursite.com/" />
         
         {/* Open Graph */}
-        <meta property="og:title" content="真引用，像你写，留痕可证 - 可校验学术写作工具" />
-        <meta property="og:description" content="DOI/ISBN实时校验，个人文风基线对齐，全流程留痕证据包。避免AI误判与假引用翻车，支持APA/MLA/GB/T格式，提交更稳。" />
+        <meta property="og:title" content={t('seo.og_title')} />
+        <meta property="og:description" content={t('seo.og_description')} />
         <meta property="og:image" content={heroImage} />
         <meta property="og:url" content="https://yoursite.com/" />
         <meta property="og:type" content="website" />
@@ -104,55 +106,55 @@ const AcademicProofWriting = () => {
                 "name": "这是'过检神器'吗？",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "不是。我们提供可校验证据与整改建议。"
+                  "text": "{t('faq.a1')}"
                 }
               },
               {
                 "@type": "Question", 
-                "name": "支持哪些引用格式？",
+                "name": "{t('faq.q2')}",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "APA/MLA/GB/T 7714，校验 DOI/ISBN/PMID。"
+                  "text": "{t('faq.a2')}"
                 }
               },
               {
                 "@type": "Question",
-                "name": "非母语会不会被修过头？",
+                "name": "{t('faq.q3')}",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "润色强度可调，保留自然错误率。"
+                  "text": "{t('faq.a3')}"
                 }
               },
               {
                 "@type": "Question",
-                "name": "二次 AI Agent 会乱改吗？",
+                "name": "{t('faq.q4')}",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "所有操作可撤销并留痕；无法验证的来源标'需核验'。"
+                  "text": "{t('faq.a4')}"
                 }
               },
               {
                 "@type": "Question",
-                "name": "图表的数据来源怎么保证？",
+                "name": "{t('faq.q5')}",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "生成时写入来源与参数元数据，可追溯。"
+                  "text": "{t('faq.a5')}"
                 }
               },
               {
                 "@type": "Question",
-                "name": "数据会被拿去训练吗？",
+                "name": "{t('faq.q6')}",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "默认不用于训练，支持本地优先与自托管。"
+                  "text": "{t('faq.a6')}"
                 }
               },
               {
                 "@type": "Question",
-                "name": "老师要看写作过程怎么办？",
+                "name": "{t('faq.q7')}",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "导出证据包与口头核验提纲即可。"
+                  "text": "{t('faq.a7')}"
                 }
               }
             ]
@@ -173,10 +175,10 @@ const AcademicProofWriting = () => {
         >
           <div className="max-w-6xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-bold mb-6" style={{ color: '#4F46E5' }}>
-              真引用，像你写，留痕可证
+              {t('hero.main_title')}
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              引用核验、个人文风对齐、全流程留痕，配合二次 AI Agent 编辑，提交更稳。
+              {t('hero.subtitle')}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -186,7 +188,7 @@ const AcademicProofWriting = () => {
                 className="text-lg px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl"
                 data-event="cta_primary_click"
               >
-                无风险体验
+                {t('hero.cta_trial')}
               </Button>
               <Button 
                 variant="outline" 
@@ -196,19 +198,19 @@ const AcademicProofWriting = () => {
                 data-event="cta_secondary_click"
               >
                 <Download className="mr-2 h-5 w-5" />
-                下载全套示例
+                {t('hero.cta_download')}
               </Button>
             </div>
 
             {/* 卖点条目 */}
             <div className="text-gray-600 mb-12">
-              真实文献引用 · 个人文风基线 · 证据包可导出 · AI agent文稿编辑
+              {t('hero.selling_points')}
             </div>
 
             <div className="relative max-w-4xl mx-auto">
               <HeroCarousel />
               <p className="text-sm text-gray-500 mt-4 text-center">
-                不承诺"过检"。我们提供可校验的证据与整改建议。
+                {t('hero.disclaimer')}
               </p>
             </div>
           </div>
@@ -225,7 +227,7 @@ const AcademicProofWriting = () => {
         >
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
-              为什么"能写出来"不等于"敢提交"
+              {t('painpoints.section_title')}
             </h2>
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
@@ -234,8 +236,8 @@ const AcademicProofWriting = () => {
                      <X className="w-4 h-4 text-white" />
                    </div>
                    <div>
-                     <h3 className="font-semibold mb-2 text-gray-900">假引文/过时结论，抽查即暴露</h3>
-                     <p className="text-gray-600">DOI 失效、期刊信息错误，面谈时无法自圆其说</p>
+                     <h3 className="font-semibold mb-2 text-gray-900">{t('painpoints.fake_citations.title')}</h3>
+                     <p className="text-gray-600">{t('painpoints.fake_citations.desc')}</p>
                    </div>
                  </div>
                  <div className="flex items-start gap-3">
@@ -243,8 +245,8 @@ const AcademicProofWriting = () => {
                      <X className="w-4 h-4 text-white" />
                    </div>
                    <div>
-                     <h3 className="font-semibold mb-2 text-gray-900">文风突变像"机器腔"，与过往作品断层</h3>
-                     <p className="text-gray-600">句式突变、词汇跃升，容易被怀疑非本人作品</p>
+                     <h3 className="font-semibold mb-2 text-gray-900">{t('painpoints.style_change.title')}</h3>
+                     <p className="text-gray-600">{t('painpoints.style_change.desc')}</p>
                    </div>
                  </div>
                  <div className="flex items-start gap-3">
@@ -252,8 +254,8 @@ const AcademicProofWriting = () => {
                      <X className="w-4 h-4 text-white" />
                    </div>
                    <div>
-                     <h3 className="font-semibold mb-2 text-gray-900">检测工具存在误伤，非母语更易中招</h3>
-                     <p className="text-gray-600">AI检测工具无法区分"润色"与"生成"</p>
+                     <h3 className="font-semibold mb-2 text-gray-900">{t('painpoints.ai_detection.title')}</h3>
+                     <p className="text-gray-600">{t('painpoints.ai_detection.desc')}</p>
                    </div>
                  </div>
                  <div className="flex items-start gap-3">
@@ -261,8 +263,8 @@ const AcademicProofWriting = () => {
                      <X className="w-4 h-4 text-white" />
                    </div>
                    <div>
-                     <h3 className="font-semibold mb-2 text-gray-900">面谈要讲检索路径与改动理由，说不清就被追问</h3>
-                     <p className="text-gray-600">无法提供写作过程证据，缺乏口头核验准备</p>
+                     <h3 className="font-semibold mb-2 text-gray-900">{t('painpoints.interview_questions.title')}</h3>
+                     <p className="text-gray-600">{t('painpoints.interview_questions.desc')}</p>
                    </div>
                  </div>
                  <div className="flex items-start gap-3">
@@ -270,20 +272,20 @@ const AcademicProofWriting = () => {
                      <X className="w-4 h-4 text-white" />
                    </div>
                    <div>
-                     <h3 className="font-semibold mb-2 text-gray-900">临近提交还要排版、插图、编号、格式统一，人工耗时</h3>
-                     <p className="text-gray-600">排版工作量大，容易出错，影响提交进度</p>
+                     <h3 className="font-semibold mb-2 text-gray-900">{t('painpoints.formatting_work.title')}</h3>
+                     <p className="text-gray-600">{t('painpoints.formatting_work.desc')}</p>
                    </div>
                  </div>
                 <div className="pt-4">
                   <a href="#faq" className="text-indigo-600 hover:text-indigo-700 font-medium">
-                    阅读更多 →
+                    {t('painpoints.read_more')}
                   </a>
                 </div>
               </div>
               <div>
                 <img 
                   src={painPointsSolutions} 
-                  alt="痛点分析与解决方案对比图"
+                  alt={t('painpoints.alt_text')}
                   className="w-full rounded-2xl shadow-lg"
                 />
               </div>
@@ -301,7 +303,7 @@ const AcademicProofWriting = () => {
         >
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
-              一套闭环，从"生成"到"可证"
+              {t('features.section_title')}
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card 
@@ -312,8 +314,8 @@ const AcademicProofWriting = () => {
                      style={{ background: 'linear-gradient(135deg, #EBF4FF, #DBEAFE)' }}>
                   <Shield className="w-8 h-8" style={{ color: '#4F46E5' }} />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">真实引用</h3>
-                 <p className="text-gray-600 text-sm leading-relaxed">DOI/PMID/ISBN 实时核验，卷期页码一致性检查；APA/MLA/GB/T 一键规范，假引文标红并给替代建议。</p>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">{t('features.real_citations.title')}</h3>
+                 <p className="text-gray-600 text-sm leading-relaxed">{t('features.real_citations.desc')}</p>
                </Card>
                <Card 
                  className="p-6 text-center bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
@@ -323,8 +325,8 @@ const AcademicProofWriting = () => {
                       style={{ background: 'linear-gradient(135deg, #F0FDF4, #DCFCE7)' }}>
                    <Target className="w-8 h-8" style={{ color: '#10B981' }} />
                  </div>
-                 <h3 className="text-xl font-semibold mb-3 text-gray-900">个人文风</h3>
-                 <p className="text-gray-600 text-sm leading-relaxed">建立个人基线；句长/词汇复杂度/突发度可视化；非母语友好润色，保留自然错误率。</p>
+                 <h3 className="text-xl font-semibold mb-3 text-gray-900">{t('features.personal_style.title')}</h3>
+                 <p className="text-gray-600 text-sm leading-relaxed">{t('features.personal_style.desc')}</p>
                </Card>
                <Card 
                  className="p-6 text-center bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
@@ -334,8 +336,8 @@ const AcademicProofWriting = () => {
                       style={{ background: 'linear-gradient(135deg, #FFF7ED, #FED7AA)' }}>
                    <FileText className="w-8 h-8" style={{ color: '#EA580C' }} />
                  </div>
-                 <h3 className="text-xl font-semibold mb-3 text-gray-900">全程留痕</h3>
-                 <p className="text-gray-600 text-sm leading-relaxed">写作时间线、段落 diff、来源快照一键打包证据包；附口头核验速答卡。</p>
+                 <h3 className="text-xl font-semibold mb-3 text-gray-900">{t('features.full_trace.title')}</h3>
+                 <p className="text-gray-600 text-sm leading-relaxed">{t('features.full_trace.desc')}</p>
                </Card>
                <Card 
                  className="p-6 text-center bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
@@ -345,8 +347,8 @@ const AcademicProofWriting = () => {
                       style={{ background: 'linear-gradient(135deg, #FDF2F8, #FCE7F3)' }}>
                    <Zap className="w-8 h-8" style={{ color: '#EC4899' }} />
                  </div>
-                 <h3 className="text-xl font-semibold mb-3 text-gray-900">二次 AI Agent 编辑</h3>
-                 <p className="text-gray-600 text-sm leading-relaxed">用自然语言完成结构化重写、格式排版、图表生成与交叉引用，保证来源与参数可追溯。</p>
+                 <h3 className="text-xl font-semibold mb-3 text-gray-900">{t('features.ai_agent.title')}</h3>
+                 <p className="text-gray-600 text-sm leading-relaxed">{t('features.ai_agent.desc')}</p>
                </Card>
             </div>
           </div>
@@ -526,7 +528,7 @@ const AcademicProofWriting = () => {
                   data-event="download_sample"
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  下载示例证据包
+                  {t('detailed.process.cta')}
                 </Button>
               </div>
               <div>
@@ -669,26 +671,26 @@ const AcademicProofWriting = () => {
         >
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
-              三步走，提交更稳
+              {t('process.section_title')}
             </h2>
             <div className="grid md:grid-cols-3 gap-8 mb-12">
               <div className="text-center">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-white" 
                      style={{ backgroundColor: '#4F46E5' }}>1</div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">收集写作需求</h3>
-                <p className="text-gray-600">收集写作需求，固定文风</p>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">{t('process.step1.title')}</h3>
+                <p className="text-gray-600">{t('process.step1.desc')}</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-white" 
                      style={{ backgroundColor: '#4F46E5' }}>2</div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">自动规划与首稿生成</h3>
-                <p className="text-gray-600">补充真实文献，产出大纲与正文，自动整理标准格式</p>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">{t('process.step2.title')}</h3>
+                <p className="text-gray-600">{t('process.step2.desc')}</p>
               </div>
               <div className="text-center">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-white" 
                      style={{ backgroundColor: '#4F46E5' }}>3</div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">Agent编辑与导出</h3>
-                <p className="text-gray-600">一条指令完成排版/图表/交叉引用，导出证据包并跑一遍口头核验</p>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">{t('process.step3.title')}</h3>
+                <p className="text-gray-600">{t('process.step3.desc')}</p>
               </div>
             </div>
           </div>
@@ -705,59 +707,59 @@ const AcademicProofWriting = () => {
         >
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
-              用户见证
+              {t('testimonials.section_title')}
             </h2>
             <div className="grid md:grid-cols-3 gap-8 mb-12">
               <Card className="p-6 bg-white rounded-2xl shadow-lg">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 rounded-full mr-3" style={{ backgroundColor: '#4F46E5' }}></div>
                   <div>
-                    <p className="font-semibold text-gray-900">本科生 / 某985高校</p>
+                    <p className="font-semibold text-gray-900">{t('testimonials.student_title')}</p>
                     <div className="flex text-yellow-500 mt-1">
                       {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                     </div>
                   </div>
                 </div>
-                <p className="text-gray-600">"引用合规从 12 条报错修到 0，面谈用速答卡顺利通过。"</p>
+                <p className="text-gray-600">{t('testimonials.student_quote')}</p>
               </Card>
               <Card className="p-6 bg-white rounded-2xl shadow-lg">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 rounded-full mr-3" style={{ backgroundColor: '#10B981' }}></div>
                   <div>
-                    <p className="font-semibold text-gray-900">硕士｜海外</p>
+                    <p className="font-semibold text-gray-900">{t('testimonials.master_title')}</p>
                     <div className="flex text-yellow-500 mt-1">
                       {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                     </div>
                   </div>
                 </div>
-                <p className="text-gray-600">"风格偏移从 58 降到 27，老师认可'像本人写'。"</p>
+                <p className="text-gray-600">{t('testimonials.master_quote')}</p>
               </Card>
               <Card className="p-6 bg-white rounded-2xl shadow-lg">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 rounded-full mr-3" style={{ backgroundColor: '#EC4899' }}></div>
                   <div>
-                    <p className="font-semibold text-gray-900">博士｜理工科</p>
+                    <p className="font-semibold text-gray-900">{t('testimonials.phd_title')}</p>
                     <div className="flex text-yellow-500 mt-1">
                       {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                     </div>
                   </div>
                 </div>
-                <p className="text-gray-600">"Agent 完成图表与编号，LaTeX 导出一次过版。"</p>
+                <p className="text-gray-600">{t('testimonials.phd_quote')}</p>
               </Card>
             </div>
             
             <div className="grid md:grid-cols-2 gap-8">
               <Card className="p-8 text-center bg-white rounded-2xl shadow-lg">
-                <h3 className="text-4xl font-bold mb-2" style={{ color: '#4F46E5' }}>96%</h3>
-                <p className="text-gray-600 font-medium">引用合规度提升</p>
+                <h3 className="text-4xl font-bold mb-2" style={{ color: '#4F46E5' }}>{t('testimonials.metric1')}</h3>
+                <p className="text-gray-600 font-medium">{t('testimonials.metric1_desc')}</p>
               </Card>
               <Card className="p-8 text-center bg-white rounded-2xl shadow-lg">
-                <h3 className="text-4xl font-bold mb-2" style={{ color: '#4F46E5' }}>-68%</h3>
-                <p className="text-gray-600 font-medium">AI率 下降</p>
+                <h3 className="text-4xl font-bold mb-2" style={{ color: '#4F46E5' }}>{t('testimonials.metric2')}</h3>
+                <p className="text-gray-600 font-medium">{t('testimonials.metric2_desc')}</p>
               </Card>
             </div>
             <p className="text-center text-sm text-gray-500 mt-4">
-              指标为样例说明，实际效果随文本而异
+              {t('testimonials.disclaimer')}
             </p>
           </div>
         </section>
@@ -772,36 +774,36 @@ const AcademicProofWriting = () => {
         >
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
-              常见问题
+              {t('faq.section_title')}
             </h2>
             <Accordion type="single" collapsible className="space-y-4">
               <AccordionItem value="item-1" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
                 <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
-                  这是"过检神器"吗？
+                  {t('faq.q1')}
                 </AccordionTrigger>
                 <AccordionContent className="text-gray-600 pt-2">
-                  不是。我们提供可校验证据与整改建议。
+                  {t('faq.a1')}
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-2" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
                 <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
-                  支持哪些引用格式？
+                  {t('faq.q2')}
                 </AccordionTrigger>
                 <AccordionContent className="text-gray-600 pt-2">
-                  APA/MLA/GB/T 7714，校验 DOI/ISBN/PMID。
+                  {t('faq.a2')}
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-3" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
                 <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
-                  非母语会不会被修过头？
+                  {t('faq.q3')}
                 </AccordionTrigger>
                 <AccordionContent className="text-gray-600 pt-2">
-                  润色强度可调，保留自然错误率。
+                  {t('faq.a3')}
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-4" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
                 <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
-                  二次 AI Agent 会乱改吗？
+                  {t('faq.q4')}
                 </AccordionTrigger>
                 <AccordionContent className="text-gray-600 pt-2">
                   所有操作可撤销并留痕；无法验证的来源标"需核验"。
@@ -809,33 +811,33 @@ const AcademicProofWriting = () => {
               </AccordionItem>
               <AccordionItem value="item-5" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
                 <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
-                  图表的数据来源怎么保证？
+                  {t('faq.q5')}
                 </AccordionTrigger>
                 <AccordionContent className="text-gray-600 pt-2">
-                  生成时写入来源与参数元数据，可追溯。
+                  {t('faq.a5')}
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-6" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
                 <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
-                  数据会被拿去训练吗？
+                  {t('faq.q6')}
                 </AccordionTrigger>
                 <AccordionContent className="text-gray-600 pt-2">
-                  默认不用于训练，支持本地优先与自托管。
+                  {t('faq.a6')}
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-7" className="bg-white rounded-2xl px-6" data-event="faq_toggle">
                 <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline">
-                  老师要看写作过程怎么办？
+                  {t('faq.q7')}
                 </AccordionTrigger>
                 <AccordionContent className="text-gray-600 pt-2">
-                  导出证据包与口头核验提纲即可。
+                  {t('faq.a7')}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
           </div>
         </section>
 
-        {/* 8. 可信与合规 Trust & Compliance */}
+        {/* 8. {t('compliance.section_title')} Trust & Compliance */}
         <section 
           id="compliance" 
           data-section 
@@ -846,7 +848,7 @@ const AcademicProofWriting = () => {
         >
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
-              可信与合规
+              {t('compliance.section_title')}
             </h2>
             <div className="grid md:grid-cols-3 gap-8">
               <Card className="p-6 text-center bg-white rounded-2xl shadow-lg">
@@ -854,30 +856,30 @@ const AcademicProofWriting = () => {
                      style={{ background: 'linear-gradient(135deg, #EBF4FF, #DBEAFE)' }}>
                   <Shield className="w-8 h-8" style={{ color: '#4F46E5' }} />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">数据与隐私</h3>
-                <p className="text-gray-600 mb-4">最小化采集，上传即处理即弃可选；敏感场景可自托管</p>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">{t('compliance.data_privacy.title')}</h3>
+                <p className="text-gray-600 mb-4">{t('compliance.data_privacy.desc')}</p>
               </Card>
               <Card className="p-6 text-center bg-white rounded-2xl shadow-lg">
                 <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" 
                      style={{ background: 'linear-gradient(135deg, #FFF7ED, #FED7AA)' }}>
                   <Award className="w-8 h-8" style={{ color: '#EA580C' }} />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">教育用途声明</h3>
-                <p className="text-gray-600 mb-4">不提供代写与"包过"承诺；定位为合规辅助</p>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">{t('compliance.education.title')}</h3>
+                <p className="text-gray-600 mb-4">{t('compliance.education.desc')}</p>
               </Card>
               <Card className="p-6 text-center bg-white rounded-2xl shadow-lg">
                 <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" 
                      style={{ background: 'linear-gradient(135deg, #F0FDF4, #DCFCE7)' }}>
                   <GraduationCap className="w-8 h-8" style={{ color: '#10B981' }} />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">教师合作</h3>
-                <p className="text-gray-600 mb-4">申请教育试用与 API</p>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900">{t('compliance.teacher_cooperation.title')}</h3>
+                <p className="text-gray-600 mb-4">{t('compliance.teacher_cooperation.desc')}</p>
               </Card>
             </div>
           </div>
         </section>
 
-        {/* 9. 相关文章内链 Blog Resources */}
+        {/* 9. {t('resources.section_title')}内链 Blog Resources */}
         <section 
           id="resources" 
           data-section
@@ -887,36 +889,36 @@ const AcademicProofWriting = () => {
         >
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#1F2937' }}>
-              相关文章
+              {t('resources.section_title')}
             </h2>
             <div className="grid md:grid-cols-3 gap-8">
               <Card className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
                 <Target className="w-8 h-8 mb-4" style={{ color: '#10B981' }} />
-                <h3 className="text-lg font-semibold mb-3 text-gray-900">非母语如何避免 AI 误判</h3>
-                <p className="text-gray-600 mb-4 text-sm">保持个人写作风格的同时提升学术表达质量的实用技巧</p>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">{t('resources.avoid_misjudge.title')}</h3>
+                <p className="text-gray-600 mb-4 text-sm">{t('resources.avoid_misjudge.desc')}</p>
                 <Button variant="outline" size="sm" asChild className="border-green-600 text-green-600 hover:bg-green-50 rounded-xl">
                   <a href="/resources/avoid-misjudge" target="_blank">
-                    阅读文章 <ExternalLink className="ml-2 h-4 w-4" />
+                    {t('resources.avoid_misjudge.cta')} <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
               </Card>
               <Card className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
                 <TrendingUp className="w-8 h-8 mb-4" style={{ color: '#0EA5E9' }} />
-                <h3 className="text-lg font-semibold mb-3 text-gray-900">用自然语言做学术图表</h3>
-                <p className="text-gray-600 mb-4 text-sm">从数据到图，如何保证可追溯</p>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">{t('resources.academic_charts.title')}</h3>
+                <p className="text-gray-600 mb-4 text-sm">{t('resources.academic_charts.desc')}</p>
                 <Button variant="outline" size="sm" asChild className="border-sky-600 text-sky-600 hover:bg-sky-50 rounded-xl">
                   <a href="/resources/academic-charts" target="_blank">
-                    阅读文章 <ExternalLink className="ml-2 h-4 w-4" />
+                    {t('resources.academic_charts.cta')} <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
               </Card>
               <Card className="p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
                 <MessageSquare className="w-8 h-8 mb-4" style={{ color: '#EC4899' }} />
-                <h3 className="text-lg font-semibold mb-3 text-gray-900">口头核验提问 20 例</h3>
-                <p className="text-gray-600 mb-4 text-sm">与回答框架</p>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">{t('resources.viva_qa.title')}</h3>
+                <p className="text-gray-600 mb-4 text-sm">{t('resources.viva_qa.desc')}</p>
                 <Button variant="outline" size="sm" asChild className="border-pink-600 text-pink-600 hover:bg-pink-50 rounded-xl">
                   <a href="/resources/viva-qa-20" target="_blank">
-                    阅读文章 <ExternalLink className="ml-2 h-4 w-4" />
+                    {t('resources.viva_qa.cta')} <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
               </Card>
@@ -929,10 +931,10 @@ const AcademicProofWriting = () => {
         <section className="py-16 px-4 text-center text-white" style={{ backgroundColor: '#4F46E5' }}>
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              开始你的学术合规之旅
+              {t('footer_cta.title')}
             </h2>
             <p className="text-xl mb-8 opacity-90">
-              让每一篇论文都经得起质疑，每一次提交都充满信心
+              {t('footer_cta.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -940,7 +942,7 @@ const AcademicProofWriting = () => {
                 onClick={handleFreeTrial}
                 className="bg-white text-indigo-600 hover:bg-gray-100 rounded-2xl"
               >
-                立即开始
+                {t('footer_cta.start_btn')}
               </Button>
               <Button 
                 size="lg" 
@@ -948,7 +950,7 @@ const AcademicProofWriting = () => {
                 onClick={handleDownloadSample}
                 className="border-white text-white hover:bg-white hover:text-indigo-600 rounded-2xl"
               >
-                下载示例
+                {t('footer_cta.download_btn')}
               </Button>
             </div>
           </div>

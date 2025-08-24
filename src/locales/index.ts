@@ -770,26 +770,66 @@ export type TranslationKey =
   | 'research.error.recovery_failed'
   | 'research.error.autopilot_start_failed'
   
-  // OutcomePanel 翻译键类型
-  | 'outcome.price.locked'
-  | 'outcome.price.locked_badge'
-  | 'outcome.price.relock'
-  | 'outcome.price.estimated'
-  | 'outcome.price.eta'
-  | 'outcome.verification.level'
-  | 'outcome.verification.basic'
-  | 'outcome.verification.standard'
-  | 'outcome.verification.pro'
-  | 'outcome.deliverables.draft'
-  | 'outcome.deliverables.citation_verification'
-  | 'outcome.deliverables.style_alignment'
-  | 'outcome.deliverables.process_tracking'
-  | 'outcome.addons.evidence_pack'
-  | 'outcome.addons.defense_card'
-  | 'outcome.addons.latex'
-  | 'outcome.addons.ai_check'
-  | 'outcome.addons.plagiarism'
-  | 'outcome.addons.share_link'
+  // OutcomePanelCard 翻译键
+  | 'outcome.deliverables.title'
+  | 'outcome.deliverables.included'
+  | 'outcome.deliverables.draft.title'
+  | 'outcome.deliverables.verification.title'
+  | 'outcome.deliverables.style.title'
+  | 'outcome.deliverables.export.title'
+  
+  // 附加项
+  | 'outcome.addons.title'
+  | 'outcome.addons.evidence_pack.title'
+  | 'outcome.addons.defense_card.title'
+  | 'outcome.addons.latex.title'
+  | 'outcome.addons.ai_check.title'
+  | 'outcome.addons.plagiarism.title'
+  | 'outcome.addons.share_link.title'
+  
+  // 价格相关
+  | 'outcome.pricing.locked'
+  | 'outcome.pricing.verify_level'
+  | 'outcome.pricing.basic'
+  | 'outcome.pricing.standard'
+  | 'outcome.pricing.pro'
+  | 'outcome.pricing.show_details'
+  | 'outcome.pricing.hide_details'
+  | 'outcome.pricing.base_price'
+  | 'outcome.pricing.total'
+  | 'outcome.pricing.relock'
+  
+  // 指标相关
+  | 'outcome.metrics.style_samples'
+  | 'outcome.metrics.citations'
+  | 'outcome.metrics.sources_hit'
+  | 'outcome.metrics.verifiable'
+  | 'outcome.metrics.thesis_candidates'
+  | 'outcome.metrics.claim_count'
+  | 'outcome.metrics.outline_depth'
+  | 'outcome.metrics.sections'
+  | 'outcome.metrics.pending'
+  
+  // 按钮相关
+  | 'outcome.buttons.pay_and_write'
+  | 'outcome.buttons.preview_more'
+  | 'outcome.buttons.processing'
+  
+  // Modal相关
+  | 'outcome.modal.draft.title'
+  | 'outcome.modal.verification.title'
+  | 'outcome.modal.style.title'
+  | 'outcome.modal.export.title'
+  | 'outcome.modal.watermark_notice'
+  | 'outcome.modal.verification.summary'
+  | 'outcome.modal.verification.sample_citations'
+  | 'outcome.modal.style.no_samples'
+  | 'outcome.modal.style.upload_suggestion'
+  | 'outcome.modal.style.samples_detected'
+  | 'outcome.modal.style.comparison'
+  | 'outcome.modal.export.timeline'
+  | 'outcome.modal.export.formats'
+  | 'outcome.modal.export.retention'
   | 'outcome.metrics.style_samples'
   | 'outcome.metrics.style_samples_desc'
   | 'outcome.metrics.sources_hit'
@@ -2637,26 +2677,66 @@ export const translations: Record<TranslationKey, Translation> = {
   'research.error.recovery_failed': { zh: '恢复研究数据失败', en: 'Failed to recover research data' },
   'research.error.autopilot_start_failed': { zh: '启动自动推进失败', en: 'Failed to start autopilot' },
 
-  // OutcomePanel 相关翻译
-  'outcome.price.locked': { zh: '锁定价 ¥${price}', en: 'Locked Price ¥${price}' },
-  'outcome.price.locked_badge': { zh: '已锁价', en: 'Price Locked' },
-  'outcome.price.relock': { zh: '重新锁价', en: 'Re-lock Price' },
-  'outcome.price.estimated': { zh: '≈ ¥${min}–${max}', en: '≈ ¥${min}–${max}' },
-  'outcome.price.eta': { zh: 'ETA ${time}', en: 'ETA ${time}' },
-  'outcome.verification.level': { zh: '核验等级', en: 'Verification Level' },
-  'outcome.verification.basic': { zh: 'Basic', en: 'Basic' },
-  'outcome.verification.standard': { zh: 'Standard', en: 'Standard' },
-  'outcome.verification.pro': { zh: 'Pro', en: 'Pro' },
-  'outcome.deliverables.draft': { zh: '初稿', en: 'First Draft' },
-  'outcome.deliverables.citation_verification': { zh: '引用核验', en: 'Citation Verification' },
-  'outcome.deliverables.style_alignment': { zh: '风格对齐', en: 'Style Alignment' },
-  'outcome.deliverables.process_tracking': { zh: '过程留痕', en: 'Process Tracking' },
-  'outcome.addons.evidence_pack': { zh: '证据包', en: 'Evidence Package' },
-  'outcome.addons.defense_card': { zh: '口头核验卡', en: 'Oral Defense Card' },
-  'outcome.addons.latex': { zh: 'LaTeX', en: 'LaTeX' },
-  'outcome.addons.ai_check': { zh: 'AI 检测', en: 'AI Detection' },
-  'outcome.addons.plagiarism': { zh: '抄袭检测', en: 'Plagiarism Check' },
-  'outcome.addons.share_link': { zh: '只读链接', en: 'Read-only Link' },
+  // OutcomePanelCard 相关翻译
+  'outcome.deliverables.title': { zh: '交付物预览', en: 'Deliverables Preview' },
+  'outcome.deliverables.included': { zh: 'Included', en: 'Included' },
+  'outcome.deliverables.draft.title': { zh: '初稿预览', en: 'Draft Preview' },
+  'outcome.deliverables.verification.title': { zh: '引用核验', en: 'Citation Verification' },
+  'outcome.deliverables.style.title': { zh: '文风对齐', en: 'Style Alignment' },
+  'outcome.deliverables.export.title': { zh: '留痕导出', en: 'Process Export' },
+  
+  // 附加项
+  'outcome.addons.title': { zh: '附加服务', en: 'Add-on Services' },
+  'outcome.addons.evidence_pack.title': { zh: '证据包', en: 'Evidence Package' },
+  'outcome.addons.defense_card.title': { zh: '答辩卡片', en: 'Defense Card' },
+  'outcome.addons.latex.title': { zh: 'LaTeX 输出', en: 'LaTeX Output' },
+  'outcome.addons.ai_check.title': { zh: 'AI 检测', en: 'AI Detection' },
+  'outcome.addons.plagiarism.title': { zh: '查重检测', en: 'Plagiarism Check' },
+  'outcome.addons.share_link.title': { zh: '分享链接', en: 'Share Link' },
+  
+  // 价格相关
+  'outcome.pricing.locked': { zh: '已锁价', en: 'Price Locked' },
+  'outcome.pricing.verify_level': { zh: '核验等级', en: 'Verification Level' },
+  'outcome.pricing.basic': { zh: 'Basic', en: 'Basic' },
+  'outcome.pricing.standard': { zh: 'Standard', en: 'Standard' },
+  'outcome.pricing.pro': { zh: 'Pro', en: 'Pro' },
+  'outcome.pricing.show_details': { zh: '展开明细', en: 'Show Details' },
+  'outcome.pricing.hide_details': { zh: '收起明细', en: 'Hide Details' },
+  'outcome.pricing.base_price': { zh: '基础价格', en: 'Base Price' },
+  'outcome.pricing.total': { zh: '合计', en: 'Total' },
+  'outcome.pricing.relock': { zh: '重新锁价', en: 'Re-lock Price' },
+  
+  // 指标相关
+  'outcome.metrics.style_samples': { zh: '风格样本', en: 'Style Samples' },
+  'outcome.metrics.citations': { zh: '引用数', en: 'Citations' },
+  'outcome.metrics.sources_hit': { zh: '命中文献', en: 'Sources Hit' },
+  'outcome.metrics.verifiable': { zh: '可验证', en: 'Verifiable' },
+  'outcome.metrics.thesis_candidates': { zh: '候选结构', en: 'Thesis Candidates' },
+  'outcome.metrics.claim_count': { zh: '论点数', en: 'Claim Count' },
+  'outcome.metrics.outline_depth': { zh: '大纲深度', en: 'Outline Depth' },
+  'outcome.metrics.sections': { zh: '章节数', en: 'Sections' },
+  'outcome.metrics.pending': { zh: '待生成', en: 'Pending' },
+  
+  // 按钮相关
+  'outcome.buttons.pay_and_write': { zh: '立即写作', en: 'Start Writing' },
+  'outcome.buttons.preview_more': { zh: '预览更多样例', en: 'Preview More Samples' },
+  'outcome.buttons.processing': { zh: '处理中...', en: 'Processing...' },
+  
+  // Modal相关
+  'outcome.modal.draft.title': { zh: '初稿预览', en: 'Draft Preview' },
+  'outcome.modal.verification.title': { zh: '引用核验详情', en: 'Citation Verification Details' },
+  'outcome.modal.style.title': { zh: '文风对齐详情', en: 'Style Alignment Details' },
+  'outcome.modal.export.title': { zh: '导出格式详情', en: 'Export Format Details' },
+  'outcome.modal.watermark_notice': { zh: '此为样例预览，实际内容无水印', en: 'This is a sample preview, actual content has no watermark' },
+  'outcome.modal.verification.summary': { zh: '核验概览', en: 'Verification Summary' },
+  'outcome.modal.verification.sample_citations': { zh: '样例引用', en: 'Sample Citations' },
+  'outcome.modal.style.no_samples': { zh: '未检测到风格样本', en: 'No style samples detected' },
+  'outcome.modal.style.upload_suggestion': { zh: '上传参考样本可显著降低风格偏移', en: 'Upload reference samples to significantly reduce style deviation' },
+  'outcome.modal.style.samples_detected': { zh: '已检测到 ${count} 个风格样本', en: '${count} style samples detected' },
+  'outcome.modal.style.comparison': { zh: '风格对比', en: 'Style Comparison' },
+  'outcome.modal.export.timeline': { zh: '写作时间线', en: 'Writing Timeline' },
+  'outcome.modal.export.formats': { zh: '导出格式', en: 'Export Formats' },
+  'outcome.modal.export.retention': { zh: '文件保存 30 天', en: 'Files stored for 30 days' },
   'outcome.metrics.style_samples': { zh: '风格样本', en: 'Style Samples' },
   'outcome.metrics.style_samples_desc': { zh: '个文件已上传', en: ' files uploaded' },
   'outcome.metrics.sources_hit': { zh: '命中文献', en: 'Sources Hit' },

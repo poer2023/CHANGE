@@ -22,7 +22,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import OutcomePanel from '@/components/WritingFlow/OutcomePanel';
+import OutcomePanelCard from '@/components/WritingFlow/OutcomePanelCard';
 import StepNav from '@/components/WritingFlow/StepNav';
 import Gate1Modal from '@/components/Gate1Modal';
 import DemoModeToggle from '@/components/DemoModeToggle';
@@ -1632,61 +1632,52 @@ const OutlineStep: React.FC = () => {
             </Card>
           </main>
           
-          {/* Right Column - Ghost Outcome Panel */}
-          <aside className="hidden xl:block">
-            <div className="sticky top-6 -mr-6 md:-mr-8">
-              <OutcomePanel
-            step="outline"
-            lockedPrice={lockPriceState.lockedPrice}
-            estimate={{
-              priceRange: estimate.priceRange,
-              etaMinutes: estimate.etaMinutes,
-              citesRange: estimate.citesRange,
-              verifyLevel: verificationLevel
-            }}
-            metrics={{
-              outlineDepth: outline.nodes.length > 0 ? Math.max(...outline.nodes.map(node => 
-                node.children && node.children.length > 0 ? 2 : 1
-              )) : 1,
-              sections: outline.nodes.length,
-              perSectionCiteBalance: totalWords > 0 ? Math.round((outline.nodes.reduce((sum, node) => {
-                const nodeWords = node.estWords + (node.children?.reduce((childSum, child) => childSum + child.estWords, 0) || 0);
-                return sum + nodeWords;
-              }, 0) / totalWords) * 100) : 0,
-              ...writingFlow.metrics
-            }}
-            addons={writingFlow.addons}
-            autopilot={autopilot.running ? {
-              running: autopilot.running,
-              step: autopilot.step as any,
-              progress: autopilot.progress,
-              message: autopilot.message
-            } : undefined}
-            error={writingFlow.error}
-            onVerifyChange={handleVerifyLevelChange}
-            onToggleAddon={toggleAddon}
-            onPreviewSample={() => {
-              toast({
-                title: t('outline.toast.development'),
-                description: t('outline.toast.sample_preview_coming')
-              });
-            }}
-            onPayAndWrite={async () => {
-              try {
-                track('outcome_pay_and_write_click', { step: 'outline' });
-                
-                let finalPrice = lockPriceState.lockedPrice;
-                
-                // Step 1: Lock price if not already locked
-                if (!finalPrice) {
-                  const priceLockResponse = await lockPrice({
-                    title: step1.title,
-                    wordCount: step1.wordCount,
-                    verifyLevel: verificationLevel
-                  });
+          {/* Right Column - Outcome Panel */}
+          <aside className="xl:sticky xl:top-6 self-start">
+            <OutcomePanelCard
+              step="outline"
+              lockedPrice={lockPriceState.lockedPrice}
+              estimate={{
+                priceRange: estimate.priceRange,
+                etaMinutes: estimate.etaMinutes,
+                citesRange: estimate.citesRange,
+                verifyLevel: verificationLevel
+              }}
+              metrics={{
+                outlineDepth: outline.nodes.length > 0 ? Math.max(...outline.nodes.map(node => 
+                  node.children && node.children.length > 0 ? 2 : 1
+                )) : 1,
+                sections: outline.nodes.length,
+                perSectionCiteBalance: totalWords > 0 ? Math.round((outline.nodes.reduce((sum, node) => {
+                  const nodeWords = node.estWords + (node.children?.reduce((childSum, child) => childSum + child.estWords, 0) || 0);
+                  return sum + nodeWords;
+                }, 0) / totalWords) * 100) : 0
+              }}
+              addons={writingFlow.addons}
+              onVerifyChange={handleVerifyLevelChange}
+              onToggleAddon={toggleAddon}
+              onPreviewMore={() => {
+                toast({
+                  title: t('outline.toast.development'),
+                  description: t('outline.toast.sample_preview_coming')
+                });
+              }}
+              onPayAndWrite={async () => {
+                try {
+                  track('outcome_pay_and_write_click', { step: 'outline' });
                   
-                  lockPriceState.lockPrice(priceLockResponse.value, priceLockResponse.expiresAt);
-                  finalPrice = priceLockResponse;
+                  let finalPrice = lockPriceState.lockedPrice;
+                  
+                  // Step 1: Lock price if not already locked
+                  if (!finalPrice) {
+                    const priceLockResponse = await lockPrice({
+                      title: step1.title,
+                      wordCount: step1.wordCount,
+                      verifyLevel: verificationLevel
+                    });
+                    
+                    lockPriceState.lockPrice(priceLockResponse.value, priceLockResponse.expiresAt);
+                    finalPrice = priceLockResponse;
                 }
                 
                 // Step 2: Show Gate1 modal for payment
@@ -1703,9 +1694,7 @@ const OutlineStep: React.FC = () => {
                 });
               }
             }}
-            onRetry={() => setError(undefined)}
             />
-            </div>
           </aside>
           </div>
         </div>

@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import OutcomePanel from '@/components/WritingFlow/OutcomePanel';
+import OutcomePanelCard from '@/components/WritingFlow/OutcomePanelCard';
 import StepNav from '@/components/WritingFlow/StepNav';
 import AutopilotBanner from '@/components/AutopilotBanner';
 import Gate1Modal from '@/components/Gate1Modal';
@@ -1042,9 +1042,8 @@ const TopicStep: React.FC = () => {
             </main>
 
             {/* Right Column - Outcome Panel */}
-            <aside className="hidden xl:block">
-              <div className="sticky top-6 -mr-6 md:-mr-8">
-                <OutcomePanel
+            <aside className="xl:sticky xl:top-6 self-start">
+              <OutcomePanelCard
                 step="topic"
                 lockedPrice={pay.lockedPrice}
                 estimate={{
@@ -1057,20 +1056,11 @@ const TopicStep: React.FC = () => {
                   styleSamples: step1.styleSamples?.length || 0
                 }}
                 addons={writingFlow.addons}
-                autopilot={autopilot.running ? {
-                  running: autopilot.running,
-                  step: autopilot.step as any,
-                  progress: autopilot.progress,
-                  message: autopilot.logs[autopilot.logs.length - 1]?.msg
-                } : undefined}
-                error={writingFlow.error}
                 onVerifyChange={handleVerifyLevelChange}
                 onToggleAddon={handleToggleAddon}
-                onPreviewSample={handleShowPreview}
+                onPreviewMore={handleShowPreview}
                 onPayAndWrite={handlePayAndWrite}
-                onRetry={handleRetry}
               />
-              </div>
             </aside>
           </div>
         </div>

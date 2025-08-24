@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import OutcomePanel from '@/components/WritingFlow/OutcomePanel';
+import OutcomePanelCard from '@/components/WritingFlow/OutcomePanelCard';
 import StepNav from '@/components/WritingFlow/StepNav';
 import Gate1Modal from '@/components/Gate1Modal';
 import DemoModeToggle from '@/components/DemoModeToggle';
@@ -99,9 +99,8 @@ interface Strategy {
   expectedCitationRange?: [number, number];
 }
 
-// Zod 验证架构
-
-const strategySchema = z.object({
+// Zod 验证架构工厂函数
+const createStrategySchema = (t: (key: string) => string) => z.object({
   thesis: z.string()
     .min(1, t('strategy.validation.thesis_required'))
     .max(500, t('strategy.validation.thesis_max_length')),
@@ -244,7 +243,7 @@ const StrategyStep: React.FC = () => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const form = useForm<Strategy>({
-    resolver: zodResolver(strategySchema),
+    resolver: zodResolver(createStrategySchema(t)),
     defaultValues: {
       thesis: project.strategy?.thesis || '',
       essayType: 'argument',
@@ -1461,10 +1460,9 @@ const StrategyStep: React.FC = () => {
           </form>
           </main>
 
-          {/* Right Column - Ghost Outcome Panel */}
-          <aside className="hidden xl:block">
-            <div className="sticky top-6 -mr-6 md:-mr-8">
-              <OutcomePanel
+          {/* Right Column - Outcome Panel */}
+          <aside className="xl:sticky xl:top-6 self-start">
+            <OutcomePanelCard
               step="strategy"
               lockedPrice={pay.lockedPrice}
               estimate={{
@@ -1479,20 +1477,11 @@ const StrategyStep: React.FC = () => {
                 claimCount: watchedData.claims?.length || 0
               }}
               addons={writingFlow.addons}
-              autopilot={autopilot.running ? {
-                running: autopilot.running,
-                step: autopilot.step as any,
-                progress: autopilot.progress,
-                message: autopilot.logs[autopilot.logs.length - 1]?.msg
-              } : undefined}
-              error={writingFlow.error}
               onVerifyChange={handleVerifyLevelChange}
               onToggleAddon={handleToggleAddon}
-              onPreviewSample={handleShowPreview}
+              onPreviewMore={handleShowPreview}
               onPayAndWrite={handlePayAndWrite}
-              onRetry={handleRetry}
             />
-            </div>
           </aside>
           </div>
         </div>

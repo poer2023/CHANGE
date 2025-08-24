@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
-import OutcomePanel from '@/components/WritingFlow/OutcomePanel';
+import OutcomePanelCard from '@/components/WritingFlow/OutcomePanelCard';
 import StepNav from '@/components/WritingFlow/StepNav';
 import Gate1Modal from '@/components/Gate1Modal';
 import DemoModeToggle from '@/components/DemoModeToggle';
@@ -1370,10 +1370,9 @@ const ResearchStep: React.FC = () => {
           </form>
           </main>
 
-          {/* Right Column - Ghost Outcome Panel */}
-          <aside className="hidden xl:block">
-            <div className="sticky top-6 -mr-6 md:-mr-8">
-              <OutcomePanel
+          {/* Right Column - Outcome Panel */}
+          <aside className="xl:sticky xl:top-6 self-start">
+            <OutcomePanelCard
               step="research"
               lockedPrice={pay.lockedPrice}
               estimate={{
@@ -1388,20 +1387,11 @@ const ResearchStep: React.FC = () => {
                 recent5yRatio: stats.recent5yRatio
               }}
               addons={writingFlow.addons}
-              autopilot={autopilot.running ? {
-                running: autopilot.running,
-                step: autopilot.step as any,
-                progress: autopilot.progress,
-                message: autopilot.logs[autopilot.logs.length - 1]?.msg
-              } : undefined}
-              error={writingFlow.error}
               onVerifyChange={handleVerifyLevelChange}
               onToggleAddon={handleToggleAddon}
-              onPreviewSample={handleShowPreview}
+              onPreviewMore={handleShowPreview}
               onPayAndWrite={handlePayAndWrite}
-              onRetry={handleRetry}
             />
-            </div>
           </aside>
           </div>
         </div>

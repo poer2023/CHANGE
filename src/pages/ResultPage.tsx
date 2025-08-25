@@ -3,8 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useSearchParams } from 'react-router-dom';
 import { useApp } from '@/state/AppContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import ArticleCard from '@/components/Result/ArticleCard';
-import DeckTabs from '@/components/Result/DeckTabs';
+import ResultCardsLayout from '@/components/Result/ResultCardsLayout';
 import Gate1Modal from '@/components/Gate1Modal';
 import LanguageToggle from '@/components/LanguageToggle';
 import { FileText, CheckCircle } from 'lucide-react';
@@ -105,6 +104,18 @@ const ResultPage: React.FC = () => {
     }, 5000);
   };
 
+  const handleDownloadAll = () => {
+    trackTyped('download_all', { docId }, 'document', 'export');
+  };
+
+  const handleDownloadReferences = () => {
+    trackTyped('download_references', { docId }, 'document', 'export');
+  };
+
+  const handleDownloadCueCards = () => {
+    trackTyped('download_cue_cards', { docId }, 'document', 'export');
+  };
+
   // Status indicator component
   const StatusIndicator = () => {
     const getStatusInfo = () => {
@@ -161,26 +172,19 @@ const ResultPage: React.FC = () => {
         </div>
       </header>
       
-      {/* Main Content Grid */}
+      {/* Main Content */}
       <div className="bg-[#F7F8FB] pt-6">
         <div className="max-w-[1320px] mx-auto px-4 md:px-6 py-6">
-          <div className="flex gap-6 items-start">
-            {/* Document Column - Fixed 760px */}
-            <div className="flex-shrink-0">
-              <ArticleCard 
-                docId={docId} 
-                disabled={state.pay.previewMode}
-              />
-            </div>
-            
-            {/* Deck Column - Fixed 420-520px */}
-            <div className="flex-shrink-0">
-              <DeckTabs 
-                docId={docId}
-                disabled={state.pay.previewMode}
-              />
-            </div>
-          </div>
+          <ResultCardsLayout
+            isPreviewMode={state.pay.previewMode}
+            docId={docId}
+            title="Advanced Strategies for Academic Research Writing"
+            badges={["Research Paper", "Academic Writing", "6,540 words"]}
+            onDownloadAll={handleDownloadAll}
+            onUnlock={handleGate1Unlock}
+            onDownloadReferences={handleDownloadReferences}
+            onDownloadCueCards={handleDownloadCueCards}
+          />
         </div>
       </div>
 
